@@ -12,7 +12,7 @@
 
 ### About the Author & Security Approach
 
-I am a **Security Engineering professional** with expertise in security operations, threat detection, and security architecture. However, I am **not an expert Security Software Engineer**. While I have a solid understanding of software development practices and security principles, secure software development at scale requires specialized expertise that differs from operational security engineering.
+I am a **Security Engineering professional** with expertise in infrastructure security and privacy engineering. At this stage of my career, I spend most of my time leading teams rather than writing code. While I have a solid understanding of software development practices and security principles, I am **not an expert Security Software Engineer**. Secure software development at scale requires specialized expertise that differs from infrastructure security and engineering leadership.
 
 **Security Implementation Approach:**
 
