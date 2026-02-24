@@ -97,6 +97,42 @@ if ! chmod 700 "$SECRETS_DIR" 2>/dev/null; then
     warning "Could not set directory permissions (chmod 700). Continuing..."
 fi
 
+# Check if secrets already exist
+EXISTING_SECRETS=()
+for file in db_key.txt secret_key.txt pepper.txt; do
+    if [[ -f "$SECRETS_DIR/$file" ]]; then
+        EXISTING_SECRETS+=("$file")
+    fi
+done
+
+if [[ ${#EXISTING_SECRETS[@]} -gt 0 ]]; then
+    echo ""
+    echo "================================================================"
+    echo -e "${YELLOW}WARNING: Existing secrets detected!${NC}"
+    echo "================================================================"
+    echo ""
+    echo -e "${YELLOW}The following secret files already exist:${NC}"
+    for file in "${EXISTING_SECRETS[@]}"; do
+        echo "  - $file"
+    done
+    echo ""
+    echo -e "${RED}IMPORTANT:${NC}"
+    echo -e "${RED}  Regenerating secrets will make your existing database UNREADABLE!${NC}"
+    echo -e "${RED}  All encrypted data will be permanently lost unless you have backups.${NC}"
+    echo ""
+    echo -e -n "${YELLOW}Do you want to continue and OVERWRITE existing secrets? (yes/no): ${NC}"
+    read -r response
+
+    if [[ "$response" != "yes" ]]; then
+        echo ""
+        echo -e "${GREEN}Operation cancelled. Existing secrets preserved.${NC}"
+        echo ""
+        exit 0
+    fi
+    echo ""
+    echo -e "${YELLOW}Proceeding with secret regeneration...${NC}"
+fi
+
 echo ""
 echo "Generating cryptographically secure secrets..."
 echo ""

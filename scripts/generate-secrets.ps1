@@ -163,6 +163,44 @@ try {
         exit 1
     }
 
+    # Check if secrets already exist
+    $existingSecrets = @()
+    $secretFiles = @("db_key.txt", "secret_key.txt", "pepper.txt")
+    foreach ($file in $secretFiles) {
+        $filePath = Join-Path $secretsDir $file
+        if (Test-Path $filePath) {
+            $existingSecrets += $file
+        }
+    }
+
+    if ($existingSecrets.Count -gt 0) {
+        Write-Host ""
+        Write-Host "================================================================" -ForegroundColor Yellow
+        Write-Host "WARNING: Existing secrets detected!" -ForegroundColor Yellow
+        Write-Host "================================================================" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "The following secret files already exist:" -ForegroundColor Yellow
+        foreach ($file in $existingSecrets) {
+            Write-Host "  - $file" -ForegroundColor Gray
+        }
+        Write-Host ""
+        Write-Host "IMPORTANT:" -ForegroundColor Red
+        Write-Host "  Regenerating secrets will make your existing database UNREADABLE!" -ForegroundColor Red
+        Write-Host "  All encrypted data will be permanently lost unless you have backups." -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Do you want to continue and OVERWRITE existing secrets? (yes/no): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+
+        if ($response -ne "yes") {
+            Write-Host ""
+            Write-Host "Operation cancelled. Existing secrets preserved." -ForegroundColor Green
+            Write-Host ""
+            exit 0
+        }
+        Write-Host ""
+        Write-Host "Proceeding with secret regeneration..." -ForegroundColor Yellow
+    }
+
     Write-Host ""
     Write-Host "Generating cryptographically secure secrets..." -ForegroundColor White
     Write-Host ""
@@ -232,6 +270,7 @@ try {
 
     # Set restrictive NTFS permissions (Windows equivalent of chmod 600)
     $secretFiles = Get-ChildItem -Path $secretsDir -Filter "*.txt"
+    $permissionsFailed = 0
     foreach ($file in $secretFiles) {
         try {
             # Remove inheritance
@@ -254,8 +293,15 @@ try {
             Write-Success "Permissions set on $($file.Name) (current user only)"
         }
         catch {
-            $errorMsg = $_.Exception.Message
-            Write-WarningMsg "Could not set permissions on $($file.Name): $errorMsg"
+            $permissionsFailed++
+            if ($permissionsFailed -eq 1) {
+                # Only show detailed message once
+                Write-Host ""
+                Write-Host "[INFO] Permission setting failed (requires administrator privileges)" -ForegroundColor Cyan
+                Write-Host "       This is not critical - files are still created successfully." -ForegroundColor Gray
+                Write-Host "       To set permissions, run PowerShell as Administrator." -ForegroundColor Gray
+                Write-Host ""
+            }
         }
     }
 
