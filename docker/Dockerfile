@@ -20,14 +20,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # Install Poetry
-RUN pip install --no-cache-dir poetry==1.7.1
+RUN pip install --no-cache-dir poetry==2.3.2
 
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
 # Install dependencies
 RUN poetry config virtualenvs.create false && \
-    poetry install --no-dev --no-interaction --no-ansi --no-root
+    poetry install --only main --no-interaction --no-ansi --no-root
 
 # Runtime stage
 FROM python:3.13-slim-bookworm
