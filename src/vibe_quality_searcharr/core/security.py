@@ -6,8 +6,11 @@ This module provides cryptographic operations following OWASP best practices:
 - Secure token generation using secrets module
 - Field-level encryption using Fernet (AES-128-CBC with HMAC)
 - Constant-time comparison for security-sensitive operations
+- HMAC-based pepper mixing to prevent timing attacks
 """
 
+import hashlib
+import hmac
 import secrets
 import string
 from typing import Any
@@ -56,11 +59,13 @@ class PasswordSecurity:
 
     def hash_password(self, password: str) -> str:
         """
-        Hash a password using Argon2id with pepper.
+        Hash a password using Argon2id with HMAC-based pepper mixing.
 
-        The password is peppered before hashing to add an additional layer of security.
-        If the database is compromised, the pepper (stored separately) is still required
-        to verify passwords.
+        Uses HMAC-SHA256 to mix the pepper with the password in constant-time,
+        preventing timing attacks. The HMAC output is then hashed with Argon2id.
+
+        If the database is compromised, the pepper (stored separately) is still
+        required to verify passwords.
 
         Args:
             password: Plain-text password to hash
@@ -76,9 +81,17 @@ class PasswordSecurity:
             raise ValueError("Password cannot be empty")
 
         try:
-            # Add pepper to password before hashing
-            peppered_password = password + self._pepper
-            return self._hasher.hash(peppered_password)
+            # Use HMAC for constant-time pepper mixing (prevents timing attacks)
+            peppered = hmac.new(
+                self._pepper.encode(), password.encode(), hashlib.sha256
+            ).digest()
+
+            # Hash the HMAC output with Argon2id
+            # Convert bytes to base64 for Argon2 (expects string input)
+            import base64
+
+            peppered_str = base64.b64encode(peppered).decode("ascii")
+            return self._hasher.hash(peppered_str)
         except Exception as e:
             raise PasswordHashingError(f"Failed to hash password: {e}") from e
 
@@ -86,7 +99,8 @@ class PasswordSecurity:
         """
         Verify a password against an Argon2id hash.
 
-        Uses constant-time comparison to prevent timing attacks.
+        Uses HMAC-SHA256 for constant-time pepper mixing and Argon2id's
+        built-in constant-time comparison.
 
         Args:
             password: Plain-text password to verify
@@ -103,9 +117,18 @@ class PasswordSecurity:
             raise ValueError("Password and hash cannot be empty")
 
         try:
-            # Add pepper before verification
-            peppered_password = password + self._pepper
-            self._hasher.verify(password_hash, peppered_password)
+            # Use HMAC for constant-time pepper mixing (same as hash_password)
+            peppered = hmac.new(
+                self._pepper.encode(), password.encode(), hashlib.sha256
+            ).digest()
+
+            # Convert to base64 (same format as hash_password)
+            import base64
+
+            peppered_str = base64.b64encode(peppered).decode("ascii")
+
+            # Verify using Argon2's constant-time comparison
+            self._hasher.verify(password_hash, peppered_str)
             return True
         except (VerifyMismatchError, VerificationError, InvalidHashError):
             # Password doesn't match or hash is invalid
@@ -147,19 +170,35 @@ class FieldEncryption:
 
     def __init__(self) -> None:
         """
-        Initialize Fernet cipher with key derived from secret key.
+        Initialize Fernet cipher with key derived from secret key using HKDF.
 
-        The encryption key is derived from the application secret key
-        to avoid requiring a separate encryption key.
+        Uses HKDF (HMAC-based Key Derivation Function) to properly derive
+        a 32-byte Fernet key from the application secret key. This prevents
+        weak key issues from short secret keys and provides cryptographically
+        secure key derivation.
+
+        Security: Uses SHA256 HKDF with application-specific salt and info.
         """
-        # Derive a Fernet key from the secret key
-        # Fernet requires a 32-byte base64-encoded key
-        secret_key = settings.get_secret_key()
-        # Use the first 32 bytes of the secret key and base64 encode it
-        key_bytes = secret_key.encode()[:32].ljust(32, b"0")
-        # Fernet requires URL-safe base64 encoding
         import base64
 
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+        secret_key = settings.get_secret_key()
+
+        # Use HKDF to derive a proper 32-byte key from secret key
+        # This prevents weak keys even if secret_key is short
+        kdf = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,  # 256 bits for Fernet
+            salt=b"vibe-quality-searcharr-fernet-v1",  # Application-specific salt
+            info=b"api-key-encryption",  # Context-specific info
+        )
+
+        # Derive key material from secret key
+        key_bytes = kdf.derive(secret_key.encode())
+
+        # Fernet requires URL-safe base64 encoding
         fernet_key = base64.urlsafe_b64encode(key_bytes)
         self._cipher = Fernet(fernet_key)
 

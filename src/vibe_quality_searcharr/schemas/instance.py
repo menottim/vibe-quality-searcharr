@@ -5,12 +5,16 @@ This module defines request and response models for Instance endpoints:
 - Creating and updating Sonarr/Radarr instances
 - Connection testing and health monitoring
 - Instance configuration management
+- SSRF protection for instance URLs
 """
 
 from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
+
+from vibe_quality_searcharr.config import settings
+from vibe_quality_searcharr.core.ssrf_protection import SSRFError, validate_instance_url
 
 # Instance types
 InstanceType = Literal["sonarr", "radarr"]
@@ -47,6 +51,22 @@ class InstanceCreate(BaseModel):
         default=True,
         description="Whether to verify SSL certificates (recommended: True)",
     )
+
+    @field_validator("url")
+    @classmethod
+    def validate_url_ssrf(cls, v: HttpUrl) -> HttpUrl:
+        """Validate URL against SSRF attacks."""
+        url_str = str(v)
+
+        try:
+            # Check for SSRF (respects allow_local_instances setting)
+            validate_instance_url(url_str, allow_local=settings.allow_local_instances)
+        except SSRFError as e:
+            raise ValueError(f"URL blocked for security: {e}") from e
+        except Exception as e:
+            raise ValueError(f"Invalid URL: {e}") from e
+
+        return v
     timeout_seconds: int = Field(
         default=30,
         ge=5,

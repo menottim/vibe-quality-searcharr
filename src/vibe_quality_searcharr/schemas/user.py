@@ -58,6 +58,81 @@ class UserRegister(BaseModel):
                 "Username must start with a letter and contain only "
                 "alphanumeric characters and underscore"
             )
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """
+        Validate password complexity requirements.
+
+        Password must:
+        - Be at least 12 characters long
+        - Contain at least one lowercase letter
+        - Contain at least one uppercase letter
+        - Contain at least one digit
+        - Contain at least one special character
+        - Not be in common password list
+
+        Args:
+            v: Password to validate
+
+        Returns:
+            str: Validated password
+
+        Raises:
+            ValueError: If password doesn't meet complexity requirements
+        """
+        if len(v) < 12:
+            raise ValueError("Password must be at least 12 characters long")
+
+        # Check for required character types
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+
+        if not re.search(r"[0-9]", v):
+            raise ValueError("Password must contain at least one digit")
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;/`~]', v):
+            raise ValueError("Password must contain at least one special character")
+
+        # Check against common passwords (top 25 most common)
+        common_passwords = {
+            "password",
+            "password123",
+            "123456",
+            "12345678",
+            "123456789",
+            "1234567890",
+            "qwerty",
+            "qwerty123",
+            "abc123",
+            "password1",
+            "admin",
+            "admin123",
+            "letmein",
+            "welcome",
+            "welcome123",
+            "monkey",
+            "dragon",
+            "master",
+            "passw0rd",
+            "p@ssw0rd",
+            "p@ssword",
+            "iloveyou",
+            "sunshine",
+            "princess",
+            "starwars",
+        }
+
+        if v.lower() in common_passwords:
+            raise ValueError(
+                "Password is too common. Please choose a more unique password."
+            )
+
         return v.lower()  # Normalize to lowercase
 
     @field_validator("password")

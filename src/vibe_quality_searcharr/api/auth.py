@@ -28,14 +28,11 @@ from vibe_quality_searcharr.core.auth import (
     authenticate_user,
     create_access_token,
     create_refresh_token,
-    generate_totp_secret,
-    generate_totp_uri,
     get_current_user_id_from_token,
     revoke_all_user_tokens,
     revoke_refresh_token,
     rotate_refresh_token,
     verify_refresh_token,
-    verify_totp_code,
 )
 from vibe_quality_searcharr.core.security import hash_password, verify_password
 from vibe_quality_searcharr.database import get_db
@@ -44,9 +41,6 @@ from vibe_quality_searcharr.schemas.user import (
     LoginSuccess,
     MessageResponse,
     PasswordChange,
-    TwoFactorDisable,
-    TwoFactorSetup,
-    TwoFactorVerify,
     UserLogin,
     UserRegister,
     UserResponse,
@@ -102,23 +96,25 @@ def set_auth_cookies(
         refresh_token: JWT refresh token
     """
     # Access token cookie (15 minutes)
+    # Using SameSite=Strict for CSRF protection
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         secure=settings.secure_cookies,
-        samesite="lax",
+        samesite="strict",  # Changed from 'lax' to 'strict' for CSRF protection
         max_age=settings.access_token_expire_minutes * 60,
         path="/",
     )
 
     # Refresh token cookie (30 days)
+    # Using SameSite=Strict for CSRF protection
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
         secure=settings.secure_cookies,
-        samesite="lax",
+        samesite="strict",  # Changed from 'lax' to 'strict' for CSRF protection
         max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
         path="/api/auth",  # Only send to auth endpoints
     )
@@ -349,11 +345,7 @@ async def login(
                 detail="Invalid username or password",
             )
 
-        # TODO: Check if 2FA is enabled
-        # For now, we'll skip 2FA and proceed with login
-        # In a future update, this should redirect to 2FA verification
-
-        # Create tokens
+        # Create tokens (2FA not implemented - see note above)
         access_token = create_access_token(user.id, user.username)
         user_agent = request.headers.get("User-Agent", "unknown")
         refresh_token, _ = create_refresh_token(
@@ -387,7 +379,7 @@ async def login(
                 last_login_ip=user.last_login_ip,
             ),
             token_type="bearer",
-            requires_2fa=False,  # TODO: Implement 2FA flow
+            requires_2fa=False,  # 2FA not implemented
         )
 
     except HTTPException:
@@ -533,273 +525,10 @@ async def refresh(
         ) from e
 
 
-@router.post(
-    "/2fa/setup",
-    response_model=TwoFactorSetup,
-    summary="Setup two-factor authentication",
-    description="Generate TOTP secret and QR code URI for 2FA setup.",
-)
-async def setup_2fa(
-    access_token: Annotated[str | None, Cookie()] = None,
-    db: Session = Depends(get_db),
-) -> TwoFactorSetup:
-    """
-    Setup two-factor authentication.
-
-    Generates a new TOTP secret and QR code URI.
-    User must verify the code with /2fa/verify to enable 2FA.
-
-    **Authentication Required:** Access token cookie
-
-    Args:
-        access_token: Access token from cookie
-        db: Database session
-
-    Returns:
-        TwoFactorSetup: TOTP secret and QR code URI
-
-    Raises:
-        HTTPException:
-            - 401: Not authenticated
-            - 404: User not found
-            - 500: Server error during setup
-    """
-    try:
-        if not access_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Not authenticated",
-            )
-
-        # Verify access token and get user
-        from vibe_quality_searcharr.core.auth import get_current_user_id_from_token
-
-        try:
-            user_id = get_current_user_id_from_token(access_token)
-        except TokenError as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=str(e),
-            ) from e
-
-        # Get user from database
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-
-        # Generate TOTP secret
-        secret = generate_totp_secret()
-        qr_uri = generate_totp_uri(secret, user.username)
-
-        # TODO: Store secret temporarily (not enabled until verified)
-        # For now, return it to the user to scan
-        # In a complete implementation, store this in a temporary field
-
-        logger.info("totp_setup_initiated", user_id=user.id)
-
-        return TwoFactorSetup(
-            secret=secret,
-            qr_code_uri=qr_uri,
-            backup_codes=[],  # TODO: Generate backup codes
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("2fa_setup_failed", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to setup 2FA",
-        ) from e
-
-
-@router.post(
-    "/2fa/verify",
-    response_model=MessageResponse,
-    summary="Verify and enable two-factor authentication",
-    description="Verify TOTP code and enable 2FA for the user account.",
-)
-async def verify_2fa(
-    verify_data: TwoFactorVerify,
-    access_token: Annotated[str | None, Cookie()] = None,
-    db: Session = Depends(get_db),
-) -> MessageResponse:
-    """
-    Verify TOTP code and enable two-factor authentication.
-
-    After calling /2fa/setup, use this endpoint to verify the TOTP code
-    and permanently enable 2FA for the user account.
-
-    **Authentication Required:** Access token cookie
-
-    Args:
-        verify_data: TOTP verification data
-        access_token: Access token from cookie
-        db: Database session
-
-    Returns:
-        MessageResponse: Success message
-
-    Raises:
-        HTTPException:
-            - 401: Not authenticated or invalid code
-            - 404: User not found
-            - 500: Server error during verification
-    """
-    try:
-        if not access_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Not authenticated",
-            )
-
-        # Verify access token and get user
-        from vibe_quality_searcharr.core.auth import get_current_user_id_from_token
-
-        try:
-            user_id = get_current_user_id_from_token(access_token)
-        except TokenError as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=str(e),
-            ) from e
-
-        # Get user from database
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-
-        # TODO: Get temporary TOTP secret from user session/database
-        # For now, this is a placeholder implementation
-        # In a complete implementation, retrieve the secret from temporary storage
-        # and verify the code
-
-        # Example verification (would use stored secret):
-        # if not verify_totp_code(stored_secret, verify_data.code):
-        #     raise HTTPException(
-        #         status_code=status.HTTP_401_UNAUTHORIZED,
-        #         detail="Invalid TOTP code",
-        #     )
-
-        # TODO: Enable 2FA for user
-        # user.totp_secret = stored_secret
-        # user.totp_enabled = True
-        # db.commit()
-
-        logger.info("2fa_enabled", user_id=user.id)
-
-        return MessageResponse(
-            message="Two-factor authentication enabled successfully",
-            detail="2FA is now required for login",
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("2fa_verification_failed", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to verify 2FA",
-        ) from e
-
-
-@router.post(
-    "/2fa/disable",
-    response_model=MessageResponse,
-    summary="Disable two-factor authentication",
-    description="Disable 2FA for the user account (requires password and TOTP code).",
-)
-async def disable_2fa(
-    disable_data: TwoFactorDisable,
-    access_token: Annotated[str | None, Cookie()] = None,
-    db: Session = Depends(get_db),
-) -> MessageResponse:
-    """
-    Disable two-factor authentication.
-
-    Requires both password and current TOTP code for security.
-
-    **Authentication Required:** Access token cookie
-
-    Args:
-        disable_data: Password and TOTP code
-        access_token: Access token from cookie
-        db: Database session
-
-    Returns:
-        MessageResponse: Success message
-
-    Raises:
-        HTTPException:
-            - 401: Not authenticated or invalid credentials
-            - 404: User not found
-            - 500: Server error during disable
-    """
-    try:
-        if not access_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Not authenticated",
-            )
-
-        # Verify access token and get user
-        from vibe_quality_searcharr.core.auth import get_current_user_id_from_token
-
-        try:
-            user_id = get_current_user_id_from_token(access_token)
-        except TokenError as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=str(e),
-            ) from e
-
-        # Get user from database
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-
-        # Verify password
-        if not verify_password(disable_data.password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid password",
-            )
-
-        # TODO: Verify TOTP code
-        # if not verify_totp_code(user.totp_secret, disable_data.code):
-        #     raise HTTPException(
-        #         status_code=status.HTTP_401_UNAUTHORIZED,
-        #         detail="Invalid TOTP code",
-        #     )
-
-        # TODO: Disable 2FA
-        # user.totp_secret = None
-        # user.totp_enabled = False
-        # db.commit()
-
-        logger.info("2fa_disabled", user_id=user.id)
-
-        return MessageResponse(
-            message="Two-factor authentication disabled successfully",
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("2fa_disable_failed", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to disable 2FA",
-        ) from e
+# NOTE: Two-factor authentication (2FA/TOTP) is not currently implemented.
+# The User model includes totp_enabled/totp_secret fields for future implementation,
+# but no functional 2FA endpoints exist. This prevents false security claims.
+# See SECURITY_PENETRATION_TEST_REPORT.md for details.
 
 
 @router.post(

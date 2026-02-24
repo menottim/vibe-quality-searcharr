@@ -23,6 +23,10 @@ from vibe_quality_searcharr.models.user import RefreshToken, User
 
 logger = structlog.get_logger()
 
+# JWT algorithm whitelist - NEVER accept 'none' or algorithms from config
+# This prevents algorithm confusion attacks where attackers change algorithm
+ALLOWED_JWT_ALGORITHMS = ["HS256"]
+
 
 class AuthenticationError(Exception):
     """Exception raised when authentication fails."""
@@ -83,11 +87,11 @@ def create_access_token(
         if additional_claims:
             claims.update(additional_claims)
 
-        # Sign and encode token
+        # Sign and encode token using hardcoded algorithm (prevent algorithm confusion)
         token = jwt.encode(
             claims,
             settings.get_secret_key(),
-            algorithm=settings.algorithm,
+            algorithm=ALLOWED_JWT_ALGORITHMS[0],  # Use first allowed algorithm
         )
 
         logger.debug(
@@ -145,11 +149,11 @@ def create_refresh_token(
             "iat": datetime.utcnow(),
         }
 
-        # Sign and encode token
+        # Sign and encode token using hardcoded algorithm (prevent algorithm confusion)
         token = jwt.encode(
             claims,
             settings.get_secret_key(),
-            algorithm=settings.algorithm,
+            algorithm=ALLOWED_JWT_ALGORITHMS[0],  # Use first allowed algorithm
         )
 
         # Store token in database
@@ -196,12 +200,22 @@ def verify_access_token(token: str) -> dict[str, Any]:
         TokenError: If token is invalid, expired, or wrong type
     """
     try:
-        # Decode and verify token
+        # Decode and verify token with algorithm whitelist
         payload = jwt.decode(
             token,
             settings.get_secret_key(),
-            algorithms=[settings.algorithm],
+            algorithms=ALLOWED_JWT_ALGORITHMS,  # Hardcoded whitelist
         )
+
+        # Explicitly verify the algorithm in the token header
+        # This prevents algorithm confusion even if jwt.decode is compromised
+        try:
+            header = jwt.get_unverified_header(token)
+            token_algorithm = header.get("alg")
+            if token_algorithm not in ALLOWED_JWT_ALGORITHMS:
+                raise TokenError(f"Invalid JWT algorithm: {token_algorithm}")
+        except Exception as e:
+            raise TokenError(f"Failed to verify token algorithm: {e}") from e
 
         # Verify token type
         if payload.get("type") != "access":
@@ -234,12 +248,21 @@ def verify_refresh_token(db: Session, token: str) -> tuple[dict[str, Any], Refre
         TokenError: If token is invalid, expired, revoked, or wrong type
     """
     try:
-        # Decode and verify token
+        # Decode and verify token with algorithm whitelist
         payload = jwt.decode(
             token,
             settings.get_secret_key(),
-            algorithms=[settings.algorithm],
+            algorithms=ALLOWED_JWT_ALGORITHMS,  # Hardcoded whitelist
         )
+
+        # Explicitly verify the algorithm in the token header
+        try:
+            header = jwt.get_unverified_header(token)
+            token_algorithm = header.get("alg")
+            if token_algorithm not in ALLOWED_JWT_ALGORITHMS:
+                raise TokenError(f"Invalid JWT algorithm: {token_algorithm}")
+        except Exception as e:
+            raise TokenError(f"Failed to verify token algorithm: {e}") from e
 
         # Verify token type
         if payload.get("type") != "refresh":

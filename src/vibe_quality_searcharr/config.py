@@ -116,12 +116,13 @@ class Settings(BaseSettings):
     )
     database_cipher: str = Field(
         default="aes-256-cfb",
-        description="SQLCipher cipher algorithm",
+        description="SQLCipher cipher algorithm (whitelisted values only)",
     )
     database_kdf_iter: int = Field(
         default=256000,
-        description="SQLCipher KDF iterations",
+        description="SQLCipher KDF iterations (must be between 64,000 and 10,000,000)",
         ge=64000,
+        le=10000000,  # Add upper bound to prevent excessive CPU usage
     )
 
     # Server Settings
@@ -186,7 +187,7 @@ class Settings(BaseSettings):
 
     # Failed Login Protection
     max_failed_login_attempts: int = Field(
-        default=10,
+        default=5,  # Reduced from 10 to 5 per OWASP recommendations
         description="Maximum failed login attempts before account lockout",
         ge=3,
         le=20,
@@ -300,9 +301,13 @@ class Settings(BaseSettings):
         """
         Construct SQLCipher database URL with encryption parameters.
 
+        Uses URL encoding and validated parameters to prevent SQL injection.
+
         Returns:
             str: Complete SQLCipher database URL with encryption settings
         """
+        from urllib.parse import urlencode
+
         db_key = self.get_database_key()
 
         # Extract base path from database_url
@@ -311,11 +316,16 @@ class Settings(BaseSettings):
         else:
             db_path = "./data/vibe-quality-searcharr.db"
 
-        # Construct SQLCipher URL with encryption parameters
-        return (
-            f"sqlite+pysqlcipher://:{db_key}@/{db_path}"
-            f"?cipher={self.database_cipher}&kdf_iter={self.database_kdf_iter}"
+        # Use URL encoding for safety (parameters are already validated by Pydantic)
+        params = urlencode(
+            {
+                "cipher": self.database_cipher,  # Validated against whitelist
+                "kdf_iter": str(self.database_kdf_iter),  # Validated integer range
+            }
         )
+
+        # Construct SQLCipher URL with encoded parameters
+        return f"sqlite+pysqlcipher://:{db_key}@/{db_path}?{params}"
 
     @staticmethod
     def _read_secret(file_path: str | None, env_value: str) -> str:
@@ -367,6 +377,34 @@ class Settings(BaseSettings):
         environment = info.data.get("environment", "production")
         if not v and environment == "production":
             raise ValueError("Secure cookies must be enabled in production")
+        return v
+
+    @field_validator("database_cipher")
+    @classmethod
+    def validate_database_cipher(cls, v: str) -> str:
+        """Validate cipher algorithm is in whitelist to prevent SQL injection."""
+        allowed_ciphers = {
+            "aes-256-cfb",
+            "aes-256-cbc",
+            "aes-128-cfb",
+            "aes-128-cbc",
+        }
+        if v not in allowed_ciphers:
+            raise ValueError(
+                f"Invalid cipher: {v}. Allowed values: {', '.join(sorted(allowed_ciphers))}"
+            )
+        return v
+
+    @field_validator("database_kdf_iter")
+    @classmethod
+    def validate_database_kdf_iter(cls, v: int) -> int:
+        """Validate KDF iterations to prevent SQL injection and DoS."""
+        if not isinstance(v, int):
+            raise ValueError("kdf_iter must be an integer")
+        if v < 64000:
+            raise ValueError("kdf_iter must be at least 64,000 for security")
+        if v > 10000000:
+            raise ValueError("kdf_iter must not exceed 10,000,000 to prevent DoS")
         return v
 
 
