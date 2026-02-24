@@ -29,22 +29,22 @@ $ErrorActionPreference = "Stop"
 # Color output functions
 function Write-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
 function Write-ErrorMsg {
     param([string]$Message)
-    Write-Host "❌ ERROR: $Message" -ForegroundColor Red
+    Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
 function Write-WarningMsg {
     param([string]$Message)
-    Write-Host "⚠️  $Message" -ForegroundColor Yellow
+    Write-Host "[WARNING] $Message" -ForegroundColor Yellow
 }
 
 function Write-InfoMsg {
     param([string]$Message)
-    Write-Host "ℹ️  $Message" -ForegroundColor Cyan
+    Write-Host "[INFO] $Message" -ForegroundColor Cyan
 }
 
 function Write-Header {
@@ -77,7 +77,8 @@ function New-SecureSecret {
         return $urlSafe
     }
     catch {
-        Write-ErrorMsg "Failed to generate secure random bytes: $_"
+        $errorMsg = $_.Exception.Message
+        Write-ErrorMsg "Failed to generate secure random bytes: $errorMsg"
         exit 1
     }
 }
@@ -157,7 +158,8 @@ try {
         Write-Success "Secrets directory ready"
     }
     catch {
-        Write-ErrorMsg "Failed to create secrets directory: $_"
+        $errorMsg = $_.Exception.Message
+        Write-ErrorMsg "Failed to create secrets directory: $errorMsg"
         exit 1
     }
 
@@ -180,7 +182,8 @@ try {
         }
     }
     catch {
-        Write-ErrorMsg "Failed to generate database key: $_"
+        $errorMsg = $_.Exception.Message
+        Write-ErrorMsg "Failed to generate database key: $errorMsg"
         exit 1
     }
 
@@ -199,7 +202,8 @@ try {
         }
     }
     catch {
-        Write-ErrorMsg "Failed to generate secret key: $_"
+        $errorMsg = $_.Exception.Message
+        Write-ErrorMsg "Failed to generate secret key: $errorMsg"
         exit 1
     }
 
@@ -218,7 +222,8 @@ try {
         }
     }
     catch {
-        Write-ErrorMsg "Failed to generate pepper: $_"
+        $errorMsg = $_.Exception.Message
+        Write-ErrorMsg "Failed to generate pepper: $errorMsg"
         exit 1
     }
 
@@ -249,7 +254,8 @@ try {
             Write-Success "Permissions set on $($file.Name) (current user only)"
         }
         catch {
-            Write-WarningMsg "Could not set permissions on $($file.Name): $_"
+            $errorMsg = $_.Exception.Message
+            Write-WarningMsg "Could not set permissions on $($file.Name): $errorMsg"
         }
     }
 
@@ -275,15 +281,15 @@ try {
     if ($allValid) {
         Write-Host ""
         Write-Host "================================================================" -ForegroundColor Green
-        Write-Host "✅ SUCCESS: All secrets generated and verified!" -ForegroundColor Green
+        Write-Host "SUCCESS: All secrets generated and verified!" -ForegroundColor Green
         Write-Host "================================================================" -ForegroundColor Green
         Write-Host ""
-        Write-Host "Generated files in ${secretsDir}:" -ForegroundColor White
+        Write-Host "Generated files in secrets directory:" -ForegroundColor White
         Write-Host "  - db_key.txt      (Database encryption key)" -ForegroundColor Gray
         Write-Host "  - secret_key.txt  (JWT signing key)" -ForegroundColor Gray
         Write-Host "  - pepper.txt      (Password hashing pepper)" -ForegroundColor Gray
         Write-Host ""
-        Write-Host "⚠️  CRITICAL SECURITY WARNINGS:" -ForegroundColor Yellow
+        Write-Host "CRITICAL SECURITY WARNINGS:" -ForegroundColor Yellow
         Write-Host ""
         Write-Host "  1. NEVER commit these files to version control" -ForegroundColor White
         Write-Host "  2. BACKUP these files securely (encrypted backup)" -ForegroundColor White
@@ -293,7 +299,7 @@ try {
         Write-Host "     - Encrypted USB drive" -ForegroundColor Gray
         Write-Host "     - Secure cloud storage (encrypted)" -ForegroundColor Gray
         Write-Host ""
-        Write-Host "ℹ️  Next Steps:" -ForegroundColor Cyan
+        Write-Host "Next Steps:" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "  1. Start the application:" -ForegroundColor White
         Write-Host "     docker-compose up -d" -ForegroundColor Gray
@@ -313,7 +319,9 @@ try {
     }
 }
 catch {
-    Write-ErrorMsg "Unexpected error: $_"
-    Write-Host $_.ScriptStackTrace -ForegroundColor Red
+    $errorMsg = $_.Exception.Message
+    $stackTrace = $_.ScriptStackTrace
+    Write-ErrorMsg "Unexpected error: $errorMsg"
+    Write-Host $stackTrace -ForegroundColor Red
     exit 1
 }
