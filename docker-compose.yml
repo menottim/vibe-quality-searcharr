@@ -18,7 +18,9 @@ services:
     user: "1000:1000"
 
     # Security: Read-only root filesystem
-    read_only: true
+    # Note: Disabled for Windows compatibility - volume mounts with non-root user
+    # have permission issues on Windows. Re-enable for Linux production deployments.
+    # read_only: true
 
     # Security: Drop all capabilities
     cap_drop:
