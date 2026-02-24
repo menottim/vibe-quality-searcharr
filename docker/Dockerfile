@@ -44,8 +44,8 @@ LABEL org.opencontainers.image.title="Vibe-Quality-Searcharr" \
       maintainer="vibe-quality-searcharr@example.com"
 
 # Security: Create non-root user
-RUN groupadd -r -g 1000 appuser && \
-    useradd -r -u 1000 -g appuser -s /sbin/nologin -c "Application user" appuser
+RUN groupadd -g 1000 appuser && \
+    useradd -u 1000 -g appuser -s /sbin/nologin -c "Application user" appuser
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
