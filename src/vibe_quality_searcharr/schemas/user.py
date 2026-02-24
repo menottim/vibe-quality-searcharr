@@ -1,0 +1,458 @@
+"""
+Pydantic schemas for user authentication and authorization.
+
+This module defines request and response models for authentication endpoints:
+- User registration and login
+- JWT token responses
+- Two-factor authentication setup and verification
+"""
+
+import re
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class UserRegister(BaseModel):
+    """
+    Schema for user registration.
+
+    Used for first-run registration (only when no users exist).
+    """
+
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=32,
+        description="Username (3-32 alphanumeric characters and underscore)",
+    )
+    password: str = Field(
+        ...,
+        min_length=12,
+        max_length=128,
+        description="Password (minimum 12 characters)",
+    )
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        """
+        Validate username format.
+
+        Username must:
+        - Be 3-32 characters long
+        - Contain only alphanumeric characters and underscore
+        - Start with a letter
+
+        Args:
+            v: Username to validate
+
+        Returns:
+            str: Validated username
+
+        Raises:
+            ValueError: If username format is invalid
+        """
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", v):
+            raise ValueError(
+                "Username must start with a letter and contain only "
+                "alphanumeric characters and underscore"
+            )
+        return v.lower()  # Normalize to lowercase
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """
+        Validate password strength.
+
+        Password must:
+        - Be at least 12 characters long
+        - Contain at least one uppercase letter
+        - Contain at least one lowercase letter
+        - Contain at least one digit
+        - Contain at least one special character
+
+        Args:
+            v: Password to validate
+
+        Returns:
+            str: Validated password
+
+        Raises:
+            ValueError: If password doesn't meet strength requirements
+        """
+        if len(v) < 12:
+            raise ValueError("Password must be at least 12 characters long")
+
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
+
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\/'`~;]", v):
+            raise ValueError("Password must contain at least one special character")
+
+        return v
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "username": "admin",
+                    "password": "SecureP@ssw0rd123!",
+                }
+            ]
+        }
+    }
+
+
+class UserLogin(BaseModel):
+    """
+    Schema for user login.
+
+    Used for authentication with username and password.
+    """
+
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=32,
+        description="Username",
+    )
+    password: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Password",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "username": "admin",
+                    "password": "SecureP@ssw0rd123!",
+                }
+            ]
+        }
+    }
+
+
+class TokenResponse(BaseModel):
+    """
+    Schema for token response.
+
+    Returned after successful login or token refresh.
+    Note: In production, tokens are sent as HTTP-only cookies,
+    but this schema can also be used for API responses if needed.
+    """
+
+    access_token: str = Field(
+        ...,
+        description="JWT access token (15-minute expiry)",
+    )
+    refresh_token: str = Field(
+        ...,
+        description="JWT refresh token (30-day expiry)",
+    )
+    token_type: Literal["bearer"] = Field(
+        default="bearer",
+        description="Token type (always 'bearer')",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "token_type": "bearer",
+                }
+            ]
+        }
+    }
+
+
+class UserResponse(BaseModel):
+    """
+    Schema for user information response.
+
+    Returned after successful registration or when fetching user details.
+    """
+
+    id: int = Field(..., description="User ID")
+    username: str = Field(..., description="Username")
+    is_active: bool = Field(..., description="Whether the account is active")
+    is_superuser: bool = Field(..., description="Whether the user has superuser privileges")
+    totp_enabled: bool = Field(default=False, description="Whether 2FA is enabled")
+    created_at: str = Field(..., description="Account creation timestamp (ISO 8601)")
+    last_login: str | None = Field(None, description="Last login timestamp (ISO 8601)")
+    last_login_ip: str | None = Field(None, description="Last login IP address")
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": 1,
+                    "username": "admin",
+                    "is_active": True,
+                    "is_superuser": True,
+                    "totp_enabled": False,
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "last_login": "2024-01-15T14:22:15Z",
+                    "last_login_ip": "192.168.1.100",
+                }
+            ]
+        },
+    }
+
+
+class TwoFactorSetup(BaseModel):
+    """
+    Schema for two-factor authentication setup response.
+
+    Contains the TOTP secret and QR code URI for scanning.
+    """
+
+    secret: str = Field(
+        ...,
+        description="Base32-encoded TOTP secret (store this securely)",
+    )
+    qr_code_uri: str = Field(
+        ...,
+        description="otpauth:// URI for QR code generation",
+    )
+    backup_codes: list[str] = Field(
+        default_factory=list,
+        description="Backup codes for account recovery (optional)",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "secret": "JBSWY3DPEHPK3PXP",
+                    "qr_code_uri": "otpauth://totp/Vibe-Quality-Searcharr:admin?secret=JBSWY3DPEHPK3PXP&issuer=Vibe-Quality-Searcharr",
+                    "backup_codes": ["12345678", "87654321"],
+                }
+            ]
+        }
+    }
+
+
+class TwoFactorVerify(BaseModel):
+    """
+    Schema for two-factor authentication verification.
+
+    Used to verify a TOTP code during 2FA setup or login.
+    """
+
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=6,
+        pattern=r"^\d{6}$",
+        description="6-digit TOTP code from authenticator app",
+    )
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, v: str) -> str:
+        """
+        Validate TOTP code format.
+
+        Args:
+            v: TOTP code to validate
+
+        Returns:
+            str: Validated TOTP code
+
+        Raises:
+            ValueError: If code is not 6 digits
+        """
+        if not v.isdigit():
+            raise ValueError("TOTP code must contain only digits")
+
+        if len(v) != 6:
+            raise ValueError("TOTP code must be exactly 6 digits")
+
+        return v
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "code": "123456",
+                }
+            ]
+        }
+    }
+
+
+class TwoFactorDisable(BaseModel):
+    """
+    Schema for disabling two-factor authentication.
+
+    Requires password confirmation for security.
+    """
+
+    password: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Current password for confirmation",
+    )
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=6,
+        pattern=r"^\d{6}$",
+        description="Current 6-digit TOTP code for verification",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "password": "SecureP@ssw0rd123!",
+                    "code": "123456",
+                }
+            ]
+        }
+    }
+
+
+class MessageResponse(BaseModel):
+    """
+    Generic message response schema.
+
+    Used for simple success/error messages.
+    """
+
+    message: str = Field(..., description="Response message")
+    detail: str | None = Field(None, description="Additional details (optional)")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "message": "Operation successful",
+                    "detail": "Additional information here",
+                }
+            ]
+        }
+    }
+
+
+class LoginSuccess(BaseModel):
+    """
+    Schema for successful login response.
+
+    Includes user information and token type.
+    Tokens are sent as HTTP-only cookies.
+    """
+
+    message: str = Field(default="Login successful", description="Success message")
+    user: UserResponse = Field(..., description="User information")
+    token_type: Literal["bearer"] = Field(
+        default="bearer",
+        description="Token type (always 'bearer')",
+    )
+    requires_2fa: bool = Field(
+        default=False,
+        description="Whether 2FA verification is required",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "message": "Login successful",
+                    "user": {
+                        "id": 1,
+                        "username": "admin",
+                        "is_active": True,
+                        "is_superuser": True,
+                        "totp_enabled": False,
+                        "created_at": "2024-01-15T10:30:00Z",
+                        "last_login": "2024-01-15T14:22:15Z",
+                        "last_login_ip": "192.168.1.100",
+                    },
+                    "token_type": "bearer",
+                    "requires_2fa": False,
+                }
+            ]
+        }
+    }
+
+
+class PasswordChange(BaseModel):
+    """
+    Schema for password change request.
+
+    Requires current password for security.
+    """
+
+    current_password: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Current password",
+    )
+    new_password: str = Field(
+        ...,
+        min_length=12,
+        max_length=128,
+        description="New password (minimum 12 characters)",
+    )
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        """
+        Validate new password strength.
+
+        Uses same validation as UserRegister.
+
+        Args:
+            v: Password to validate
+
+        Returns:
+            str: Validated password
+
+        Raises:
+            ValueError: If password doesn't meet strength requirements
+        """
+        if len(v) < 12:
+            raise ValueError("Password must be at least 12 characters long")
+
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
+
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\/'`~;]", v):
+            raise ValueError("Password must contain at least one special character")
+
+        return v
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "current_password": "OldP@ssw0rd123!",
+                    "new_password": "NewSecureP@ssw0rd456!",
+                }
+            ]
+        }
+    }

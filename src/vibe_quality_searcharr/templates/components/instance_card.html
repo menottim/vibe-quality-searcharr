@@ -1,0 +1,65 @@
+{#
+Instance card component
+
+Usage:
+    {% include "components/instance_card.html" with instance=instance %}
+
+Expected variables:
+    - instance: Instance object with attributes:
+        - id
+        - name
+        - instance_type
+        - url
+        - is_active
+        - health_status
+        - last_health_check
+#}
+
+<article>
+    <header>
+        <h3>
+            {{ instance.name }}
+            {% if instance.is_active %}
+            <small style="color: var(--ins-color);">● Active</small>
+            {% else %}
+            <small style="color: var(--del-color);">● Inactive</small>
+            {% endif %}
+        </h3>
+    </header>
+
+    <dl>
+        <dt>Type</dt>
+        <dd><code>{{ instance.instance_type }}</code></dd>
+
+        <dt>URL</dt>
+        <dd><small>{{ instance.url }}</small></dd>
+
+        <dt>Last Checked</dt>
+        <dd>
+            {% if instance.last_health_check %}
+            {{ instance.last_health_check|timeago }}
+            {% else %}
+            Never
+            {% endif %}
+        </dd>
+
+        <dt>Status</dt>
+        <dd>
+            {% if instance.health_status == 'healthy' %}
+            <span style="color: var(--ins-color);">✓ Healthy</span>
+            {% elif instance.health_status == 'unhealthy' %}
+            <span style="color: var(--del-color);">✗ Unhealthy</span>
+            {% else %}
+            <span style="color: var(--muted-color);">? Unknown</span>
+            {% endif %}
+        </dd>
+    </dl>
+
+    <footer>
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button class="secondary" onclick="testInstance({{ instance.id }})">Test</button>
+            <button class="secondary" onclick="editInstance({{ instance.id }})">Edit</button>
+            <button class="secondary" style="color: var(--del-color);" onclick="deleteInstance({{ instance.id }}, '{{ instance.name }}')">Delete</button>
+        </div>
+    </footer>
+</article>

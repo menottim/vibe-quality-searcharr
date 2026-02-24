@@ -1,0 +1,122 @@
+[tool.poetry]
+name = "vibe-quality-searcharr"
+version = "1.0.0"
+description = "Intelligent backlog search automation for Sonarr and Radarr"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "vibe_quality_searcharr", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+pydantic = "^2.10.0"
+pydantic-settings = "^2.7.0"
+sqlalchemy = "^2.0.36"
+sqlcipher3 = "^0.5.3"
+alembic = "^1.14.0"
+argon2-cffi = "^23.1.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.20"
+cryptography = "^44.0.0"
+pyotp = "^2.9.0"
+httpx = "^0.27.0"
+apscheduler = "^3.11.0"
+python-dotenv = "^1.0.1"
+pyyaml = "^6.0.2"
+tenacity = "^9.0.0"
+slowapi = "^0.1.9"
+jinja2 = "^3.1.5"
+structlog = "^24.4.0"
+gunicorn = "^23.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-asyncio = "^0.25.0"
+pytest-cov = "^6.0.0"
+pytest-httpx = "^0.33.0"
+freezegun = "^1.5.1"
+bandit = "^1.8.0"
+safety = "^3.2.0"
+mypy = "^1.14.0"
+ruff = "^0.8.0"
+pytest-mock = "^3.14.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "S",   # bandit (security)
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+    "S101",  # use of assert (okay in tests)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["S101", "S105", "S106"]  # Allow asserts and hardcoded passwords in tests
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "sqlcipher3.*",
+    "apscheduler.*",
+    "slowapi.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/vibe_quality_searcharr",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "*/migrations/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101", "B601"]  # assert_used, paramiko_calls

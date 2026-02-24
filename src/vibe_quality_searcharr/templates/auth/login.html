@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Vibe-Quality-Searcharr{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 4rem auto;">
+    <hgroup>
+        <h1>Login</h1>
+        <p>Sign in to access your Vibe-Quality-Searcharr dashboard</p>
+    </hgroup>
+
+    <form action="/api/auth/login" method="post" id="loginForm">
+        <label for="username">
+            Username
+            <input type="text" id="username" name="username" required autocomplete="username">
+        </label>
+
+        <label for="password">
+            Password
+            <input type="password" id="password" name="password" required autocomplete="current-password">
+        </label>
+
+        <button type="submit" id="submitBtn">Login</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('aria-busy', 'true');
+
+        const formData = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                window.location.href = '/dashboard';
+            } else {
+                const data = await response.json();
+                alert(data.detail || 'Login failed');
+                submitBtn.disabled = false;
+                submitBtn.setAttribute('aria-busy', 'false');
+            }
+        } catch (error) {
+            alert('Login failed: ' + error.message);
+            submitBtn.disabled = false;
+            submitBtn.setAttribute('aria-busy', 'false');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Search Queues - Vibe-Quality-Searcharr{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>Search Queue Management</h1>
+    <p>Create and manage automated search queues</p>
+</hgroup>
+
+<div style="text-align: right; margin-bottom: 1rem;">
+    <a href="#create-queue" role="button">+ Create Queue</a>
+</div>
+
+<!-- Queues List -->
+{% if queues %}
+<div class="grid">
+    {% for queue in queues %}
+    <article>
+        <header>
+            <h3>
+                {{ queue.name }}
+                {% if queue.is_active and queue.status in ['pending', 'running'] %}
+                <small style="color: var(--ins-color);">● Active</small>
+                {% elif queue.status == 'paused' %}
+                <small style="color: var(--muted-color);">⏸ Paused</small>
+                {% elif queue.status == 'completed' %}
+                <small style="color: var(--primary);">✓ Completed</small>
+                {% elif queue.status == 'failed' %}
+                <small style="color: var(--del-color);">✗ Failed</small>
+                {% else %}
+                <small style="color: var(--muted-color);">● {{ queue.status }}</small>
+                {% endif %}
+            </h3>
+        </header>
+
+        <dl>
+            <dt>Instance</dt>
+            <dd>{{ queue.instance.name }}</dd>
+
+            <dt>Strategy</dt>
+            <dd><code>{{ queue.strategy }}</code></dd>
+
+            <dt>Type</dt>
+            <dd>
+                {% if queue.is_recurring %}
+                🔄 Recurring (every {{ queue.interval_hours }}h)
+                {% else %}
+                One-time
+                {% endif %}
+            </dd>
+
+            <dt>Next Run</dt>
+            <dd>
+                {% if queue.next_run_at %}
+                {{ queue.next_run_at|timeago }}
+                {% else %}
+                Not scheduled
+                {% endif %}
+            </dd>
+
+            <dt>Progress</dt>
+            <dd>
+                {% if queue.total_items %}
+                {{ queue.processed_items or 0 }} / {{ queue.total_items }} items
+                ({{ ((queue.processed_items or 0) / queue.total_items * 100)|round|int }}%)
+                {% else %}
+                Not started
+                {% endif %}
+            </dd>
+        </dl>
+
+        <footer>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                {% if queue.status == 'paused' %}
+                <button onclick="resumeQueue({{ queue.id }})">Resume</button>
+                {% elif queue.status in ['pending', 'running'] %}
+                <button class="secondary" onclick="pauseQueue({{ queue.id }})">Pause</button>
+                {% endif %}
+                <button class="secondary" onclick="viewQueue({{ queue.id }})">View</button>
+                <button class="secondary" style="color: var(--del-color);" onclick="deleteQueue({{ queue.id }}, '{{ queue.name }}')">Delete</button>
+            </div>
+        </footer>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<article>
+    <p style="text-align: center; color: var(--muted-color); padding: 2rem;">
+        No search queues yet. Create your first queue to automate searches!
+    </p>
+</article>
+{% endif %}
+
+<!-- Create Queue Modal -->
+<dialog id="create-queue">
+    <article style="max-width: 600px;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="closeCreateModal()"></a>
+            <h3>Create Search Queue</h3>
+        </header>
+
+        <form id="createQueueForm">
+            <label for="instance_id">
+                Instance
+                <select id="instance_id" name="instance_id" required>
+                    <option value="">Select instance...</option>
+                    {% for instance in instances %}
+                    <option value="{{ instance.id }}">{{ instance.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label for="name">
+                Queue Name
+                <input type="text" id="name" name="name" required placeholder="e.g., Recent TV Shows">
+            </label>
+
+            <label for="strategy">
+                Search Strategy
+                <select id="strategy" name="strategy" required>
+                    <option value="">Select strategy...</option>
+                    <option value="recent">Recent - Newest items first</option>
+                    <option value="popular">Popular - Highest rated first</option>
+                    <option value="oldest">Oldest - Oldest items first</option>
+                    <option value="random">Random - Random selection</option>
+                </select>
+                <small>Strategy determines the order items are searched</small>
+            </label>
+
+            <label for="recurring">
+                <input type="checkbox" id="recurring" name="recurring" onchange="toggleRecurring()">
+                Recurring search
+            </label>
+
+            <label for="interval_hours" id="intervalLabel" style="display: none;">
+                Interval (hours)
+                <input type="number" id="interval_hours" name="interval_hours" min="1" max="168" placeholder="24">
+                <small>How often to run this search (1-168 hours)</small>
+            </label>
+
+            <footer>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button type="button" class="secondary" onclick="closeCreateModal()">Cancel</button>
+                    <button type="submit">Create Queue</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleRecurring() {
+    const recurring = document.getElementById('recurring').checked;
+    const intervalLabel = document.getElementById('intervalLabel');
+    const intervalInput = document.getElementById('interval_hours');
+
+    if (recurring) {
+        intervalLabel.style.display = 'block';
+        intervalInput.required = true;
+    } else {
+        intervalLabel.style.display = 'none';
+        intervalInput.required = false;
+    }
+}
+
+document.getElementById('createQueueForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = {
+        instance_id: parseInt(document.getElementById('instance_id').value),
+        name: document.getElementById('name').value,
+        strategy: document.getElementById('strategy').value,
+        recurring: document.getElementById('recurring').checked,
+        interval_hours: document.getElementById('recurring').checked
+            ? parseInt(document.getElementById('interval_hours').value)
+            : null,
+    };
+
+    try {
+        const response = await fetch('/api/search-queues', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert('Failed to create queue: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Failed to create queue: ' + error.message);
+    }
+});
+
+async function pauseQueue(queueId) {
+    try {
+        const response = await fetch(`/api/search-queues/${queueId}/pause`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert('Failed to pause queue: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Failed to pause queue: ' + error.message);
+    }
+}
+
+async function resumeQueue(queueId) {
+    try {
+        const response = await fetch(`/api/search-queues/${queueId}/resume`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert('Failed to resume queue: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Failed to resume queue: ' + error.message);
+    }
+}
+
+function viewQueue(queueId) {
+    window.location.href = `/dashboard/search-queues/${queueId}`;
+}
+
+async function deleteQueue(queueId, name) {
+    if (!confirm(`Are you sure you want to delete queue "${name}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/search-queues/${queueId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert('Delete failed: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Delete failed: ' + error.message);
+    }
+}
+
+function closeCreateModal() {
+    document.getElementById('create-queue').close();
+}
+</script>
+{% endblock %}

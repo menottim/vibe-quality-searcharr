@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Instances - Vibe-Quality-Searcharr{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>Instance Management</h1>
+    <p>Manage your Sonarr and Radarr instances</p>
+</hgroup>
+
+<div style="text-align: right; margin-bottom: 1rem;">
+    <a href="#add-instance" role="button">+ Add Instance</a>
+</div>
+
+<!-- Instances List -->
+{% if instances %}
+<div class="grid">
+    {% for instance in instances %}
+    <article>
+        <header>
+            <h3>
+                {{ instance.name }}
+                {% if instance.is_active %}
+                <small style="color: var(--ins-color);">● Active</small>
+                {% else %}
+                <small style="color: var(--del-color);">● Inactive</small>
+                {% endif %}
+            </h3>
+        </header>
+
+        <dl>
+            <dt>Type</dt>
+            <dd><code>{{ instance.instance_type }}</code></dd>
+
+            <dt>URL</dt>
+            <dd><small>{{ instance.url }}</small></dd>
+
+            <dt>Last Checked</dt>
+            <dd>
+                {% if instance.last_health_check %}
+                {{ instance.last_health_check|timeago }}
+                {% else %}
+                Never
+                {% endif %}
+            </dd>
+
+            <dt>Status</dt>
+            <dd>
+                {% if instance.health_status == 'healthy' %}
+                <span style="color: var(--ins-color);">✓ Healthy</span>
+                {% elif instance.health_status == 'unhealthy' %}
+                <span style="color: var(--del-color);">✗ Unhealthy</span>
+                {% else %}
+                <span style="color: var(--muted-color);">? Unknown</span>
+                {% endif %}
+            </dd>
+        </dl>
+
+        <footer>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button class="secondary" onclick="testInstance({{ instance.id }})">Test</button>
+                <button class="secondary" onclick="editInstance({{ instance.id }})">Edit</button>
+                <button class="secondary" style="color: var(--del-color);" onclick="deleteInstance({{ instance.id }}, '{{ instance.name }}')">Delete</button>
+            </div>
+        </footer>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<article>
+    <p style="text-align: center; color: var(--muted-color); padding: 2rem;">
+        No instances configured yet. Add your first instance to get started!
+    </p>
+</article>
+{% endif %}
+
+<!-- Add Instance Modal (placeholder) -->
+<dialog id="add-instance">
+    <article>
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="closeModal()"></a>
+            <h3>Add Instance</h3>
+        </header>
+        <p>Add instance functionality would go here (use existing API endpoint)</p>
+        <footer>
+            <button class="secondary" onclick="closeModal()">Cancel</button>
+        </footer>
+    </article>
+</dialog>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function testInstance(instanceId) {
+    try {
+        const response = await fetch(`/api/instances/${instanceId}/test`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            alert('Connection successful!\n\nVersion: ' + (data.version || 'Unknown'));
+        } else {
+            alert('Connection failed: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Connection failed: ' + error.message);
+    }
+}
+
+function editInstance(instanceId) {
+    alert('Edit functionality coming soon! Instance ID: ' + instanceId);
+}
+
+async function deleteInstance(instanceId, name) {
+    if (!confirm(`Are you sure you want to delete instance "${name}"?\n\nThis will also delete all associated search queues and history.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/instances/${instanceId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert('Delete failed: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Delete failed: ' + error.message);
+    }
+}
+
+function closeModal() {
+    document.getElementById('add-instance').close();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1877 @@
+{
+    "report_meta": {
+        "scan_target": "environment",
+        "scanned": [
+            "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages"
+        ],
+        "scanned_full_path": [
+            "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages"
+        ],
+        "target_languages": [
+            "python"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "audit_and_monitor": false,
+        "api_key": false,
+        "account": "",
+        "local_database_path": null,
+        "safety_version": "3.7.0",
+        "timestamp": "2026-02-24 11:07:07",
+        "packages_found": 92,
+        "vulnerabilities_found": 4,
+        "vulnerabilities_ignored": 0,
+        "remediations_recommended": 0,
+        "telemetry": {
+            "safety_options": {
+                "save_json": {
+                    "--save-json": 1
+                }
+            },
+            "safety_version": "3.7.0",
+            "safety_source": "cli",
+            "os_type": "Darwin",
+            "os_release": "25.3.0",
+            "os_description": "macOS-26.3-arm64-arm-64bit-Mach-O",
+            "python_version": "3.14.2",
+            "safety_command": "check"
+        },
+        "git": {
+            "error": "not-git-repo"
+        },
+        "project": null,
+        "json_version": "1.1",
+        "remediations_attempted": 0,
+        "remediations_completed": 0,
+        "remediation_mode": "NON_INTERACTIVE"
+    },
+    "scanned_packages": {
+        "anyio": {
+            "name": "anyio",
+            "version": "4.12.1",
+            "requirements": [
+                {
+                    "raw": "anyio==4.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "anyio",
+                    "specifier": "==4.12.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/anyio-4.12.1.dist-info"
+                }
+            ]
+        },
+        "shellingham": {
+            "name": "shellingham",
+            "version": "1.5.4",
+            "requirements": [
+                {
+                    "raw": "shellingham==1.5.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "shellingham",
+                    "specifier": "==1.5.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/shellingham-1.5.4.dist-info"
+                }
+            ]
+        },
+        "freezegun": {
+            "name": "freezegun",
+            "version": "1.5.5",
+            "requirements": [
+                {
+                    "raw": "freezegun==1.5.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "freezegun",
+                    "specifier": "==1.5.5",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/freezegun-1.5.5.dist-info"
+                }
+            ]
+        },
+        "cryptography": {
+            "name": "cryptography",
+            "version": "44.0.3",
+            "requirements": [
+                {
+                    "raw": "cryptography==44.0.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cryptography",
+                    "specifier": "==44.0.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/cryptography-44.0.3.dist-info"
+                }
+            ]
+        },
+        "ruamel.yaml": {
+            "name": "ruamel.yaml",
+            "version": "0.19.1",
+            "requirements": [
+                {
+                    "raw": "ruamel.yaml==0.19.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruamel.yaml",
+                    "specifier": "==0.19.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/ruamel_yaml-0.19.1.dist-info"
+                }
+            ]
+        },
+        "starlette": {
+            "name": "starlette",
+            "version": "0.46.2",
+            "requirements": [
+                {
+                    "raw": "starlette==0.46.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "starlette",
+                    "specifier": "==0.46.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/starlette-0.46.2.dist-info"
+                }
+            ]
+        },
+        "regex": {
+            "name": "regex",
+            "version": "2026.2.19",
+            "requirements": [
+                {
+                    "raw": "regex==2026.2.19",
+                    "extras": [],
+                    "marker": null,
+                    "name": "regex",
+                    "specifier": "==2026.2.19",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/regex-2026.2.19.dist-info"
+                }
+            ]
+        },
+        "requests": {
+            "name": "requests",
+            "version": "2.32.5",
+            "requirements": [
+                {
+                    "raw": "requests==2.32.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests",
+                    "specifier": "==2.32.5",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/requests-2.32.5.dist-info"
+                }
+            ]
+        },
+        "pytest-httpx": {
+            "name": "pytest-httpx",
+            "version": "0.33.0",
+            "requirements": [
+                {
+                    "raw": "pytest-httpx==0.33.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-httpx",
+                    "specifier": "==0.33.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pytest_httpx-0.33.0.dist-info"
+                }
+            ]
+        },
+        "slowapi": {
+            "name": "slowapi",
+            "version": "0.1.9",
+            "requirements": [
+                {
+                    "raw": "slowapi==0.1.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "slowapi",
+                    "specifier": "==0.1.9",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/slowapi-0.1.9.dist-info"
+                }
+            ]
+        },
+        "click": {
+            "name": "click",
+            "version": "8.3.1",
+            "requirements": [
+                {
+                    "raw": "click==8.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "click",
+                    "specifier": "==8.3.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/click-8.3.1.dist-info"
+                }
+            ]
+        },
+        "dparse": {
+            "name": "dparse",
+            "version": "0.6.4",
+            "requirements": [
+                {
+                    "raw": "dparse==0.6.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "dparse",
+                    "specifier": "==0.6.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/dparse-0.6.4.dist-info"
+                }
+            ]
+        },
+        "pytest-mock": {
+            "name": "pytest-mock",
+            "version": "3.15.1",
+            "requirements": [
+                {
+                    "raw": "pytest-mock==3.15.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-mock",
+                    "specifier": "==3.15.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pytest_mock-3.15.1.dist-info"
+                }
+            ]
+        },
+        "iniconfig": {
+            "name": "iniconfig",
+            "version": "2.3.0",
+            "requirements": [
+                {
+                    "raw": "iniconfig==2.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "iniconfig",
+                    "specifier": "==2.3.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/iniconfig-2.3.0.dist-info"
+                }
+            ]
+        },
+        "certifi": {
+            "name": "certifi",
+            "version": "2026.1.4",
+            "requirements": [
+                {
+                    "raw": "certifi==2026.1.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "certifi",
+                    "specifier": "==2026.1.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/certifi-2026.1.4.dist-info"
+                }
+            ]
+        },
+        "safety": {
+            "name": "safety",
+            "version": "3.7.0",
+            "requirements": [
+                {
+                    "raw": "safety==3.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety",
+                    "specifier": "==3.7.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/safety-3.7.0.dist-info"
+                }
+            ]
+        },
+        "APScheduler": {
+            "name": "APScheduler",
+            "version": "3.11.2",
+            "requirements": [
+                {
+                    "raw": "APScheduler==3.11.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "APScheduler",
+                    "specifier": "==3.11.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/apscheduler-3.11.2.dist-info"
+                }
+            ]
+        },
+        "websockets": {
+            "name": "websockets",
+            "version": "16.0",
+            "requirements": [
+                {
+                    "raw": "websockets==16.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "websockets",
+                    "specifier": "==16.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/websockets-16.0.dist-info"
+                }
+            ]
+        },
+        "pydantic": {
+            "name": "pydantic",
+            "version": "2.12.5",
+            "requirements": [
+                {
+                    "raw": "pydantic==2.12.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic",
+                    "specifier": "==2.12.5",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pydantic-2.12.5.dist-info"
+                }
+            ]
+        },
+        "structlog": {
+            "name": "structlog",
+            "version": "24.4.0",
+            "requirements": [
+                {
+                    "raw": "structlog==24.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "structlog",
+                    "specifier": "==24.4.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/structlog-24.4.0.dist-info"
+                }
+            ]
+        },
+        "python-dotenv": {
+            "name": "python-dotenv",
+            "version": "1.2.1",
+            "requirements": [
+                {
+                    "raw": "python-dotenv==1.2.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-dotenv",
+                    "specifier": "==1.2.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/python_dotenv-1.2.1.dist-info"
+                }
+            ]
+        },
+        "alembic": {
+            "name": "alembic",
+            "version": "1.18.4",
+            "requirements": [
+                {
+                    "raw": "alembic==1.18.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "alembic",
+                    "specifier": "==1.18.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/alembic-1.18.4.dist-info"
+                }
+            ]
+        },
+        "tomlkit": {
+            "name": "tomlkit",
+            "version": "0.14.0",
+            "requirements": [
+                {
+                    "raw": "tomlkit==0.14.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tomlkit",
+                    "specifier": "==0.14.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/tomlkit-0.14.0.dist-info"
+                }
+            ]
+        },
+        "httpx": {
+            "name": "httpx",
+            "version": "0.27.2",
+            "requirements": [
+                {
+                    "raw": "httpx==0.27.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httpx",
+                    "specifier": "==0.27.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/httpx-0.27.2.dist-info"
+                }
+            ]
+        },
+        "safety-schemas": {
+            "name": "safety-schemas",
+            "version": "0.0.16",
+            "requirements": [
+                {
+                    "raw": "safety-schemas==0.0.16",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety-schemas",
+                    "specifier": "==0.0.16",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/safety_schemas-0.0.16.dist-info"
+                }
+            ]
+        },
+        "marshmallow": {
+            "name": "marshmallow",
+            "version": "4.2.2",
+            "requirements": [
+                {
+                    "raw": "marshmallow==4.2.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "marshmallow",
+                    "specifier": "==4.2.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/marshmallow-4.2.2.dist-info"
+                }
+            ]
+        },
+        "idna": {
+            "name": "idna",
+            "version": "3.11",
+            "requirements": [
+                {
+                    "raw": "idna==3.11",
+                    "extras": [],
+                    "marker": null,
+                    "name": "idna",
+                    "specifier": "==3.11",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/idna-3.11.dist-info"
+                }
+            ]
+        },
+        "typer": {
+            "name": "typer",
+            "version": "0.24.1",
+            "requirements": [
+                {
+                    "raw": "typer==0.24.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typer",
+                    "specifier": "==0.24.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/typer-0.24.1.dist-info"
+                }
+            ]
+        },
+        "cffi": {
+            "name": "cffi",
+            "version": "2.0.0",
+            "requirements": [
+                {
+                    "raw": "cffi==2.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cffi",
+                    "specifier": "==2.0.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/cffi-2.0.0.dist-info"
+                }
+            ]
+        },
+        "pyotp": {
+            "name": "pyotp",
+            "version": "2.9.0",
+            "requirements": [
+                {
+                    "raw": "pyotp==2.9.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyotp",
+                    "specifier": "==2.9.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pyotp-2.9.0.dist-info"
+                }
+            ]
+        },
+        "mypy": {
+            "name": "mypy",
+            "version": "1.19.1",
+            "requirements": [
+                {
+                    "raw": "mypy==1.19.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mypy",
+                    "specifier": "==1.19.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/mypy-1.19.1.dist-info"
+                }
+            ]
+        },
+        "rich": {
+            "name": "rich",
+            "version": "14.3.3",
+            "requirements": [
+                {
+                    "raw": "rich==14.3.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rich",
+                    "specifier": "==14.3.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/rich-14.3.3.dist-info"
+                }
+            ]
+        },
+        "librt": {
+            "name": "librt",
+            "version": "0.8.1",
+            "requirements": [
+                {
+                    "raw": "librt==0.8.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "librt",
+                    "specifier": "==0.8.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/librt-0.8.1.dist-info"
+                }
+            ]
+        },
+        "tenacity": {
+            "name": "tenacity",
+            "version": "9.1.4",
+            "requirements": [
+                {
+                    "raw": "tenacity==9.1.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tenacity",
+                    "specifier": "==9.1.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/tenacity-9.1.4.dist-info"
+                }
+            ]
+        },
+        "pytest-cov": {
+            "name": "pytest-cov",
+            "version": "6.3.0",
+            "requirements": [
+                {
+                    "raw": "pytest-cov==6.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-cov",
+                    "specifier": "==6.3.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pytest_cov-6.3.0.dist-info"
+                }
+            ]
+        },
+        "ecdsa": {
+            "name": "ecdsa",
+            "version": "0.19.1",
+            "requirements": [
+                {
+                    "raw": "ecdsa==0.19.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ecdsa",
+                    "specifier": "==0.19.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/ecdsa-0.19.1.dist-info"
+                }
+            ]
+        },
+        "httpcore": {
+            "name": "httpcore",
+            "version": "1.0.9",
+            "requirements": [
+                {
+                    "raw": "httpcore==1.0.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httpcore",
+                    "specifier": "==1.0.9",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/httpcore-1.0.9.dist-info"
+                }
+            ]
+        },
+        "pytest-asyncio": {
+            "name": "pytest-asyncio",
+            "version": "0.25.3",
+            "requirements": [
+                {
+                    "raw": "pytest-asyncio==0.25.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-asyncio",
+                    "specifier": "==0.25.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pytest_asyncio-0.25.3.dist-info"
+                }
+            ]
+        },
+        "argon2-cffi": {
+            "name": "argon2-cffi",
+            "version": "23.1.0",
+            "requirements": [
+                {
+                    "raw": "argon2-cffi==23.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "argon2-cffi",
+                    "specifier": "==23.1.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/argon2_cffi-23.1.0.dist-info"
+                }
+            ]
+        },
+        "charset-normalizer": {
+            "name": "charset-normalizer",
+            "version": "3.4.4",
+            "requirements": [
+                {
+                    "raw": "charset-normalizer==3.4.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "charset-normalizer",
+                    "specifier": "==3.4.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/charset_normalizer-3.4.4.dist-info"
+                }
+            ]
+        },
+        "markdown-it-py": {
+            "name": "markdown-it-py",
+            "version": "4.0.0",
+            "requirements": [
+                {
+                    "raw": "markdown-it-py==4.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "markdown-it-py",
+                    "specifier": "==4.0.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/markdown_it_py-4.0.0.dist-info"
+                }
+            ]
+        },
+        "pydantic-settings": {
+            "name": "pydantic-settings",
+            "version": "2.13.1",
+            "requirements": [
+                {
+                    "raw": "pydantic-settings==2.13.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic-settings",
+                    "specifier": "==2.13.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pydantic_settings-2.13.1.dist-info"
+                }
+            ]
+        },
+        "fastapi": {
+            "name": "fastapi",
+            "version": "0.115.14",
+            "requirements": [
+                {
+                    "raw": "fastapi==0.115.14",
+                    "extras": [],
+                    "marker": null,
+                    "name": "fastapi",
+                    "specifier": "==0.115.14",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/fastapi-0.115.14.dist-info"
+                }
+            ]
+        },
+        "watchfiles": {
+            "name": "watchfiles",
+            "version": "1.1.1",
+            "requirements": [
+                {
+                    "raw": "watchfiles==1.1.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "watchfiles",
+                    "specifier": "==1.1.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/watchfiles-1.1.1.dist-info"
+                }
+            ]
+        },
+        "h11": {
+            "name": "h11",
+            "version": "0.16.0",
+            "requirements": [
+                {
+                    "raw": "h11==0.16.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "h11",
+                    "specifier": "==0.16.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/h11-0.16.0.dist-info"
+                }
+            ]
+        },
+        "sniffio": {
+            "name": "sniffio",
+            "version": "1.3.1",
+            "requirements": [
+                {
+                    "raw": "sniffio==1.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sniffio",
+                    "specifier": "==1.3.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/sniffio-1.3.1.dist-info"
+                }
+            ]
+        },
+        "pycparser": {
+            "name": "pycparser",
+            "version": "3.0",
+            "requirements": [
+                {
+                    "raw": "pycparser==3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pycparser",
+                    "specifier": "==3.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pycparser-3.0.dist-info"
+                }
+            ]
+        },
+        "rsa": {
+            "name": "rsa",
+            "version": "4.9.1",
+            "requirements": [
+                {
+                    "raw": "rsa==4.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rsa",
+                    "specifier": "==4.9.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/rsa-4.9.1.dist-info"
+                }
+            ]
+        },
+        "httptools": {
+            "name": "httptools",
+            "version": "0.7.1",
+            "requirements": [
+                {
+                    "raw": "httptools==0.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httptools",
+                    "specifier": "==0.7.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/httptools-0.7.1.dist-info"
+                }
+            ]
+        },
+        "filelock": {
+            "name": "filelock",
+            "version": "3.24.3",
+            "requirements": [
+                {
+                    "raw": "filelock==3.24.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "filelock",
+                    "specifier": "==3.24.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/filelock-3.24.3.dist-info"
+                }
+            ]
+        },
+        "Authlib": {
+            "name": "Authlib",
+            "version": "1.6.8",
+            "requirements": [
+                {
+                    "raw": "Authlib==1.6.8",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Authlib",
+                    "specifier": "==1.6.8",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/authlib-1.6.8.dist-info"
+                }
+            ]
+        },
+        "mdurl": {
+            "name": "mdurl",
+            "version": "0.1.2",
+            "requirements": [
+                {
+                    "raw": "mdurl==0.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mdurl",
+                    "specifier": "==0.1.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/mdurl-0.1.2.dist-info"
+                }
+            ]
+        },
+        "pathspec": {
+            "name": "pathspec",
+            "version": "1.0.4",
+            "requirements": [
+                {
+                    "raw": "pathspec==1.0.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pathspec",
+                    "specifier": "==1.0.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pathspec-1.0.4.dist-info"
+                }
+            ]
+        },
+        "python-dateutil": {
+            "name": "python-dateutil",
+            "version": "2.9.0.post0",
+            "requirements": [
+                {
+                    "raw": "python-dateutil==2.9.0.post0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-dateutil",
+                    "specifier": "==2.9.0.post0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/python_dateutil-2.9.0.post0.dist-info"
+                }
+            ]
+        },
+        "nltk": {
+            "name": "nltk",
+            "version": "3.9.3",
+            "requirements": [
+                {
+                    "raw": "nltk==3.9.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nltk",
+                    "specifier": "==3.9.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/nltk-3.9.3.dist-info"
+                }
+            ]
+        },
+        "PyYAML": {
+            "name": "PyYAML",
+            "version": "6.0.3",
+            "requirements": [
+                {
+                    "raw": "PyYAML==6.0.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "PyYAML",
+                    "specifier": "==6.0.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pyyaml-6.0.3.dist-info"
+                }
+            ]
+        },
+        "gunicorn": {
+            "name": "gunicorn",
+            "version": "23.0.0",
+            "requirements": [
+                {
+                    "raw": "gunicorn==23.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "gunicorn",
+                    "specifier": "==23.0.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/gunicorn-23.0.0.dist-info"
+                }
+            ]
+        },
+        "pytest": {
+            "name": "pytest",
+            "version": "8.4.2",
+            "requirements": [
+                {
+                    "raw": "pytest==8.4.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest",
+                    "specifier": "==8.4.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pytest-8.4.2.dist-info"
+                }
+            ]
+        },
+        "tzlocal": {
+            "name": "tzlocal",
+            "version": "5.3.1",
+            "requirements": [
+                {
+                    "raw": "tzlocal==5.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tzlocal",
+                    "specifier": "==5.3.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/tzlocal-5.3.1.dist-info"
+                }
+            ]
+        },
+        "pydantic_core": {
+            "name": "pydantic_core",
+            "version": "2.41.5",
+            "requirements": [
+                {
+                    "raw": "pydantic_core==2.41.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic_core",
+                    "specifier": "==2.41.5",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pydantic_core-2.41.5.dist-info"
+                }
+            ]
+        },
+        "Mako": {
+            "name": "Mako",
+            "version": "1.3.10",
+            "requirements": [
+                {
+                    "raw": "Mako==1.3.10",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Mako",
+                    "specifier": "==1.3.10",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/mako-1.3.10.dist-info"
+                }
+            ]
+        },
+        "urllib3": {
+            "name": "urllib3",
+            "version": "2.6.3",
+            "requirements": [
+                {
+                    "raw": "urllib3==2.6.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "urllib3",
+                    "specifier": "==2.6.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/urllib3-2.6.3.dist-info"
+                }
+            ]
+        },
+        "ruff": {
+            "name": "ruff",
+            "version": "0.8.6",
+            "requirements": [
+                {
+                    "raw": "ruff==0.8.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruff",
+                    "specifier": "==0.8.6",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/ruff-0.8.6.dist-info"
+                }
+            ]
+        },
+        "typing_extensions": {
+            "name": "typing_extensions",
+            "version": "4.15.0",
+            "requirements": [
+                {
+                    "raw": "typing_extensions==4.15.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing_extensions",
+                    "specifier": "==4.15.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/typing_extensions-4.15.0.dist-info"
+                }
+            ]
+        },
+        "joblib": {
+            "name": "joblib",
+            "version": "1.5.3",
+            "requirements": [
+                {
+                    "raw": "joblib==1.5.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "joblib",
+                    "specifier": "==1.5.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/joblib-1.5.3.dist-info"
+                }
+            ]
+        },
+        "Jinja2": {
+            "name": "Jinja2",
+            "version": "3.1.6",
+            "requirements": [
+                {
+                    "raw": "Jinja2==3.1.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Jinja2",
+                    "specifier": "==3.1.6",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/jinja2-3.1.6.dist-info"
+                }
+            ]
+        },
+        "argon2-cffi-bindings": {
+            "name": "argon2-cffi-bindings",
+            "version": "25.1.0",
+            "requirements": [
+                {
+                    "raw": "argon2-cffi-bindings==25.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "argon2-cffi-bindings",
+                    "specifier": "==25.1.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/argon2_cffi_bindings-25.1.0.dist-info"
+                }
+            ]
+        },
+        "vibe-quality-searcharr": {
+            "name": "vibe-quality-searcharr",
+            "version": "0.1.0",
+            "requirements": [
+                {
+                    "raw": "vibe-quality-searcharr==0.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "vibe-quality-searcharr",
+                    "specifier": "==0.1.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/vibe_quality_searcharr-0.1.0.dist-info"
+                }
+            ]
+        },
+        "python-multipart": {
+            "name": "python-multipart",
+            "version": "0.0.20",
+            "requirements": [
+                {
+                    "raw": "python-multipart==0.0.20",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-multipart",
+                    "specifier": "==0.0.20",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/python_multipart-0.0.20.dist-info"
+                }
+            ]
+        },
+        "pyasn1": {
+            "name": "pyasn1",
+            "version": "0.6.2",
+            "requirements": [
+                {
+                    "raw": "pyasn1==0.6.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyasn1",
+                    "specifier": "==0.6.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pyasn1-0.6.2.dist-info"
+                }
+            ]
+        },
+        "MarkupSafe": {
+            "name": "MarkupSafe",
+            "version": "3.0.3",
+            "requirements": [
+                {
+                    "raw": "MarkupSafe==3.0.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "MarkupSafe",
+                    "specifier": "==3.0.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/markupsafe-3.0.3.dist-info"
+                }
+            ]
+        },
+        "pip": {
+            "name": "pip",
+            "version": "26.0.1",
+            "requirements": [
+                {
+                    "raw": "pip==26.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pip",
+                    "specifier": "==26.0.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pip-26.0.1.dist-info"
+                }
+            ]
+        },
+        "Deprecated": {
+            "name": "Deprecated",
+            "version": "1.3.1",
+            "requirements": [
+                {
+                    "raw": "Deprecated==1.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Deprecated",
+                    "specifier": "==1.3.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/deprecated-1.3.1.dist-info"
+                }
+            ]
+        },
+        "pluggy": {
+            "name": "pluggy",
+            "version": "1.6.0",
+            "requirements": [
+                {
+                    "raw": "pluggy==1.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pluggy",
+                    "specifier": "==1.6.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pluggy-1.6.0.dist-info"
+                }
+            ]
+        },
+        "stevedore": {
+            "name": "stevedore",
+            "version": "5.7.0",
+            "requirements": [
+                {
+                    "raw": "stevedore==5.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "stevedore",
+                    "specifier": "==5.7.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/stevedore-5.7.0.dist-info"
+                }
+            ]
+        },
+        "Pygments": {
+            "name": "Pygments",
+            "version": "2.19.2",
+            "requirements": [
+                {
+                    "raw": "Pygments==2.19.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Pygments",
+                    "specifier": "==2.19.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/pygments-2.19.2.dist-info"
+                }
+            ]
+        },
+        "python-jose": {
+            "name": "python-jose",
+            "version": "3.5.0",
+            "requirements": [
+                {
+                    "raw": "python-jose==3.5.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-jose",
+                    "specifier": "==3.5.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/python_jose-3.5.0.dist-info"
+                }
+            ]
+        },
+        "coverage": {
+            "name": "coverage",
+            "version": "7.13.4",
+            "requirements": [
+                {
+                    "raw": "coverage==7.13.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "coverage",
+                    "specifier": "==7.13.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/coverage-7.13.4.dist-info"
+                }
+            ]
+        },
+        "bandit": {
+            "name": "bandit",
+            "version": "1.9.3",
+            "requirements": [
+                {
+                    "raw": "bandit==1.9.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "bandit",
+                    "specifier": "==1.9.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/bandit-1.9.3.dist-info"
+                }
+            ]
+        },
+        "packaging": {
+            "name": "packaging",
+            "version": "26.0",
+            "requirements": [
+                {
+                    "raw": "packaging==26.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "packaging",
+                    "specifier": "==26.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/packaging-26.0.dist-info"
+                }
+            ]
+        },
+        "tqdm": {
+            "name": "tqdm",
+            "version": "4.67.3",
+            "requirements": [
+                {
+                    "raw": "tqdm==4.67.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tqdm",
+                    "specifier": "==4.67.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/tqdm-4.67.3.dist-info"
+                }
+            ]
+        },
+        "uvloop": {
+            "name": "uvloop",
+            "version": "0.22.1",
+            "requirements": [
+                {
+                    "raw": "uvloop==0.22.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "uvloop",
+                    "specifier": "==0.22.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/uvloop-0.22.1.dist-info"
+                }
+            ]
+        },
+        "uvicorn": {
+            "name": "uvicorn",
+            "version": "0.34.3",
+            "requirements": [
+                {
+                    "raw": "uvicorn==0.34.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "uvicorn",
+                    "specifier": "==0.34.3",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/uvicorn-0.34.3.dist-info"
+                }
+            ]
+        },
+        "typing-inspection": {
+            "name": "typing-inspection",
+            "version": "0.4.2",
+            "requirements": [
+                {
+                    "raw": "typing-inspection==0.4.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing-inspection",
+                    "specifier": "==0.4.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/typing_inspection-0.4.2.dist-info"
+                }
+            ]
+        },
+        "annotated-types": {
+            "name": "annotated-types",
+            "version": "0.7.0",
+            "requirements": [
+                {
+                    "raw": "annotated-types==0.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "annotated-types",
+                    "specifier": "==0.7.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/annotated_types-0.7.0.dist-info"
+                }
+            ]
+        },
+        "limits": {
+            "name": "limits",
+            "version": "5.8.0",
+            "requirements": [
+                {
+                    "raw": "limits==5.8.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "limits",
+                    "specifier": "==5.8.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/limits-5.8.0.dist-info"
+                }
+            ]
+        },
+        "sqlcipher3": {
+            "name": "sqlcipher3",
+            "version": "0.5.4",
+            "requirements": [
+                {
+                    "raw": "sqlcipher3==0.5.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sqlcipher3",
+                    "specifier": "==0.5.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/sqlcipher3-0.5.4.dist-info"
+                }
+            ]
+        },
+        "mypy_extensions": {
+            "name": "mypy_extensions",
+            "version": "1.1.0",
+            "requirements": [
+                {
+                    "raw": "mypy_extensions==1.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mypy_extensions",
+                    "specifier": "==1.1.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/mypy_extensions-1.1.0.dist-info"
+                }
+            ]
+        },
+        "six": {
+            "name": "six",
+            "version": "1.17.0",
+            "requirements": [
+                {
+                    "raw": "six==1.17.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "six",
+                    "specifier": "==1.17.0",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/six-1.17.0.dist-info"
+                }
+            ]
+        },
+        "wrapt": {
+            "name": "wrapt",
+            "version": "2.1.1",
+            "requirements": [
+                {
+                    "raw": "wrapt==2.1.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "wrapt",
+                    "specifier": "==2.1.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/wrapt-2.1.1.dist-info"
+                }
+            ]
+        },
+        "SQLAlchemy": {
+            "name": "SQLAlchemy",
+            "version": "2.0.46",
+            "requirements": [
+                {
+                    "raw": "SQLAlchemy==2.0.46",
+                    "extras": [],
+                    "marker": null,
+                    "name": "SQLAlchemy",
+                    "specifier": "==2.0.46",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/sqlalchemy-2.0.46.dist-info"
+                }
+            ]
+        },
+        "annotated-doc": {
+            "name": "annotated-doc",
+            "version": "0.0.4",
+            "requirements": [
+                {
+                    "raw": "annotated-doc==0.0.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "annotated-doc",
+                    "specifier": "==0.0.4",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/annotated_doc-0.0.4.dist-info"
+                }
+            ]
+        }
+    },
+    "affected_packages": {
+        "ecdsa": {
+            "name": "ecdsa",
+            "version": "0.19.1",
+            "requirements": [
+                {
+                    "raw": "ecdsa==0.19.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ecdsa",
+                    "specifier": "==0.19.1",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/ecdsa-0.19.1.dist-info"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.10",
+                "0.11",
+                "0.12",
+                "0.13",
+                "0.13.1",
+                "0.13.2",
+                "0.13.3",
+                "0.14",
+                "0.14.1",
+                "0.15",
+                "0.16.0",
+                "0.16.1",
+                "0.17.0",
+                "0.18.0",
+                "0.18.0b1",
+                "0.18.0b2",
+                "0.19.0",
+                "0.19.1",
+                "0.6",
+                "0.7",
+                "0.8",
+                "0.9"
+            ],
+            "secure_versions": [],
+            "latest_version_without_known_vulnerabilities": "",
+            "latest_version": "0.19.1",
+            "more_info_url": "https://data.safetycli.com/p/pypi/ecdsa/97c/"
+        },
+        "starlette": {
+            "name": "starlette",
+            "version": "0.46.2",
+            "requirements": [
+                {
+                    "raw": "starlette==0.46.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "starlette",
+                    "specifier": "==0.46.2",
+                    "url": null,
+                    "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/starlette-0.46.2.dist-info"
+                }
+            ],
+            "found": null,
+            "insecure_versions": [
+                "0.1.0",
+                "0.10.0",
+                "0.10.1",
+                "0.10.2",
+                "0.10.3",
+                "0.10.4",
+                "0.10.5",
+                "0.10.6",
+                "0.10.7",
+                "0.1.1",
+                "0.1.10",
+                "0.11.0",
+                "0.1.11",
+                "0.11.1",
+                "0.1.12",
+                "0.11.2",
+                "0.1.13",
+                "0.11.3",
+                "0.1.14",
+                "0.11.4",
+                "0.1.15",
+                "0.1.16",
+                "0.1.17",
+                "0.1.2",
+                "0.12.0",
+                "0.12.0b1",
+                "0.12.0b2",
+                "0.12.0b3",
+                "0.12.1",
+                "0.12.10",
+                "0.12.11",
+                "0.12.12",
+                "0.12.13",
+                "0.12.2",
+                "0.12.3",
+                "0.12.4",
+                "0.12.5",
+                "0.12.6",
+                "0.12.7",
+                "0.12.8",
+                "0.12.9",
+                "0.1.3",
+                "0.13.0",
+                "0.13.1",
+                "0.13.2",
+                "0.13.3",
+                "0.13.4",
+                "0.13.5",
+                "0.13.6",
+                "0.13.7",
+                "0.13.8",
+                "0.1.4",
+                "0.14.0",
+                "0.14.1",
+                "0.14.2",
+                "0.1.5",
+                "0.15.0",
+                "0.1.6",
+                "0.16.0",
+                "0.1.7",
+                "0.17.0",
+                "0.17.1",
+                "0.1.8",
+                "0.18.0",
+                "0.1.9",
+                "0.19.0",
+                "0.19.1",
+                "0.2.0",
+                "0.20.0",
+                "0.20.1",
+                "0.20.2",
+                "0.20.3",
+                "0.20.4",
+                "0.2.1",
+                "0.21.0",
+                "0.2.2",
+                "0.22.0",
+                "0.2.3",
+                "0.23.0",
+                "0.23.1",
+                "0.24.0",
+                "0.25.0",
+                "0.26.0",
+                "0.26.0.post1",
+                "0.26.1",
+                "0.27.0",
+                "0.28.0",
+                "0.29.0",
+                "0.3.0",
+                "0.30.0",
+                "0.3.1",
+                "0.31.0",
+                "0.31.1",
+                "0.3.2",
+                "0.32.0",
+                "0.32.0.post1",
+                "0.3.3",
+                "0.33.0",
+                "0.3.4",
+                "0.34.0",
+                "0.3.5",
+                "0.35.0",
+                "0.35.1",
+                "0.3.6",
+                "0.36.0",
+                "0.36.1",
+                "0.36.2",
+                "0.36.3",
+                "0.3.7",
+                "0.37.0",
+                "0.37.1",
+                "0.37.2",
+                "0.38.0",
+                "0.38.1",
+                "0.38.2",
+                "0.38.3",
+                "0.38.4",
+                "0.38.5",
+                "0.38.6",
+                "0.39.0",
+                "0.39.1",
+                "0.39.2",
+                "0.4.0",
+                "0.40.0",
+                "0.4.1",
+                "0.41.0",
+                "0.41.1",
+                "0.41.2",
+                "0.41.3",
+                "0.4.2",
+                "0.42.0",
+                "0.43.0",
+                "0.44.0",
+                "0.45.0",
+                "0.45.1",
+                "0.45.2",
+                "0.45.3",
+                "0.46.0",
+                "0.46.1",
+                "0.46.2",
+                "0.47.0",
+                "0.47.1",
+                "0.47.2",
+                "0.47.3",
+                "0.48.0",
+                "0.49.0",
+                "0.5.0",
+                "0.5.1",
+                "0.5.2",
+                "0.5.3",
+                "0.5.4",
+                "0.5.5",
+                "0.6.0",
+                "0.6.1",
+                "0.6.2",
+                "0.6.3",
+                "0.7.0",
+                "0.7.1",
+                "0.7.2",
+                "0.7.3",
+                "0.7.4",
+                "0.8.0",
+                "0.8.1",
+                "0.8.2",
+                "0.8.3",
+                "0.8.4",
+                "0.8.5",
+                "0.8.6",
+                "0.8.7",
+                "0.8.8",
+                "0.9.0",
+                "0.9.1",
+                "0.9.10",
+                "0.9.11",
+                "0.9.2",
+                "0.9.3",
+                "0.9.4",
+                "0.9.5",
+                "0.9.6",
+                "0.9.7",
+                "0.9.8",
+                "0.9.9"
+            ],
+            "secure_versions": [
+                "0.52.1",
+                "0.52.0",
+                "0.51.0",
+                "0.50.0",
+                "0.49.3",
+                "0.49.2",
+                "0.49.1"
+            ],
+            "latest_version_without_known_vulnerabilities": "0.52.1",
+            "latest_version": "0.52.1",
+            "more_info_url": "https://data.safetycli.com/p/pypi/starlette/97c/"
+        }
+    },
+    "announcements": [],
+    "vulnerabilities": [
+        {
+            "vulnerability_id": "64459",
+            "package_name": "ecdsa",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=0"
+            ],
+            "all_vulnerable_specs": [
+                ">=0"
+            ],
+            "analyzed_version": "0.19.1",
+            "analyzed_requirement": {
+                "raw": "ecdsa==0.19.1",
+                "extras": [],
+                "marker": null,
+                "name": "ecdsa",
+                "specifier": "==0.19.1",
+                "url": null,
+                "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/ecdsa-0.19.1.dist-info"
+            },
+            "advisory": "The python-ecdsa library, which implements ECDSA cryptography in Python, is vulnerable to the Minerva attack (CVE-2024-23342). This vulnerability arises because scalar multiplication is not performed in constant time, affecting ECDSA signatures, key generation, and ECDH operations. ECDSA signature verification remains unaffected. The project maintainers have stated that there is no plan to release a fix for this vulnerability, citing their security policy:\r\n\"As stated in the security policy, side-channel vulnerabilities are outside the scope of the project. This is not due to a lack of interest in side-channel secure implementations but rather because the main goal of the project is to be pure Python. Implementing side-channel-free code in pure Python is impossible. Therefore, we do not plan to release a fix for this vulnerability.\"\r\nNOTE: The specs we include in this advisory differ from the publicly available on other sources. That's because research by Safety CLI Cybersecurity Team confirms that there is no plan to address this vulnerability.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2024-23342",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/64459/97c"
+        },
+        {
+            "vulnerability_id": "64396",
+            "package_name": "ecdsa",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=0"
+            ],
+            "all_vulnerable_specs": [
+                ">=0"
+            ],
+            "analyzed_version": "0.19.1",
+            "analyzed_requirement": {
+                "raw": "ecdsa==0.19.1",
+                "extras": [],
+                "marker": null,
+                "name": "ecdsa",
+                "specifier": "==0.19.1",
+                "url": null,
+                "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/ecdsa-0.19.1.dist-info"
+            },
+            "advisory": "Ecdsa does not protects against side-channel attacks. This is because Python does not provide side-channel secure primitives (with the exception of hmac.compare_digest()), making side-channel secure programming impossible. For a sophisticated attacker observing just one operation with a private key will be sufficient to completely reconstruct the private key.\r\nhttps://pypi.org/project/ecdsa/#Security",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": null,
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/64396/97c"
+        },
+        {
+            "vulnerability_id": "80876",
+            "package_name": "starlette",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                "<0.49.1"
+            ],
+            "all_vulnerable_specs": [
+                "<0.49.1"
+            ],
+            "analyzed_version": "0.46.2",
+            "analyzed_requirement": {
+                "raw": "starlette==0.46.2",
+                "extras": [],
+                "marker": null,
+                "name": "starlette",
+                "specifier": "==0.46.2",
+                "url": null,
+                "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/starlette-0.46.2.dist-info"
+            },
+            "advisory": "Affected versions of the Starlette package are vulnerable to Denial of Service (DoS) due to inefficient Range header processing behaviour in starlette.responses.FileResponse. The FileResponse._parse_range_header() routine parses multi-range requests and merges intervals using an O(n\u00b2) algorithm, so supplying many non-overlapping ranges causes quadratic CPU usage in routes that return FileResponse or are served via starlette.staticfiles.StaticFiles.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2025-62727",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/80876/97c"
+        },
+        {
+            "vulnerability_id": "78279",
+            "package_name": "starlette",
+            "ignored": {},
+            "ignored_reason": null,
+            "ignored_expires": null,
+            "vulnerable_spec": [
+                ">=0.13.5,<0.47.2"
+            ],
+            "all_vulnerable_specs": [
+                ">=0.13.5,<0.47.2"
+            ],
+            "analyzed_version": "0.46.2",
+            "analyzed_requirement": {
+                "raw": "starlette==0.46.2",
+                "extras": [],
+                "marker": null,
+                "name": "starlette",
+                "specifier": "==0.46.2",
+                "url": null,
+                "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/starlette-0.46.2.dist-info"
+            },
+            "advisory": "Affected versions of the `starlette` package are vulnerable to Denial of Service (DoS) due to improper handling of large file uploads in multi-part form parsing. The vulnerability exists in the `UploadFile` class, where the logic fails to adequately check if additional bytes will trigger a file rollover, leading to blocking of the main thread. An attacker can exploit this by uploading large files that exceed the default max spool size, causing the event thread to block and preventing the application from accepting new connections.",
+            "is_transitive": false,
+            "published_date": null,
+            "fixed_versions": [],
+            "closest_versions_without_known_vulnerabilities": [],
+            "resources": [],
+            "CVE": "CVE-2025-54121",
+            "severity": null,
+            "affected_versions": [],
+            "more_info_url": "https://data.safetycli.com/v/78279/97c"
+        }
+    ],
+    "ignored_vulnerabilities": [],
+    "remediations": {
+        "ecdsa": {
+            "requirements": {
+                "==0.19.1": {
+                    "vulnerabilities_found": 2,
+                    "version": "0.19.1",
+                    "requirement": {
+                        "raw": "ecdsa==0.19.1",
+                        "extras": [],
+                        "marker": null,
+                        "name": "ecdsa",
+                        "specifier": "==0.19.1",
+                        "url": null,
+                        "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/ecdsa-0.19.1.dist-info"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/ecdsa/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        },
+        "starlette": {
+            "requirements": {
+                "==0.46.2": {
+                    "vulnerabilities_found": 2,
+                    "version": "0.46.2",
+                    "requirement": {
+                        "raw": "starlette==0.46.2",
+                        "extras": [],
+                        "marker": null,
+                        "name": "starlette",
+                        "specifier": "==0.46.2",
+                        "url": null,
+                        "found": "/Users/mminutillo/Library/Caches/pypoetry/virtualenvs/vibe-quality-searcharr-Tbv_rh4e-py3.14/lib/python3.14/site-packages/starlette-0.46.2.dist-info"
+                    },
+                    "more_info_url": "https://data.safetycli.com/p/pypi/starlette/97c/"
+                }
+            },
+            "current_version": null,
+            "vulnerabilities_found": null,
+            "recommended_version": null,
+            "other_recommended_versions": [],
+            "more_info_url": null
+        }
+    },
+    "remediations_results": {
+        "vulnerabilities_fixed": [],
+        "remediations_applied": {},
+        "remediations_skipped": {}
+    }
+}

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Vibe-Quality-Searcharr{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>Settings</h1>
+    <p>Manage your account and preferences</p>
+</hgroup>
+
+<!-- Account Information -->
+<article>
+    <header>
+        <h3>Account Information</h3>
+    </header>
+
+    <dl>
+        <dt>Username</dt>
+        <dd>{{ user.username }}</dd>
+
+        <dt>Role</dt>
+        <dd>
+            {% if user.is_superuser %}
+            <span style="color: var(--primary);">Administrator</span>
+            {% else %}
+            User
+            {% endif %}
+        </dd>
+
+        <dt>Account Created</dt>
+        <dd>{{ user.created_at|datetime }}</dd>
+
+        <dt>Last Login</dt>
+        <dd>
+            {% if user.last_login %}
+            {{ user.last_login|datetime }}
+            {% if user.last_login_ip %}
+            from {{ user.last_login_ip }}
+            {% endif %}
+            {% else %}
+            Never
+            {% endif %}
+        </dd>
+    </dl>
+</article>
+
+<!-- Change Password -->
+<article>
+    <header>
+        <h3>Change Password</h3>
+    </header>
+
+    <form id="changePasswordForm">
+        <label for="current_password">
+            Current Password
+            <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
+        </label>
+
+        <label for="new_password">
+            New Password
+            <input type="password" id="new_password" name="new_password" required minlength="12" autocomplete="new-password">
+            <small>Minimum 12 characters, must include uppercase, lowercase, digit, and special character</small>
+        </label>
+
+        <label for="confirm_new_password">
+            Confirm New Password
+            <input type="password" id="confirm_new_password" name="confirm_new_password" required minlength="12" autocomplete="new-password">
+        </label>
+
+        <button type="submit" id="changePasswordBtn">Change Password</button>
+    </form>
+</article>
+
+<!-- Two-Factor Authentication -->
+<article>
+    <header>
+        <h3>Two-Factor Authentication</h3>
+    </header>
+
+    {% if user.totp_enabled %}
+    <p>
+        <span style="color: var(--ins-color);">✓ Two-factor authentication is enabled</span>
+    </p>
+    <p>
+        <small>Your account is protected with an additional security layer using time-based one-time passwords (TOTP).</small>
+    </p>
+    <button class="secondary" onclick="disable2FA()">Disable 2FA</button>
+    {% else %}
+    <p>
+        <span style="color: var(--muted-color);">Two-factor authentication is not enabled</span>
+    </p>
+    <p>
+        <small>Add an extra layer of security to your account by requiring a code from your authenticator app during login.</small>
+    </p>
+    <button onclick="setup2FA()">Enable 2FA</button>
+    {% endif %}
+</article>
+
+<!-- Danger Zone -->
+<article style="border-color: var(--del-color);">
+    <header>
+        <h3 style="color: var(--del-color);">Danger Zone</h3>
+    </header>
+
+    <p>
+        <strong>Logout All Sessions</strong><br>
+        <small>Revoke all active sessions and refresh tokens. You'll need to log in again on all devices.</small>
+    </p>
+    <button class="secondary" style="color: var(--del-color);" onclick="logoutAllSessions()">Logout All Sessions</button>
+</article>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const currentPassword = document.getElementById('current_password').value;
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_new_password').value;
+
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match');
+        return;
+    }
+
+    const submitBtn = document.getElementById('changePasswordBtn');
+    submitBtn.disabled = true;
+    submitBtn.setAttribute('aria-busy', 'true');
+
+    try {
+        const response = await fetch('/api/auth/password/change', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword
+            })
+        });
+
+        if (response.ok) {
+            alert('Password changed successfully! You will be logged out.');
+            window.location.href = '/login';
+        } else {
+            const data = await response.json();
+            alert('Failed to change password: ' + (data.detail || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.setAttribute('aria-busy', 'false');
+        }
+    } catch (error) {
+        alert('Failed to change password: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.setAttribute('aria-busy', 'false');
+    }
+});
+
+function setup2FA() {
+    alert('2FA setup functionality coming soon!');
+}
+
+function disable2FA() {
+    if (confirm('Are you sure you want to disable two-factor authentication?\n\nThis will reduce the security of your account.')) {
+        alert('2FA disable functionality coming soon!');
+    }
+}
+
+async function logoutAllSessions() {
+    if (!confirm('Are you sure you want to logout all sessions?\n\nYou will need to log in again on all devices.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/auth/logout', {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            window.location.href = '/login';
+        } else {
+            alert('Failed to logout all sessions');
+        }
+    } catch (error) {
+        alert('Failed to logout: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

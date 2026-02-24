@@ -1,0 +1,300 @@
+"""
+Vibe-Quality-Searcharr FastAPI Application.
+
+Main application entry point with:
+- FastAPI app initialization
+- Middleware configuration (CORS, rate limiting, security headers)
+- Router registration
+- Startup/shutdown event handlers
+- Database initialization
+"""
+
+import structlog
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+
+from vibe_quality_searcharr.api import auth, dashboard, instances, search_history, search_queue
+from vibe_quality_searcharr.config import settings
+from vibe_quality_searcharr.database import close_db, get_session_factory, init_db, test_database_connection
+from vibe_quality_searcharr.services import start_scheduler, stop_scheduler
+
+# Configure structured logging
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.processors.JSONRenderer() if settings.environment == "production"
+        else structlog.dev.ConsoleRenderer(),
+    ],
+    wrapper_class=structlog.stdlib.BoundLogger,
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    cache_logger_on_first_use=True,
+)
+
+logger = structlog.get_logger()
+
+# Initialize rate limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[f"{settings.rate_limit_per_minute}/minute"],
+    storage_uri="memory://",  # In-memory storage (use Redis in production for multiple workers)
+)
+
+# Create FastAPI application
+app = FastAPI(
+    title=settings.app_name,
+    description="Intelligent backlog search automation for Sonarr and Radarr",
+    version="0.1.0",
+    docs_url="/api/docs" if settings.environment != "production" else None,
+    redoc_url="/api/redoc" if settings.environment != "production" else None,
+    openapi_url="/api/openapi.json" if settings.environment != "production" else None,
+)
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+
+# Add rate limit exception handler
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add SlowAPI middleware
+app.add_middleware(SlowAPIMiddleware)
+
+# Add CORS middleware
+if settings.cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=settings.cors_allow_credentials,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+        allow_headers=["*"],
+        expose_headers=["*"],
+    )
+    logger.info("cors_middleware_enabled", origins=settings.cors_origins)
+
+# Add trusted host middleware (security)
+if settings.environment == "production":
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=settings.trusted_hosts,
+    )
+    logger.info("trusted_host_middleware_enabled", hosts=settings.trusted_hosts)
+
+
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """
+    Add security headers to all responses.
+
+    Implements OWASP recommendations:
+    - X-Content-Type-Options: nosniff
+    - X-Frame-Options: DENY
+    - X-XSS-Protection: 1; mode=block
+    - Strict-Transport-Security (HSTS) in production
+    - Content-Security-Policy
+    """
+    response = await call_next(request)
+
+    # Basic security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # HSTS (only in production with HTTPS)
+    if settings.environment == "production" and settings.secure_cookies:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    # Content Security Policy
+    csp_directives = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline'",  # Allow inline scripts for API docs
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+    ]
+    response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
+
+    return response
+
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="src/vibe_quality_searcharr/static"), name="static")
+
+# Include routers
+app.include_router(dashboard.router)  # Dashboard router (includes root, setup, login)
+app.include_router(auth.router)
+app.include_router(instances.router)
+app.include_router(search_queue.router)
+app.include_router(search_history.router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Application startup event handler.
+
+    Initializes database and tests connection.
+    """
+    try:
+        logger.info(
+            "application_starting",
+            environment=settings.environment,
+            log_level=settings.log_level,
+        )
+
+        # Initialize database
+        init_db()
+        logger.info("database_initialized")
+
+        # Test database connection
+        test_database_connection()
+        logger.info("database_connection_verified")
+
+        # Start search scheduler
+        try:
+            await start_scheduler(get_session_factory())
+            logger.info("search_scheduler_started")
+        except Exception as e:
+            logger.error("search_scheduler_start_failed", error=str(e))
+            # Don't fail startup if scheduler fails to start
+            # This allows the app to run in read-only mode for troubleshooting
+
+        logger.info("application_started")
+
+    except Exception as e:
+        logger.error("application_startup_failed", error=str(e))
+        raise
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    Application shutdown event handler.
+
+    Closes database connections gracefully.
+    """
+    try:
+        logger.info("application_shutting_down")
+
+        # Stop search scheduler
+        try:
+            await stop_scheduler()
+            logger.info("search_scheduler_stopped")
+        except Exception as e:
+            logger.error("search_scheduler_stop_failed", error=str(e))
+
+        # Close database connections
+        close_db()
+        logger.info("database_connections_closed")
+
+        logger.info("application_shutdown_complete")
+
+    except Exception as e:
+        logger.error("application_shutdown_error", error=str(e))
+
+
+# Root endpoint removed - handled by dashboard.router
+
+
+@app.get("/health", tags=["health"])
+async def health_check():
+    """
+    Health check endpoint.
+
+    Returns application and database health status.
+    """
+    try:
+        from vibe_quality_searcharr.database import database_health_check
+
+        db_health = database_health_check()
+
+        return {
+            "status": "healthy" if db_health.get("status") == "healthy" else "unhealthy",
+            "application": "operational",
+            "database": db_health,
+        }
+
+    except Exception as e:
+        logger.error("health_check_failed", error=str(e))
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "unhealthy",
+                "application": "operational",
+                "database": {"status": "unhealthy", "error": str(e)},
+            },
+        )
+
+
+@app.get("/api", tags=["api"])
+async def api_info():
+    """
+    API information endpoint.
+
+    Returns available API routes and authentication status.
+    """
+    return {
+        "version": "v1",
+        "endpoints": {
+            "authentication": "/api/auth",
+            "instances": "/api/instances",
+            "search": "/api/search",
+            "dashboard": "/api/dashboard",
+        },
+        "documentation": {
+            "swagger": "/api/docs" if settings.environment != "production" else None,
+            "redoc": "/api/redoc" if settings.environment != "production" else None,
+        },
+    }
+
+
+# Error handlers
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """Custom 404 handler."""
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": "Resource not found"},
+    )
+
+
+@app.exception_handler(500)
+async def internal_error_handler(request: Request, exc):
+    """Custom 500 handler."""
+    logger.error("internal_server_error", path=request.url.path, error=str(exc))
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error"},
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "vibe_quality_searcharr.main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.reload,
+        log_level=settings.log_level.lower(),
+        workers=settings.workers if not settings.reload else 1,
+    )

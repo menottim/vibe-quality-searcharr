@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vibe-Quality-Searcharr{% endblock %}</title>
+
+    <!-- Pico CSS -->
+    <link rel="stylesheet" href="/static/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if user %}
+    <!-- Navigation (only show if authenticated) -->
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>Vibe-Quality-Searcharr</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/dashboard/instances">Instances</a></li>
+            <li><a href="/dashboard/search-queues">Queues</a></li>
+            <li><a href="/dashboard/search-history">History</a></li>
+            <li>
+                <details class="dropdown">
+                    <summary>{{ user.username }}</summary>
+                    <ul dir="rtl">
+                        <li><a href="/dashboard/settings">Settings</a></li>
+                        <li><a href="#" onclick="logout(); return false;">Logout</a></li>
+                    </ul>
+                </details>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- Flash messages -->
+    {% include "components/flash.html" %}
+
+    <!-- Main content -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="container">
+        <small>
+            Vibe-Quality-Searcharr v0.1.0 &middot;
+            <a href="https://github.com/yourusername/vibe-quality-searcharr" target="_blank">GitHub</a>
+        </small>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Logout function
+        function logout() {
+            fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(() => {
+                window.location.href = '/login';
+            });
+        }
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,95 @@
+version: '3.9'
+
+services:
+  vibe-quality-searcharr-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        VERSION: dev
+    image: vibe-quality-searcharr:dev
+    container_name: vibe-quality-searcharr-dev
+
+    # Run as current user for file permissions
+    user: "${UID:-1000}:${GID:-1000}"
+
+    environment:
+      # Application settings
+      - APP_NAME=Vibe-Quality-Searcharr-Dev
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+
+      # Server configuration
+      - HOST=0.0.0.0
+      - PORT=7337
+      - RELOAD=true  # Enable auto-reload for development
+
+      # Secrets (use environment variables for dev convenience)
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - PEPPER=dev-pepper-change-in-production
+      - DATABASE_KEY=dev-database-key-change-in-production
+
+      # Database (in data volume)
+      - DATABASE_URL=sqlite+pysqlcipher:///:memory:@/data/vibe-quality-searcharr-dev.db?cipher=aes-256-cfb&kdf_iter=256000
+
+      # Security settings (relaxed for development)
+      - SESSION_EXPIRE_HOURS=24
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - REFRESH_TOKEN_EXPIRE_DAYS=30
+
+      # Rate limiting (more permissive for testing)
+      - API_RATE_LIMIT=1000/minute
+
+      # Network security (allow local instances for dev)
+      - ALLOW_LOCAL_INSTANCES=true
+      - ALLOWED_ORIGINS=http://localhost:7337,http://127.0.0.1:7337
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+
+    volumes:
+      # Mount source code for live reload
+      - ../src:/app/src:rw
+      - ../alembic:/app/alembic:rw
+      - ../alembic.ini:/app/alembic.ini:ro
+      # Data directory (persistent across restarts)
+      - ../data:/data:rw
+      # Temp directory
+      - /tmp
+
+    ports:
+      # Expose to host for easy access
+      - "7337:7337"
+      # Optional: debugger port
+      - "5678:5678"
+
+    restart: unless-stopped
+
+    # Health check (faster for dev)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx, sys; resp = httpx.get('http://localhost:7337/health', timeout=5.0); sys.exit(0 if resp.status_code == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # Resource limits (less restrictive for dev)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+    # Network
+    networks:
+      - vqs-dev-network
+
+networks:
+  vqs-dev-network:
+    driver: bridge

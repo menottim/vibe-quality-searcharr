@@ -1,0 +1,133 @@
+version: '3.9'
+
+services:
+  vibe-quality-searcharr:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        VERSION: 1.0.0
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+    image: vibe-quality-searcharr:1.0.0
+    container_name: vibe-quality-searcharr-prod
+
+    # Security: Run as non-root
+    user: "1000:1000"
+
+    # Security: Read-only root filesystem
+    read_only: true
+
+    # Security: Drop all capabilities
+    cap_drop:
+      - ALL
+
+    # Security: No new privileges
+    security_opt:
+      - no-new-privileges:true
+
+    environment:
+      # Secrets (prefer Docker secrets)
+      - DATABASE_KEY_FILE=/run/secrets/db_key
+      - SECRET_KEY_FILE=/run/secrets/secret_key
+      - PEPPER_FILE=/run/secrets/pepper
+
+      # Application settings
+      - APP_NAME=Vibe-Quality-Searcharr
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+
+      # Server configuration
+      - HOST=0.0.0.0
+      - PORT=7337
+      - RELOAD=false
+
+      # Database
+      - DATABASE_URL=sqlite+pysqlcipher:///:memory:@/data/vibe-quality-searcharr.db?cipher=aes-256-cfb&kdf_iter=256000
+
+      # Security settings
+      - SESSION_EXPIRE_HOURS=24
+      - ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - REFRESH_TOKEN_EXPIRE_DAYS=30
+
+      # Rate limiting
+      - API_RATE_LIMIT=100/minute
+
+      # Network security
+      - ALLOW_LOCAL_INSTANCES=false
+      - ALLOWED_ORIGINS=https://yourdomain.com
+      - ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+
+    secrets:
+      - db_key
+      - secret_key
+      - pepper
+
+    volumes:
+      # Data directory (read-write, persistent)
+      - vqs-data:/data:rw
+      # Temp directory (for read-only filesystem)
+      - /tmp
+      # Optional: custom alembic.ini
+      # - ./alembic.ini:/app/alembic.ini:ro
+
+    ports:
+      # IMPORTANT: Use reverse proxy (nginx/Traefik) in production
+      # Bind to localhost only, let reverse proxy handle external traffic
+      - "127.0.0.1:7337:7337"
+
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx, sys; resp = httpx.get('http://localhost:7337/health', timeout=5.0); sys.exit(0 if resp.status_code == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+    # Network
+    networks:
+      - vqs-network
+
+secrets:
+  db_key:
+    file: ../secrets/db_key.txt
+  secret_key:
+    file: ../secrets/secret_key.txt
+  pepper:
+    file: ../secrets/pepper.txt
+
+volumes:
+  vqs-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/vibe-quality-searcharr/data
+
+networks:
+  vqs-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

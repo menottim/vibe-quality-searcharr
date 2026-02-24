@@ -1,0 +1,23 @@
+[bandit]
+# Bandit configuration for Vibe-Quality-Searcharr
+
+# Directories to exclude from scanning
+exclude_dirs = [
+    '/tests',
+    '/venv',
+    '/.venv',
+    '/htmlcov',
+    '/.pytest_cache',
+    '/alembic/versions'
+]
+
+# Test IDs to skip
+# B101: assert_used - Allow assert statements (used in tests)
+# B601: paramiko_calls - We don't use paramiko
+skips = ['B101', 'B601']
+
+# Test IDs to run (leave empty to run all except skipped)
+tests = []
+
+# Scan recursively
+recursive = true

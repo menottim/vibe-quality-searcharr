@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Create Admin Account - Vibe-Quality-Searcharr{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 3rem auto;">
+    <!-- Progress indicator -->
+    <div class="setup-progress">
+        <span class="step">1. Welcome</span>
+        <span class="step active">2. Admin Account</span>
+        <span class="step">3. Instance</span>
+        <span class="step">4. Complete</span>
+    </div>
+
+    <hgroup style="margin-top: 2rem;">
+        <h1>Create Admin Account</h1>
+        <p>Set up the administrator account for Vibe-Quality-Searcharr</p>
+    </hgroup>
+
+    <form action="/setup/admin" method="post" id="adminForm">
+        <label for="username">
+            Username
+            <input
+                type="text"
+                id="username"
+                name="username"
+                required
+                minlength="3"
+                maxlength="32"
+                pattern="[a-zA-Z][a-zA-Z0-9_]*"
+                value="{{ username or '' }}"
+                autocomplete="username">
+            <small>3-32 characters, start with a letter, alphanumeric and underscore only</small>
+        </label>
+
+        <label for="password">
+            Password
+            <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                minlength="12"
+                autocomplete="new-password"
+                oninput="checkPasswordStrength()">
+            <small>Minimum 12 characters, must include uppercase, lowercase, digit, and special character</small>
+            <div id="passwordStrength" style="margin-top: 0.5rem;"></div>
+        </label>
+
+        <label for="confirm_password">
+            Confirm Password
+            <input
+                type="password"
+                id="confirm_password"
+                name="confirm_password"
+                required
+                minlength="12"
+                autocomplete="new-password"
+                oninput="checkPasswordMatch()">
+            <div id="passwordMatch" style="margin-top: 0.5rem;"></div>
+        </label>
+
+        <div style="display: flex; justify-content: space-between; gap: 1rem;">
+            <a href="/setup" role="button" class="secondary">Back</a>
+            <button type="submit" id="submitBtn">Continue</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.setup-progress {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 2rem 0;
+    padding: 0;
+}
+
+.setup-progress .step {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    background: var(--card-background-color);
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    color: var(--muted-color);
+}
+
+.setup-progress .step.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    font-weight: bold;
+}
+
+.strength-weak { color: #e74c3c; }
+.strength-fair { color: #f39c12; }
+.strength-good { color: #3498db; }
+.strength-strong { color: #27ae60; }
+</style>
+
+<script>
+function checkPasswordStrength() {
+    const password = document.getElementById('password').value;
+    const strengthDiv = document.getElementById('passwordStrength');
+
+    if (password.length === 0) {
+        strengthDiv.innerHTML = '';
+        return;
+    }
+
+    let strength = 0;
+    let feedback = [];
+
+    if (password.length >= 12) strength++;
+    else feedback.push('At least 12 characters');
+
+    if (/[a-z]/.test(password)) strength++;
+    else feedback.push('Lowercase letter');
+
+    if (/[A-Z]/.test(password)) strength++;
+    else feedback.push('Uppercase letter');
+
+    if (/\d/.test(password)) strength++;
+    else feedback.push('Number');
+
+    if (/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/'`~;]/.test(password)) strength++;
+    else feedback.push('Special character');
+
+    let strengthText = '';
+    let strengthClass = '';
+
+    if (strength < 3) {
+        strengthText = 'Weak';
+        strengthClass = 'strength-weak';
+    } else if (strength < 4) {
+        strengthText = 'Fair';
+        strengthClass = 'strength-fair';
+    } else if (strength < 5) {
+        strengthText = 'Good';
+        strengthClass = 'strength-good';
+    } else {
+        strengthText = 'Strong';
+        strengthClass = 'strength-strong';
+    }
+
+    if (feedback.length > 0) {
+        strengthDiv.innerHTML = `<small class="${strengthClass}">Password strength: ${strengthText} (Missing: ${feedback.join(', ')})</small>`;
+    } else {
+        strengthDiv.innerHTML = `<small class="${strengthClass}">Password strength: ${strengthText}</small>`;
+    }
+}
+
+function checkPasswordMatch() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const matchDiv = document.getElementById('passwordMatch');
+
+    if (confirmPassword.length === 0) {
+        matchDiv.innerHTML = '';
+        return;
+    }
+
+    if (password === confirmPassword) {
+        matchDiv.innerHTML = '<small style="color: #27ae60;">Passwords match</small>';
+    } else {
+        matchDiv.innerHTML = '<small style="color: #e74c3c;">Passwords do not match</small>';
+    }
+}
+</script>
+{% endblock %}

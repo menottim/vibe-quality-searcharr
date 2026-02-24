@@ -1,0 +1,85 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+*.egg
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+coverage.xml
+*.cover
+
+# Virtual environments
+venv
+.venv
+env
+ENV
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation (not needed in image)
+*.md
+!README.md
+docs/
+reports/
+
+# Development files
+.env
+.env.local
+.env.*.local
+poetry.lock
+
+# Test files
+tests/
+*.test.py
+test_*.py
+
+# Secrets (should never be in build context anyway)
+secrets/
+*.key
+*.pem
+*.crt
+
+# Data directories
+data/
+logs/
+*.db
+*.db-shm
+*.db-wal
+
+# CI/CD
+.github
+.gitlab-ci.yml
+Jenkinsfile
+
+# Docker
+.dockerignore
+docker-compose*.yml
+Dockerfile*
+.docker
+
+# Alembic (migrations copied explicitly)
+alembic.ini.example
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log

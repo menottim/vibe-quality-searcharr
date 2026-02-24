@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Vibe-Quality-Searcharr{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>Dashboard</h1>
+    <p>Overview of your Vibe-Quality-Searcharr system</p>
+</hgroup>
+
+<!-- Statistics Cards -->
+<div class="grid">
+    <article>
+        <hgroup>
+            <h2>{{ stats.instances.total }}</h2>
+            <p>Instances</p>
+        </hgroup>
+        <small>
+            <span style="color: var(--ins-color);">{{ stats.instances.active }} active</span>
+            {% if stats.instances.inactive > 0 %}
+            &middot; <span style="color: var(--del-color);">{{ stats.instances.inactive }} inactive</span>
+            {% endif %}
+        </small>
+    </article>
+
+    <article>
+        <hgroup>
+            <h2>{{ stats.search_queues.total }}</h2>
+            <p>Search Queues</p>
+        </hgroup>
+        <small>
+            <span style="color: var(--ins-color);">{{ stats.search_queues.active }} active</span>
+            {% if stats.search_queues.paused > 0 %}
+            &middot; <span style="color: var(--muted-color);">{{ stats.search_queues.paused }} paused</span>
+            {% endif %}
+        </small>
+    </article>
+
+    <article>
+        <hgroup>
+            <h2>{{ stats.searches.today }}</h2>
+            <p>Searches Today</p>
+        </hgroup>
+        <small>{{ stats.searches.this_week }} this week &middot; {{ stats.searches.success_rate }}% success rate</small>
+    </article>
+</div>
+
+<!-- Recent Activity -->
+<article>
+    <header>
+        <h3>Recent Search Activity</h3>
+    </header>
+
+    {% if recent_searches %}
+    <figure>
+        <table role="grid">
+            <thead>
+                <tr>
+                    <th>Instance</th>
+                    <th>Strategy</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for search in recent_searches %}
+                <tr>
+                    <td>{{ search.instance.name }}</td>
+                    <td><code>{{ search.strategy }}</code></td>
+                    <td>
+                        {% if search.status == 'completed' %}
+                        <span style="color: var(--ins-color);">✓ Completed</span>
+                        {% elif search.status == 'running' %}
+                        <span style="color: var(--primary);">⟳ Running</span>
+                        {% elif search.status == 'failed' %}
+                        <span style="color: var(--del-color);">✗ Failed</span>
+                        {% else %}
+                        <span style="color: var(--muted-color);">{{ search.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ search.items_searched or 0 }} searched
+                        {% if search.items_found %}
+                        &middot; {{ search.items_found }} found
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small>{{ search.started_at|timeago }}</small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </figure>
+    {% else %}
+    <p style="text-align: center; color: var(--muted-color); padding: 2rem;">
+        No search history yet. Create a search queue to get started!
+    </p>
+    {% endif %}
+
+    <footer style="text-align: right;">
+        <a href="/dashboard/search-history">View all history →</a>
+    </footer>
+</article>
+
+<!-- Quick Actions -->
+<div class="grid">
+    <article>
+        <h4>Quick Actions</h4>
+        <p><a href="/dashboard/search-queues">Create Search Queue</a></p>
+        <p><a href="/dashboard/instances">Add Instance</a></p>
+        <p><a href="/dashboard/search-history">View History</a></p>
+    </article>
+
+    <article>
+        <h4>System Status</h4>
+        <p>All systems operational</p>
+        <small style="color: var(--muted-color);">Last checked: {{ stats.last_check or 'just now' }}</small>
+    </article>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Auto-refresh statistics every 30 seconds
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/dashboard/stats');
+            if (response.ok) {
+                const stats = await response.json();
+                // Update stats on page (simplified version)
+                console.log('Stats updated:', stats);
+            }
+        } catch (error) {
+            console.error('Failed to refresh stats:', error);
+        }
+    }, 30000);
+</script>
+{% endblock %}

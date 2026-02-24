@@ -1,0 +1,87 @@
+{#
+Search queue card component
+
+Usage:
+    {% include "components/queue_card.html" with queue=queue %}
+
+Expected variables:
+    - queue: SearchQueue object with attributes:
+        - id
+        - name
+        - is_active
+        - status
+        - strategy
+        - is_recurring
+        - interval_hours
+        - next_run_at
+        - total_items
+        - processed_items
+        - instance (with name attribute)
+#}
+
+<article>
+    <header>
+        <h3>
+            {{ queue.name }}
+            {% if queue.is_active and queue.status in ['pending', 'running'] %}
+            <small style="color: var(--ins-color);">● Active</small>
+            {% elif queue.status == 'paused' %}
+            <small style="color: var(--muted-color);">⏸ Paused</small>
+            {% elif queue.status == 'completed' %}
+            <small style="color: var(--primary);">✓ Completed</small>
+            {% elif queue.status == 'failed' %}
+            <small style="color: var(--del-color);">✗ Failed</small>
+            {% else %}
+            <small style="color: var(--muted-color);">● {{ queue.status }}</small>
+            {% endif %}
+        </h3>
+    </header>
+
+    <dl>
+        <dt>Instance</dt>
+        <dd>{{ queue.instance.name }}</dd>
+
+        <dt>Strategy</dt>
+        <dd><code>{{ queue.strategy }}</code></dd>
+
+        <dt>Type</dt>
+        <dd>
+            {% if queue.is_recurring %}
+            🔄 Recurring (every {{ queue.interval_hours }}h)
+            {% else %}
+            One-time
+            {% endif %}
+        </dd>
+
+        <dt>Next Run</dt>
+        <dd>
+            {% if queue.next_run_at %}
+            {{ queue.next_run_at|timeago }}
+            {% else %}
+            Not scheduled
+            {% endif %}
+        </dd>
+
+        <dt>Progress</dt>
+        <dd>
+            {% if queue.total_items %}
+            {{ queue.processed_items or 0 }} / {{ queue.total_items }} items
+            ({{ ((queue.processed_items or 0) / queue.total_items * 100)|round|int }}%)
+            {% else %}
+            Not started
+            {% endif %}
+        </dd>
+    </dl>
+
+    <footer>
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            {% if queue.status == 'paused' %}
+            <button onclick="resumeQueue({{ queue.id }})">Resume</button>
+            {% elif queue.status in ['pending', 'running'] %}
+            <button class="secondary" onclick="pauseQueue({{ queue.id }})">Pause</button>
+            {% endif %}
+            <button class="secondary" onclick="viewQueue({{ queue.id }})">View</button>
+            <button class="secondary" style="color: var(--del-color);" onclick="deleteQueue({{ queue.id }}, '{{ queue.name }}')">Delete</button>
+        </div>
+    </footer>
+</article>
