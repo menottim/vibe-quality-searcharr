@@ -517,7 +517,7 @@ DELETE /api/auth/account
 **Report Security Vulnerabilities:**
 - Email: security@yourdomain.com
 - PGP Key: [Key Fingerprint]
-- GitHub Security Advisories: https://github.com/yourusername/vibe-quality-searcharr/security
+- GitHub Security Advisories: https://github.com/menottim/vibe-quality-searcharr/security
 
 **Response Time:**
 - Critical: 24 hours

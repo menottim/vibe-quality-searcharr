@@ -45,11 +45,11 @@ For other operating systems, see [Docker Installation](https://docs.docker.com/g
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/vibe-quality-searcharr.git
+git clone https://github.com/menottim/vibe-quality-searcharr.git
 cd vibe-quality-searcharr
 
 # Or download and extract
-wget https://github.com/yourusername/vibe-quality-searcharr/archive/v1.0.0.tar.gz
+wget https://github.com/menottim/vibe-quality-searcharr/archive/v0.1.0-alpha.tar.gz
 tar -xzf v1.0.0.tar.gz
 cd vibe-quality-searcharr-1.0.0
 ```

@@ -278,7 +278,7 @@ try {
         Write-Host "✅ SUCCESS: All secrets generated and verified!" -ForegroundColor Green
         Write-Host "================================================================" -ForegroundColor Green
         Write-Host ""
-        Write-Host "Generated files in $secretsDir:" -ForegroundColor White
+        Write-Host "Generated files in ${secretsDir}:" -ForegroundColor White
         Write-Host "  - db_key.txt      (Database encryption key)" -ForegroundColor Gray
         Write-Host "  - secret_key.txt  (JWT signing key)" -ForegroundColor Gray
         Write-Host "  - pepper.txt      (Password hashing pepper)" -ForegroundColor Gray

@@ -7,7 +7,7 @@ FROM python:3.13-slim-bookworm AS builder
 ARG VERSION=1.0.0
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VCS_URL=https://github.com/yourusername/vibe-quality-searcharr
+ARG VCS_URL=https://github.com/menottim/vibe-quality-searcharr
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

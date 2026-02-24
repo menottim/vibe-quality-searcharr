@@ -111,7 +111,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 **Installation:**
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/vibe-quality-searcharr.git
+git clone https://github.com/menottim/vibe-quality-searcharr.git
 cd vibe-quality-searcharr
 
 # Install dependencies

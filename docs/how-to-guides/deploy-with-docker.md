@@ -74,7 +74,7 @@ docker-compose --version
 ### 1. Clone or Download
 
 ```bash
-git clone https://github.com/yourusername/vibe-quality-searcharr.git
+git clone https://github.com/menottim/vibe-quality-searcharr.git
 cd vibe-quality-searcharr
 ```
 
@@ -926,6 +926,6 @@ volumes:
 
 **Questions or Issues?**
 
-- GitHub Issues: https://github.com/yourusername/vibe-quality-searcharr/issues
-- Documentation: https://github.com/yourusername/vibe-quality-searcharr/docs/
+- GitHub Issues: https://github.com/menottim/vibe-quality-searcharr/issues
+- Documentation: https://github.com/menottim/vibe-quality-searcharr/docs/
 - Troubleshooting: See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

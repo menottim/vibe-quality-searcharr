@@ -351,7 +351,7 @@ docker-compose up -d
 
 2. **Get Application Code**
    ```bash
-   git clone https://github.com/yourusername/vibe-quality-searcharr.git
+   git clone https://github.com/menottim/vibe-quality-searcharr.git
    cd vibe-quality-searcharr
    ```
 
@@ -431,7 +431,7 @@ If secrets are lost and no backup exists:
 
 3. **On new host:**
    ```bash
-   git clone https://github.com/yourusername/vibe-quality-searcharr.git
+   git clone https://github.com/menottim/vibe-quality-searcharr.git
    cd vibe-quality-searcharr
    ./scripts/restore.sh /tmp/vibe-quality-searcharr-backup-*.tar.gz
    ```
@@ -477,7 +477,7 @@ docker-compose up -d
 
 3. **Set up Docker:**
    ```bash
-   git clone https://github.com/yourusername/vibe-quality-searcharr.git
+   git clone https://github.com/menottim/vibe-quality-searcharr.git
    cd vibe-quality-searcharr
    tar -xzf ../vqs-data.tar.gz
    docker-compose up -d
@@ -514,7 +514,7 @@ mkdir -p test-restore
 cd test-restore
 
 # Clone application
-git clone https://github.com/yourusername/vibe-quality-searcharr.git
+git clone https://github.com/menottim/vibe-quality-searcharr.git
 cd vibe-quality-searcharr
 
 # Restore backup
@@ -705,5 +705,5 @@ sqlite3 data/vibe-quality-searcharr.db "PRAGMA integrity_check;"
 
 **Need Help?**
 
-- GitHub Issues: https://github.com/yourusername/vibe-quality-searcharr/issues
-- Documentation: https://github.com/yourusername/vibe-quality-searcharr/docs/
+- GitHub Issues: https://github.com/menottim/vibe-quality-searcharr/issues
+- Documentation: https://github.com/menottim/vibe-quality-searcharr/docs/

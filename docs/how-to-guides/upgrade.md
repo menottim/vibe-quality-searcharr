@@ -533,7 +533,7 @@ If a critical security vulnerability is announced:
 
 ## Additional Resources
 
-- [Release Notes](https://github.com/yourusername/vibe-quality-searcharr/releases)
+- [Release Notes](https://github.com/menottim/vibe-quality-searcharr/releases)
 - [Changelog](../CHANGELOG.md)
 - [Backup Guide](BACKUP_RESTORE.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
@@ -543,6 +543,6 @@ If a critical security vulnerability is announced:
 
 **Need Help?**
 
-- GitHub Issues: https://github.com/yourusername/vibe-quality-searcharr/issues
-- Documentation: https://github.com/yourusername/vibe-quality-searcharr/docs/
+- GitHub Issues: https://github.com/menottim/vibe-quality-searcharr/issues
+- Documentation: https://github.com/menottim/vibe-quality-searcharr/docs/
 - Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

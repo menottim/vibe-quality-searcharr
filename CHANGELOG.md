@@ -336,10 +336,10 @@ This entire project was created using AI assistance (Claude Code). While it impl
 
 ## Links
 
-- **Repository:** https://github.com/yourusername/vibe-quality-searcharr
-- **Documentation:** https://github.com/yourusername/vibe-quality-searcharr/docs
-- **Issues:** https://github.com/yourusername/vibe-quality-searcharr/issues
-- **Releases:** https://github.com/yourusername/vibe-quality-searcharr/releases
+- **Repository:** https://github.com/menottim/vibe-quality-searcharr
+- **Documentation:** https://github.com/menottim/vibe-quality-searcharr/docs
+- **Issues:** https://github.com/menottim/vibe-quality-searcharr/issues
+- **Releases:** https://github.com/menottim/vibe-quality-searcharr/releases
 
 ---
 

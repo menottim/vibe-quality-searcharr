@@ -728,8 +728,8 @@ docker-compose logs --tail=100
 
 ### Support Channels
 
-- **GitHub Issues:** https://github.com/yourusername/vibe-quality-searcharr/issues
-- **Discussions:** https://github.com/yourusername/vibe-quality-searcharr/discussions
+- **GitHub Issues:** https://github.com/menottim/vibe-quality-searcharr/issues
+- **Discussions:** https://github.com/menottim/vibe-quality-searcharr/discussions
 - **Documentation:** /docs/
 
 ---

@@ -556,8 +556,8 @@ Your findings help improve the codebase and demonstrate where AI code generation
 ### Resources
 
 - **Documentation:** `/docs` directory
-- **GitHub Issues:** https://github.com/yourusername/vibe-quality-searcharr/issues
-- **Discussions:** https://github.com/yourusername/vibe-quality-searcharr/discussions
+- **GitHub Issues:** https://github.com/menottim/vibe-quality-searcharr/issues
+- **Discussions:** https://github.com/menottim/vibe-quality-searcharr/discussions
 - **Quick Start:** [GETTING_STARTED.md](docs/GETTING_STARTED.md)
 - **Troubleshooting:** [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
