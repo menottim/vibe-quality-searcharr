@@ -97,7 +97,170 @@ docker-compose up -d
 
 Open http://localhost:7337 in your browser and complete the setup wizard.
 
-### 5. View Logs
+### 5. Post-Deployment Security Hardening
+
+**⚠️ CRITICAL: Complete these steps before production use!**
+
+#### A. Update Dependencies (Fix Known CVEs)
+
+```bash
+# Stop the container
+docker-compose down
+
+# Update Python dependencies to fix Starlette CVEs
+# Edit docker/Dockerfile and update fastapi version:
+# Change: fastapi>=0.115.0
+# To: fastapi>=1.0.0
+
+# Rebuild the image
+docker-compose build --no-cache
+
+# Restart
+docker-compose up -d
+```
+
+**What this fixes:**
+- CVE-2025-62727: Starlette DoS via Range header
+- CVE-2025-54121: Starlette DoS via multipart
+
+#### B. Configure Production Settings
+
+Create or update your `.env` file:
+
+```bash
+# Production mode (REQUIRED)
+ENVIRONMENT=production
+
+# Security settings (REQUIRED)
+SECURE_COOKIES=true
+ALLOW_LOCAL_INSTANCES=false
+
+# Single worker for rate limiting (REQUIRED unless using Redis)
+WORKERS=1
+
+# Strong secret keys (32+ characters each - REQUIRED)
+# Generate with: openssl rand -base64 32
+SECRET_KEY=your-strong-secret-key-here
+PEPPER=your-strong-pepper-here
+DATABASE_KEY=your-strong-database-key-here
+
+# OR use Docker secrets (recommended):
+SECRET_KEY_FILE=/run/secrets/secret_key
+PEPPER_FILE=/run/secrets/pepper
+DATABASE_KEY_FILE=/run/secrets/db_key
+```
+
+**Restart after configuration:**
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+#### C. Enable HTTPS/TLS (REQUIRED for production)
+
+**Option 1: Nginx Reverse Proxy (Recommended)**
+
+```nginx
+# /etc/nginx/sites-available/vibe-quality-searcharr
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    # SSL certificates (use Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    location / {
+        proxy_pass http://127.0.0.1:7337;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+```
+
+**Option 2: Traefik (Docker-native)**
+
+```yaml
+# Add to docker-compose.yml
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=your@email.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme.json:/acme.json
+
+  vibe-quality-searcharr:
+    # ... existing config ...
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vqs.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.vqs.entrypoints=websecure"
+      - "traefik.http.routers.vqs.tls.certresolver=letsencrypt"
+```
+
+#### D. Verify Security Configuration
+
+```bash
+# Check that production mode is enabled
+docker-compose exec vibe-quality-searcharr env | grep ENVIRONMENT
+# Should output: ENVIRONMENT=production
+
+# Check that secrets are loaded
+docker-compose exec vibe-quality-searcharr env | grep -E "(SECRET_KEY|PEPPER|DATABASE_KEY)"
+# Should show file paths or values (NOT empty)
+
+# Check worker count
+docker-compose exec vibe-quality-searcharr env | grep WORKERS
+# Should output: WORKERS=1 (unless Redis configured)
+
+# Test HTTPS (after reverse proxy setup)
+curl -I https://your-domain.com
+# Should see: Strict-Transport-Security header
+```
+
+#### E. Enable Monitoring and Logging
+
+```bash
+# View real-time logs
+docker-compose logs -f vibe-quality-searcharr
+
+# Check for security events
+docker-compose logs vibe-quality-searcharr | grep -E "(failed_login|locked|unauthorized)"
+
+# Set up log rotation (recommended)
+# Edit docker-compose.yml:
+logging:
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+```
+
+### 6. View Logs
 
 ```bash
 docker-compose logs -f

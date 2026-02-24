@@ -124,6 +124,12 @@ docker-compose up -d
 # Open http://localhost:7337/setup
 ```
 
+**⚠️ IMPORTANT:** After installation, complete the [Post-Deployment Security Steps](docs/how-to-guides/deploy-with-docker.md#5-post-deployment-security-hardening) to:
+- Update dependencies (fix known CVEs)
+- Enable production mode
+- Configure HTTPS/TLS
+- Verify security settings
+
 See [Deploy with Docker](docs/how-to-guides/deploy-with-docker.md) for complete instructions.
 
 ### Local Development

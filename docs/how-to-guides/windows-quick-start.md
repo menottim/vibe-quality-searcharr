@@ -386,13 +386,168 @@ docker-compose logs > logs.txt
 
 ---
 
-## Next Steps
+## Post-Deployment: Critical Security Steps
 
-- [Configure Search Strategies](../explanation/search-strategies.md)
-- [Set Up Backup & Restore](./backup-and-restore.md)
-- [Security Best Practices](../explanation/security.md)
-- [Advanced Configuration](../reference/configuration.md)
+**⚠️ IMPORTANT:** Before using the application, complete these security hardening steps!
+
+### Step 1: Update Dependencies (Fix Known CVEs)
+
+Some dependencies have known security vulnerabilities that are easy to fix:
+
+```powershell
+# Stop the container
+docker-compose down
+
+# The application needs updated dependencies
+# Download the latest version from GitHub (it includes the fixes)
+# Or if you're using Git:
+git pull
+
+# Rebuild with latest dependencies
+docker-compose build --no-cache
+
+# Restart
+docker-compose up -d
+```
+
+**What this fixes:**
+- CVE-2025-62727: DoS vulnerability in Starlette
+- CVE-2025-54121: DoS vulnerability in Starlette
+
+### Step 2: Verify Production Configuration
+
+Make sure these settings are correct:
+
+```powershell
+# Navigate to your project folder
+cd C:\Users\YourName\vibe-quality-searcharr
+
+# Check your configuration
+Get-Content .env
+```
+
+**Required settings for security:**
+
+Create a `.env` file in your project folder with these settings:
+
+```
+# Production mode (REQUIRED)
+ENVIRONMENT=production
+
+# Security cookies (REQUIRED)
+SECURE_COOKIES=true
+
+# Block local instance URLs unless testing (REQUIRED)
+ALLOW_LOCAL_INSTANCES=false
+
+# Single worker mode (REQUIRED for rate limiting)
+WORKERS=1
+
+# Your secret keys are already in the secrets/ folder ✅
+SECRET_KEY_FILE=/run/secrets/secret_key
+PEPPER_FILE=/run/secrets/pepper
+DATABASE_KEY_FILE=/run/secrets/db_key
+```
+
+**Apply the changes:**
+```powershell
+docker-compose down
+docker-compose up -d
+```
+
+### Step 3: Enable HTTPS (Recommended)
+
+For secure access, you should use HTTPS. The easiest way on Windows is using Cloudflare Tunnel (free):
+
+**Option A: Cloudflare Tunnel (Easiest for Windows)**
+
+1. Sign up for free Cloudflare account at https://dash.cloudflare.com
+2. Download cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/
+3. Run the tunnel:
+   ```powershell
+   cloudflared tunnel --url http://localhost:7337
+   ```
+4. Follow the link to access your app securely via HTTPS
+
+**Option B: Self-Signed Certificate (Local Network Only)**
+
+If you only access from your local network, you can skip HTTPS for now, but understand this is **less secure**.
+
+### Step 4: Verify Everything is Working Securely
+
+```powershell
+# Check the application is running in production mode
+docker-compose exec vibe-quality-searcharr env | Select-String "ENVIRONMENT"
+# Should show: ENVIRONMENT=production
+
+# Check logs for any errors
+docker-compose logs --tail 50
+```
+
+### Step 5: Set Up Regular Backups
+
+**Your data is important!** Set up automated backups:
+
+```powershell
+# Create a backup folder
+New-Item -ItemType Directory -Force -Path backups
+
+# Manual backup command (run this weekly)
+Copy-Item -Path data\* -Destination backups\backup_$(Get-Date -Format "yyyy-MM-dd")\ -Recurse
+Copy-Item -Path secrets\* -Destination backups\backup_$(Get-Date -Format "yyyy-MM-dd")\secrets\ -Recurse
+```
+
+**Set up automatic backups** using Windows Task Scheduler:
+
+1. Open **Task Scheduler** from Start Menu
+2. Create Basic Task → Name it "Vibe Backup"
+3. Trigger: Weekly (Sunday at 2 AM)
+4. Action: Start a Program
+5. Program: `powershell.exe`
+6. Arguments:
+   ```
+   -File "C:\Users\YourName\vibe-quality-searcharr\backup.ps1"
+   ```
+7. Create `backup.ps1` in your project folder:
+   ```powershell
+   $date = Get-Date -Format "yyyy-MM-dd"
+   $backup = "backups\backup_$date"
+   New-Item -ItemType Directory -Force -Path $backup
+   Copy-Item -Path data\* -Destination $backup\ -Recurse
+   Copy-Item -Path secrets\* -Destination "$backup\secrets\" -Recurse
+   Write-Host "Backup completed: $backup"
+   ```
 
 ---
 
-**Congratulations!** 🎉 You've successfully installed Vibe-Quality-Searcharr on Windows!
+## Next Steps
+
+Now that security is configured, explore these features:
+
+- [Configure Search Strategies](../explanation/search-strategies.md) - Set up automated searches
+- [Advanced Configuration](../reference/configuration.md) - Fine-tune settings
+- [Security Best Practices](../explanation/security.md) - Learn more about security
+- [Troubleshooting Guide](./troubleshoot.md) - Solutions to common problems
+
+---
+
+## Security Checklist ✅
+
+Before considering your installation complete, verify:
+
+- [ ] Dependencies updated (rebuilt with latest code)
+- [ ] ENVIRONMENT=production in .env file
+- [ ] SECURE_COOKIES=true in .env file
+- [ ] WORKERS=1 in .env file
+- [ ] Secret keys generated (in secrets/ folder)
+- [ ] HTTPS enabled (via Cloudflare or reverse proxy)
+- [ ] Backups configured (weekly recommended)
+- [ ] Application accessible at http://localhost:7337 (or your domain)
+- [ ] Setup wizard completed
+- [ ] First admin account created with strong password (12+ characters)
+
+**Once all boxes are checked, you're ready to use the application securely!**
+
+---
+
+**Congratulations!** 🎉 You've successfully installed **and secured** Vibe-Quality-Searcharr on Windows!
