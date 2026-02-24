@@ -46,7 +46,7 @@ services:
       - RELOAD=false
 
       # Database
-      - DATABASE_URL=sqlite+pysqlcipher:///:memory:@/data/vibe-quality-searcharr.db?cipher=aes-256-cfb&kdf_iter=256000
+      - DATABASE_URL=sqlite+pysqlcipher:///data/vibe-quality-searcharr.db?cipher=aes-256-cfb&kdf_iter=256000
 
       # Security
       - SESSION_EXPIRE_HOURS=24
