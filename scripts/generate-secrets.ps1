@@ -301,14 +301,20 @@ try {
         Write-Host ""
         Write-Host "Next Steps:" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  1. Start the application:" -ForegroundColor White
+        Write-Host "  1. Build the Docker image (first time setup):" -ForegroundColor White
+        Write-Host "     docker-compose build" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "  2. Start the application:" -ForegroundColor White
         Write-Host "     docker-compose up -d" -ForegroundColor Gray
         Write-Host ""
-        Write-Host "  2. Access the setup wizard:" -ForegroundColor White
+        Write-Host "  3. Verify it's running:" -ForegroundColor White
+        Write-Host "     docker-compose ps" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "  4. Open your browser to:" -ForegroundColor White
         Write-Host "     http://localhost:7337" -ForegroundColor Gray
         Write-Host ""
-        Write-Host "  3. See Windows deployment guide:" -ForegroundColor White
-        Write-Host "     docs/how-to-guides/windows-quick-start.md" -ForegroundColor Gray
+        Write-Host "  For complete setup instructions, see:" -ForegroundColor Cyan
+        Write-Host "  docs/how-to-guides/windows-quick-start.md" -ForegroundColor Gray
         Write-Host ""
 
         exit 0
