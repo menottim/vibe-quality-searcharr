@@ -1,4 +1,4 @@
-version: '3.9'
+# Note: 'version' is obsolete in Docker Compose v2+ and has been removed
 
 services:
   vibe-quality-searcharr-dev:

@@ -1,7 +1,6 @@
-version: '3.9'
-
 # Root-level docker-compose.yml for convenience
 # This file allows running `docker-compose up` from the project root directory
+# Note: 'version' is obsolete in Docker Compose v2+ and has been removed
 
 services:
   vibe-quality-searcharr:
