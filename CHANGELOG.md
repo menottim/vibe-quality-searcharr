@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2026-02-24
+## [Unreleased]
+
+*Future releases will be documented here.*
+
+---
+
+## [0.1.0-alpha] - 2026-02-24
 
 ### Overview
 
-First stable release! 🎉 Production-ready with comprehensive security, documentation, and deployment automation.
+**⚠️ ALPHA RELEASE - NOT HAND-VERIFIED**
+
+Initial alpha release with comprehensive security fixes and documentation. This release includes all core features and security hardening, but **has not been hand-verified for deployment**. Use with caution in homelab environments only.
 
 ### Added
 

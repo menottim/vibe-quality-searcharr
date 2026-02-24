@@ -1,6 +1,8 @@
 # Docker Deployment Guide
 
-**Vibe-Quality-Searcharr v1.0.0**
+**Vibe-Quality-Searcharr v0.1.0-alpha**
+
+**⚠️ ALPHA:** This is a pre-release version that has not been hand-verified for deployment.
 
 This guide provides comprehensive instructions for deploying Vibe-Quality-Searcharr using Docker and Docker Compose.
 

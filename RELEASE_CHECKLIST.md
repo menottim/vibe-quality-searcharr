@@ -1,8 +1,10 @@
-# Release Checklist v1.0.0
+# Release Checklist v0.1.0-alpha
 
-**Version:** 1.0.0
-**Target Release Date:** February 24, 2026
-**Status:** ✅ READY FOR RELEASE
+**Version:** 0.1.0-alpha
+**Release Date:** February 24, 2026
+**Status:** ⚠️ ALPHA - NOT HAND-VERIFIED
+
+**Note:** This is an alpha release. Full v1.0.0 release checklist will be completed after manual deployment verification.
 
 ---
 

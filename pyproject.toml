@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vibe-quality-searcharr"
-version = "1.0.0"
+version = "0.1.0-alpha"
 description = "Intelligent backlog search automation for Sonarr and Radarr"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"

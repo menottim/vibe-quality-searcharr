@@ -1,16 +1,20 @@
 # Release Notes
 
-## Version 1.0.0 - First Stable Release
+## Version 0.1.0-alpha - Initial Alpha Release
 
 **Release Date:** February 24, 2026
+
+**⚠️ ALPHA RELEASE - NOT HAND-VERIFIED FOR DEPLOYMENT**
 
 ---
 
 ## 🎉 Overview
 
-We're excited to announce the first stable release of **Vibe-Quality-Searcharr**! This release represents the culmination of comprehensive development, focusing on security, reliability, and ease of use.
+This is the **initial alpha release** of **Vibe-Quality-Searcharr**. This release includes all core features and comprehensive security fixes, but **has not been hand-verified for deployment**.
 
-Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intelligently scheduling searches while respecting API rate limits. This v1.0.0 release is production-ready with enterprise-grade security features and comprehensive documentation.
+**Use with caution:** This is intended for homelab enthusiasts and early testers only. Full production deployment testing and verification will come in a future stable release (v1.0.0).
+
+Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intelligently scheduling searches while respecting API rate limits. This alpha release has undergone comprehensive security review and fixes, but real-world deployment scenarios have not been manually tested.
 
 ---
 

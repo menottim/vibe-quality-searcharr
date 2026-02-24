@@ -1,6 +1,8 @@
 # Getting Started Guide
 
-**Vibe-Quality-Searcharr v1.0.0**
+**Vibe-Quality-Searcharr v0.1.0-alpha**
+
+**⚠️ ALPHA:** This is a pre-release version that has not been hand-verified for deployment.
 
 Welcome! This guide will help you get Vibe-Quality-Searcharr up and running in 5 minutes.
 

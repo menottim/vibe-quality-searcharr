@@ -1,6 +1,8 @@
 # Vibe-Quality-Searcharr
 
-**Version 1.0.0** | Intelligent backlog search automation for Sonarr and Radarr.
+**Version 0.1.0-alpha** | Intelligent backlog search automation for Sonarr and Radarr.
+
+**⚠️ PRE-RELEASE:** This version has not been hand-verified for deployment. Use with caution.
 
 ## Table of Contents
 
@@ -93,7 +95,7 @@ Documentation is organized following the [Diátaxis](https://diataxis.fr/) frame
 
 ### 📋 Release Information
 
-- **[Release Notes v1.0.0](RELEASE_NOTES.md)** - What's new in v1.0.0
+- **[Release Notes v0.1.0-alpha](RELEASE_NOTES.md)** - What's in this alpha release
 - **[Changelog](CHANGELOG.md)** - Complete version history
 
 ## Quick Start

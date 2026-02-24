@@ -1,6 +1,6 @@
 # Backup and Restore Guide
 
-**Vibe-Quality-Searcharr v1.0.0**
+**Vibe-Quality-Searcharr v0.1.0-alpha**
 
 This guide provides comprehensive procedures for backing up and restoring your Vibe-Quality-Searcharr installation.
 
