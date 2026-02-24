@@ -47,11 +47,12 @@ LABEL org.opencontainers.image.title="Vibe-Quality-Searcharr" \
 RUN groupadd -g 1000 appuser && \
     useradd -u 1000 -g appuser -s /sbin/nologin -c "Application user" appuser
 
-# Install runtime dependencies
+# Install runtime dependencies including gosu for privilege dropping
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
     libsqlcipher0 \
     ca-certificates \
+    gosu \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -72,8 +73,13 @@ COPY --chown=appuser:appuser alembic.ini ./
 # Create data directory
 RUN mkdir -p /data && chown appuser:appuser /data
 
-# Security: Run as non-root
-USER appuser
+# Copy and set up entrypoint script
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Note: Container starts as root, entrypoint script will drop to appuser
+# This allows fixing /data permissions on Windows before switching users
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Health check with better error handling
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
