@@ -60,6 +60,7 @@ This guide provides comprehensive procedures for backing up and restoring your V
 ```
 
 **Features:**
+
 - Creates timestamped archive
 - Includes metadata (version, date, hostname)
 - Calculates SHA256 checksum
@@ -259,14 +260,15 @@ tar -czf vqs-export-$(date +%Y%m%d).tar.gz \
 ```
 
 **Process:**
-1. Verifies backup integrity (checksum)
-2. Confirms restore operation
-3. Stops application
-4. Creates safety backup of current state
-5. Extracts backup
-6. Restores data, secrets, and config
-7. Starts application
-8. Verifies health
+
+- Verifies backup integrity (checksum)
+- Confirms restore operation
+- Stops application
+- Creates safety backup of current state
+- Extracts backup
+- Restores data, secrets, and config
+- Starts application
+- Verifies health
 
 ### Manual Restore
 
@@ -343,28 +345,28 @@ docker-compose up -d
 
 **Recovery Steps:**
 
-1. **Install Docker and Docker Compose**
-   ```bash
-   curl -fsSL https://get.docker.com -o get-docker.sh
-   sudo sh get-docker.sh
-   ```
+**Install Docker and Docker Compose:**
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
 
-2. **Get Application Code**
-   ```bash
-   git clone https://github.com/menottim/vibe-quality-searcharr.git
-   cd vibe-quality-searcharr
-   ```
+**Get Application Code:**
+```bash
+git clone https://github.com/menottim/vibe-quality-searcharr.git
+cd vibe-quality-searcharr
+```
 
-3. **Restore from Backup**
-   ```bash
-   ./scripts/restore.sh /path/to/backup.tar.gz
-   ```
+**Restore from Backup:**
+```bash
+./scripts/restore.sh /path/to/backup.tar.gz
+```
 
-4. **Verify and Test**
-   ```bash
-   docker-compose ps
-   curl http://localhost:7337/health
-   ```
+**Verify and Test:**
+```bash
+docker-compose ps
+curl http://localhost:7337/health
+```
 
 ### Corrupted Database
 
@@ -375,27 +377,27 @@ docker-compose up -d
 
 **Recovery:**
 
-1. **Stop application**
-   ```bash
-   docker-compose down
-   ```
+**Stop application:**
+```bash
+docker-compose down
+```
 
-2. **Attempt repair**
-   ```bash
-   # Backup corrupted database
-   cp data/vibe-quality-searcharr.db data/vibe-quality-searcharr.db.corrupted
+**Attempt repair:**
+```bash
+# Backup corrupted database
+cp data/vibe-quality-searcharr.db data/vibe-quality-searcharr.db.corrupted
 
-   # Attempt recovery
-   sqlite3 data/vibe-quality-searcharr.db ".recover" | sqlite3 data/vibe-quality-searcharr.db.recovered
+# Attempt recovery
+sqlite3 data/vibe-quality-searcharr.db ".recover" | sqlite3 data/vibe-quality-searcharr.db.recovered
 
-   # If successful, replace
-   mv data/vibe-quality-searcharr.db.recovered data/vibe-quality-searcharr.db
-   ```
+# If successful, replace
+mv data/vibe-quality-searcharr.db.recovered data/vibe-quality-searcharr.db
+```
 
-3. **If repair fails, restore from backup**
-   ```bash
-   ./scripts/restore.sh backups/latest-backup.tar.gz
-   ```
+**If repair fails, restore from backup:**
+```bash
+./scripts/restore.sh backups/latest-backup.tar.gz
+```
 
 ### Lost Secrets
 
@@ -408,6 +410,7 @@ If secrets are lost and no backup exists:
 4. **Complete reinstall required**
 
 **Prevention:**
+
 - Store secrets in password manager (1Password, Bitwarden, etc.)
 - Print secrets and store in safe
 - Store backup off-site
@@ -419,22 +422,22 @@ If secrets are lost and no backup exists:
 
 ### Same Architecture (e.g., Linux to Linux)
 
-1. **On old host:**
-   ```bash
-   ./scripts/backup.sh
-   ```
+**On old host:**
+```bash
+./scripts/backup.sh
+```
 
-2. **Transfer backup to new host:**
-   ```bash
-   scp backups/vibe-quality-searcharr-backup-*.tar.gz newhost:/tmp/
-   ```
+**Transfer backup to new host:**
+```bash
+scp backups/vibe-quality-searcharr-backup-*.tar.gz newhost:/tmp/
+```
 
-3. **On new host:**
-   ```bash
-   git clone https://github.com/menottim/vibe-quality-searcharr.git
-   cd vibe-quality-searcharr
-   ./scripts/restore.sh /tmp/vibe-quality-searcharr-backup-*.tar.gz
-   ```
+**On new host:**
+```bash
+git clone https://github.com/menottim/vibe-quality-searcharr.git
+cd vibe-quality-searcharr
+./scripts/restore.sh /tmp/vibe-quality-searcharr-backup-*.tar.gz
+```
 
 ### Different Architecture (e.g., x86 to ARM)
 
@@ -447,41 +450,41 @@ docker-compose up -d
 
 ### Docker to Bare Metal
 
-1. **Export data from Docker:**
-   ```bash
-   docker cp vibe-quality-searcharr:/data ./data
-   docker cp vibe-quality-searcharr:/app/secrets ./secrets
-   ```
+**Export data from Docker:**
+```bash
+docker cp vibe-quality-searcharr:/data ./data
+docker cp vibe-quality-searcharr:/app/secrets ./secrets
+```
 
-2. **On bare metal:**
-   ```bash
-   poetry install
-   cp -r data /path/to/installation/
-   cp -r secrets /path/to/installation/
-   cp .env /path/to/installation/
-   poetry run alembic upgrade head
-   poetry run uvicorn src.vibe_quality_searcharr.main:app --host 0.0.0.0 --port 7337
-   ```
+**On bare metal:**
+```bash
+poetry install
+cp -r data /path/to/installation/
+cp -r secrets /path/to/installation/
+cp .env /path/to/installation/
+poetry run alembic upgrade head
+poetry run uvicorn src.vibe_quality_searcharr.main:app --host 0.0.0.0 --port 7337
+```
 
 ### Bare Metal to Docker
 
-1. **Stop bare metal service:**
-   ```bash
-   sudo systemctl stop vibe-quality-searcharr
-   ```
+**Stop bare metal service:**
+```bash
+sudo systemctl stop vibe-quality-searcharr
+```
 
-2. **Backup data:**
-   ```bash
-   tar -czf vqs-data.tar.gz /path/to/data /path/to/secrets /path/to/.env
-   ```
+**Backup data:**
+```bash
+tar -czf vqs-data.tar.gz /path/to/data /path/to/secrets /path/to/.env
+```
 
-3. **Set up Docker:**
-   ```bash
-   git clone https://github.com/menottim/vibe-quality-searcharr.git
-   cd vibe-quality-searcharr
-   tar -xzf ../vqs-data.tar.gz
-   docker-compose up -d
-   ```
+**Set up Docker:**
+```bash
+git clone https://github.com/menottim/vibe-quality-searcharr.git
+cd vibe-quality-searcharr
+tar -xzf ../vqs-data.tar.gz
+docker-compose up -d
+```
 
 ---
 
@@ -582,10 +585,13 @@ echo "✓ Backup test passed"
 
 ### Recommended Retention
 
-- **Hourly**: Keep for 24 hours (24 backups)
-- **Daily**: Keep for 7 days (7 backups)
-- **Weekly**: Keep for 4 weeks (4 backups)
-- **Monthly**: Keep for 12 months (12 backups)
+**Hourly**: Keep for 24 hours (24 backups)
+
+**Daily**: Keep for 7 days (7 backups)
+
+**Weekly**: Keep for 4 weeks (4 backups)
+
+**Monthly**: Keep for 12 months (12 backups)
 
 ### Implement with Script
 
@@ -672,26 +678,26 @@ sqlite3 data/vibe-quality-searcharr.db "PRAGMA integrity_check;"
 
 ## Best Practices
 
-### ✅ DO
+### DO
 
-- ✅ Backup before every upgrade
-- ✅ Test restore process regularly
-- ✅ Store backups on different disk/system
-- ✅ Keep multiple backup generations
-- ✅ Verify backup integrity
-- ✅ Document backup procedures
-- ✅ Automate backups with cron/systemd
-- ✅ Monitor backup success/failure
-- ✅ Encrypt backups if stored off-site
+- Backup before every upgrade
+- Test restore process regularly
+- Store backups on different disk/system
+- Keep multiple backup generations
+- Verify backup integrity
+- Document backup procedures
+- Automate backups with cron/systemd
+- Monitor backup success/failure
+- Encrypt backups if stored off-site
 
-### ❌ DON'T
+### DON'T
 
-- ❌ Store only one backup copy
-- ❌ Keep backups on same disk as data
-- ❌ Skip testing restore process
-- ❌ Delete old backups immediately
-- ❌ Forget to backup secrets
-- ❌ Store backups without encryption (if sensitive)
+- Store only one backup copy
+- Keep backups on same disk as data
+- Skip testing restore process
+- Delete old backups immediately
+- Forget to backup secrets
+- Store backups without encryption (if sensitive)
 
 ---
 

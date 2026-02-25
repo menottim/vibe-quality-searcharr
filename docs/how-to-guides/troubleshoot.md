@@ -13,19 +13,20 @@ RuntimeError: PEPPER not configured. Set PEPPER or PEPPER_FILE environment varia
 ```
 
 **Solutions:**
-1. Generate secrets:
+
+Generate secrets:
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))" > secrets/pepper
 ```
 
-2. Set environment variable:
+Set environment variable:
 ```bash
 export PEPPER_FILE=/path/to/secrets/pepper
 # Or
 export PEPPER="your-pepper-value"
 ```
 
-3. For Docker:
+For Docker:
 ```yaml
 environment:
   - PEPPER_FILE=/run/secrets/pepper
@@ -41,24 +42,25 @@ sqlalchemy.exc.OperationalError: unable to open database file
 ```
 
 **Solutions:**
-1. Check database file permissions:
+
+Check database file permissions:
 ```bash
 ls -l data/vibe-quality-searcharr.db
 chmod 600 data/vibe-quality-searcharr.db
 ```
 
-2. Ensure data directory exists:
+Ensure data directory exists:
 ```bash
 mkdir -p data
 ```
 
-3. Verify DATABASE_KEY is correct:
+Verify DATABASE_KEY is correct:
 ```bash
 # If key is wrong, database cannot be decrypted
 # Must use original key or restore from backup
 ```
 
-4. Check disk space:
+Check disk space:
 ```bash
 df -h /path/to/data
 ```
@@ -71,17 +73,18 @@ OSError: [Errno 48] Address already in use
 ```
 
 **Solutions:**
-1. Check what's using the port:
+
+Check what's using the port:
 ```bash
 sudo lsof -i :7337
 ```
 
-2. Change port in configuration:
+Change port in configuration:
 ```bash
 PORT=7338  # Use different port
 ```
 
-3. Stop conflicting service:
+Stop conflicting service:
 ```bash
 docker stop $(docker ps -q -f "publish=7337")
 ```
@@ -97,25 +100,26 @@ docker stop $(docker ps -q -f "publish=7337")
 - "Invalid username or password" error
 
 **Solutions:**
-1. Verify user exists:
+
+Verify user exists:
 ```bash
 # Check database (requires DB tool)
 sqlite3 data/vibe-quality-searcharr.db "SELECT username, is_active FROM users;"
 ```
 
-2. Check SECRET_KEY hasn't changed:
+Check SECRET_KEY hasn't changed:
 ```bash
 # JWT tokens become invalid if SECRET_KEY changes
 # Users must re-login after SECRET_KEY change
 ```
 
-3. Clear browser cookies:
+Clear browser cookies:
 ```javascript
 // In browser console
 document.cookie.split(";").forEach(c => document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"));
 ```
 
-4. Reset password (requires DB access):
+Reset password (requires DB access):
 ```python
 from vibe_quality_searcharr.core.security import hash_password
 # Generate new hash
@@ -130,13 +134,14 @@ new_hash = hash_password("new-password")
 - Must log in repeatedly
 
 **Solutions:**
-1. Increase token expiration:
+
+Increase token expiration:
 ```bash
 ACCESS_TOKEN_EXPIRE_MINUTES=60  # Default is 15
 SESSION_EXPIRE_HOURS=48  # Default is 24
 ```
 
-2. Use refresh token:
+Use refresh token:
 ```bash
 # Implement token refresh in client
 POST /api/auth/refresh
@@ -153,18 +158,18 @@ POST /api/auth/refresh
 ```
 
 **Solutions:**
-1. Ensure cookies enabled in browser
-2. Check CORS configuration:
-```bash
-ALLOWED_ORIGINS=https://your-domain.com
-```
 
-3. Verify SECURE_COOKIES setting:
-```bash
-# Use false for HTTP, true for HTTPS
-SECURE_COOKIES=false  # Development
-SECURE_COOKIES=true   # Production with HTTPS
-```
+- Ensure cookies enabled in browser
+- Check CORS configuration:
+  ```bash
+  ALLOWED_ORIGINS=https://your-domain.com
+  ```
+- Verify SECURE_COOKIES setting:
+  ```bash
+  # Use false for HTTP, true for HTTPS
+  SECURE_COOKIES=false  # Development
+  SECURE_COOKIES=true   # Production with HTTPS
+  ```
 
 ---
 
@@ -177,7 +182,8 @@ SECURE_COOKIES=true   # Production with HTTPS
 - Timeouts when executing searches
 
 **Solutions:**
-1. Verify URL format:
+
+Verify URL format:
 ```bash
 # Correct formats:
 http://localhost:8989
@@ -189,24 +195,24 @@ localhost:8989  # Missing protocol
 http://localhost:8989/  # Trailing slash may cause issues
 ```
 
-2. Test connectivity:
+Test connectivity:
 ```bash
 curl -I http://localhost:8989/api/system/status?apikey=YOUR_API_KEY
 ```
 
-3. Check API key:
+Check API key:
 ```bash
 # Get from Sonarr/Radarr:
 # Settings → General → Security → API Key
 ```
 
-4. Verify network access:
+Verify network access:
 ```bash
 # If in Docker, ensure network connectivity
 docker-compose exec vibe-quality-searcharr ping sonarr
 ```
 
-5. Check ALLOW_LOCAL_INSTANCES:
+Check ALLOW_LOCAL_INSTANCES:
 ```bash
 # Development: Allow localhost
 ALLOW_LOCAL_INSTANCES=true
@@ -216,7 +222,7 @@ ALLOW_LOCAL_INSTANCES=false
 # Use actual domain/IP instead
 ```
 
-6. Check firewall:
+Check firewall:
 ```bash
 # Ensure Sonarr/Radarr ports accessible
 sudo ufw allow from <docker-subnet> to any port 8989
@@ -230,20 +236,21 @@ SSLError: certificate verify failed
 ```
 
 **Solutions:**
-1. For self-signed certificates:
+
+For self-signed certificates:
 ```python
 # Not recommended for production
 import urllib3
 urllib3.disable_warnings()
 ```
 
-2. Add certificate to trust store:
+Add certificate to trust store:
 ```bash
 sudo cp your-cert.crt /usr/local/share/ca-certificates/
 sudo update-ca-certificates
 ```
 
-3. Use HTTP instead of HTTPS (if internal network):
+Use HTTP instead of HTTPS (if internal network):
 ```bash
 http://sonarr.local:8989  # Instead of https://
 ```

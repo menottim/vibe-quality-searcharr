@@ -13,11 +13,11 @@ Welcome! This guide will help you get Vibe-Quality-Searcharr up and running in 5
 Vibe-Quality-Searcharr automates systematic backlog searching for your Sonarr and Radarr instances. It intelligently schedules searches to maximize coverage while respecting API rate limits.
 
 **Key Benefits:**
-- 🔍 Automatically searches for missing episodes/movies
-- ⚡ Upgrades content that doesn't meet quality profiles
-- 📊 Tracks search history to avoid duplicates
-- 🎯 Respects indexer API limits
-- 🔒 Secure by design (implements OWASP Top 10 best practices)
+- Automatically searches for missing episodes/movies
+- Upgrades content that doesn't meet quality profiles
+- Tracks search history to avoid duplicates
+- Respects indexer API limits
+- Secure by design (implements OWASP Top 10 best practices)
 
 ---
 
@@ -67,6 +67,7 @@ cd vibe-quality-searcharr-1.0.0
 ```
 
 This creates cryptographically secure keys in the `secrets/` directory:
+
 - `db_key.txt` - Database encryption key (256-bit)
 - `secret_key.txt` - JWT signing key (512-bit)
 - `pepper.txt` - Password hashing pepper (256-bit)
@@ -175,10 +176,10 @@ You'll be redirected to the dashboard where you can monitor your searches.
 
 The dashboard shows:
 
-1. **Instance Status** - Health of each Sonarr/Radarr instance
-2. **Active Search Queues** - Currently running searches
-3. **Recent Searches** - Last 24 hours of search activity
-4. **Statistics** - Total searches, success rate, items found
+- **Instance Status** - Health of each Sonarr/Radarr instance
+- **Active Search Queues** - Currently running searches
+- **Recent Searches** - Last 24 hours of search activity
+- **Statistics** - Total searches, success rate, items found
 
 ### Navigation
 
@@ -194,11 +195,11 @@ The dashboard shows:
 
 ### From Dashboard
 
-1. Click "Instances" in navigation
-2. Click "Add Instance" button
-3. Fill in details (name, type, URL, API key)
-4. Click "Test Connection"
-5. Click "Save"
+- Click "Instances" in navigation
+- Click "Add Instance" button
+- Fill in details (name, type, URL, API key)
+- Click "Test Connection"
+- Click "Save"
 
 **You can add multiple instances:**
 - Multiple Sonarr instances (e.g., TV4K, TV1080p)
@@ -302,15 +303,15 @@ Every search operation is logged with:
 
 ### Setup 2FA
 
-1. Go to "Settings" → "Security"
-2. Click "Enable 2FA"
-3. Scan QR code with authenticator app:
-   - Google Authenticator
-   - Authy
-   - 1Password
-   - Bitwarden
-4. Enter 6-digit code to verify
-5. **Save backup codes** in secure location
+- Go to "Settings" → "Security"
+- Click "Enable 2FA"
+- Scan QR code with authenticator app:
+  - Google Authenticator
+  - Authy
+  - 1Password
+  - Bitwarden
+- Enter 6-digit code to verify
+- **Save backup codes** in secure location
 
 ### Using 2FA
 
@@ -324,19 +325,19 @@ After setup, you'll be prompted for a 6-digit code after entering your password.
 
 ### For Best Performance
 
-1. **Stagger search schedules** across instances
-   - Instance 1: 2 AM
-   - Instance 2: 3 AM
-   - Instance 3: 4 AM
+**Stagger search schedules** across instances:
+- Instance 1: 2 AM
+- Instance 2: 3 AM
+- Instance 3: 4 AM
 
-2. **Adjust batch sizes** based on your indexers
-   - More indexers = higher batch size
-   - Fewer indexers = lower batch size
+**Adjust batch sizes** based on your indexers:
+- More indexers = higher batch size
+- Fewer indexers = lower batch size
 
-3. **Use different strategies** for different needs
-   - Missing: Daily
-   - Cutoff Unmet: Weekly
-   - Recent: Every 6 hours
+**Use different strategies** for different needs:
+- Missing: Daily
+- Cutoff Unmet: Weekly
+- Recent: Every 6 hours
 
 ### Resource Management
 
@@ -353,23 +354,23 @@ Adjust in `docker-compose.yml` if needed.
 
 ### Change Password
 
-1. Settings → Account → Change Password
-2. Enter current password
-3. Enter new password (twice)
-4. Click "Update Password"
+- Settings → Account → Change Password
+- Enter current password
+- Enter new password (twice)
+- Click "Update Password"
 
 ### Test Instance Connection
 
-1. Instances → Select instance
-2. Click "Test Connection"
-3. View response time and status
-4. Check "Configuration Drift" for changes
+- Instances → Select instance
+- Click "Test Connection"
+- View response time and status
+- Check "Configuration Drift" for changes
 
 ### Pause Search Queue
 
-1. Search Queues → Select queue
-2. Click "Pause"
-3. Resume when ready with "Resume" button
+- Search Queues → Select queue
+- Click "Pause"
+- Resume when ready with "Resume" button
 
 ### View Logs
 
@@ -391,11 +392,11 @@ docker-compose logs | grep -i error
 ### Can't Connect to Instance
 
 **Check:**
-1. URL is correct (include http:// or https://)
-2. Port is included (e.g., :8989)
-3. API key is correct
-4. Instance is running and accessible
-5. Firewall allows connection
+- URL is correct (include http:// or https://)
+- Port is included (e.g., :8989)
+- API key is correct
+- Instance is running and accessible
+- Firewall allows connection
 
 **Test from Docker container:**
 ```bash
@@ -405,10 +406,10 @@ docker exec vibe-quality-searcharr curl -v http://your-sonarr:8989/api/v3/system
 ### Searches Not Running
 
 **Check:**
-1. Queue is enabled (green toggle)
-2. Schedule is correct
-3. Instance is connected
-4. Check Search History for errors
+- Queue is enabled (green toggle)
+- Schedule is correct
+- Instance is connected
+- Check Search History for errors
 
 ### Forgot Password
 

@@ -8,7 +8,7 @@
 
 ---
 
-## 🎉 Overview
+## Overview
 
 This is the **initial alpha release** of **Vibe-Quality-Searcharr**. This release includes all core features and comprehensive security fixes, but **has not been hand-verified for deployment**.
 
@@ -18,7 +18,7 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 
 ---
 
-## ✨ Highlights
+## Highlights
 
 ### Security-First Design
 - **OWASP Top 10 2025 Compliance** - Built with security as the foundation
@@ -46,7 +46,7 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 
 ---
 
-## 🚀 New Features
+## New Features
 
 ### Core Functionality
 
@@ -139,7 +139,7 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 
 ---
 
-## 📦 What's Included
+## What's Included
 
 ### Application Components
 
@@ -186,11 +186,11 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Security Audit Summary
 
-**Overall Rating:** GOOD ✓
+**Overall Rating:** GOOD
 
 **SAST Scan Results:**
 - Critical Issues: 0
@@ -204,47 +204,47 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 - ECDSA vulnerabilities in non-critical dependencies
 
 **OWASP Top 10 2025 Compliance:**
-- ✅ A01: Broken Access Control - PASS
-- ✅ A02: Cryptographic Failures - PASS
-- ✅ A03: Injection - PASS
-- ✅ A05: Security Misconfiguration - PASS
-- ✅ A07: Authentication Failures - PASS
-- ✅ A09: Logging Failures - PASS
-- ✅ A10: SSRF - PASS
+- A01: Broken Access Control - PASS
+- A02: Cryptographic Failures - PASS
+- A03: Injection - PASS
+- A05: Security Misconfiguration - PASS
+- A07: Authentication Failures - PASS
+- A09: Logging Failures - PASS
+- A10: SSRF - PASS
 
 **Manual Security Testing:**
-- Authentication bypass: SECURE ✓
-- SQL injection: SECURE ✓
-- XSS attacks: SECURE ✓
-- CSRF attacks: MITIGATED ✓
-- Rate limit bypass: SECURE ✓
-- Privilege escalation: SECURE ✓
+- Authentication bypass: SECURE
+- SQL injection: SECURE
+- XSS attacks: SECURE
+- CSRF attacks: MITIGATED
+- Rate limit bypass: SECURE
+- Privilege escalation: SECURE
 
 ### Security Features Implemented
 
-✅ Argon2id password hashing (128 MiB memory, 3 iterations)
-✅ SQLCipher database encryption (AES-256-CFB, 256,000 KDF iterations)
-✅ API key encryption at rest (Fernet AES-128-CBC + HMAC-SHA256)
-✅ Separate pepper storage
-✅ JWT access and refresh tokens
-✅ Token rotation and revocation
-✅ HTTP-only, secure, SameSite cookies
-✅ Account lockout after failed attempts
-✅ Comprehensive rate limiting
-✅ Security headers (CSP, HSTS, X-Frame-Options, etc.)
-✅ CORS protection
-✅ Input validation (Pydantic)
-✅ SQL injection prevention (ORM with parameterized queries)
-✅ SSRF protection
-✅ Sensitive data sanitization in logs
-✅ Non-root Docker container
-✅ Read-only container filesystem
-✅ Dropped capabilities
-✅ Docker secrets integration
+- Argon2id password hashing (128 MiB memory, 3 iterations)
+- SQLCipher database encryption (AES-256-CFB, 256,000 KDF iterations)
+- API key encryption at rest (Fernet AES-128-CBC + HMAC-SHA256)
+- Separate pepper storage
+- JWT access and refresh tokens
+- Token rotation and revocation
+- HTTP-only, secure, SameSite cookies
+- Account lockout after failed attempts
+- Comprehensive rate limiting
+- Security headers (CSP, HSTS, X-Frame-Options, etc.)
+- CORS protection
+- Input validation (Pydantic)
+- SQL injection prevention (ORM with parameterized queries)
+- SSRF protection
+- Sensitive data sanitization in logs
+- Non-root Docker container
+- Read-only container filesystem
+- Dropped capabilities
+- Docker secrets integration
 
 ---
 
-## 📊 Statistics
+## Statistics
 
 ### Development Metrics
 
@@ -279,7 +279,7 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 
 ---
 
-## 🔧 Technical Details
+## Technical Details
 
 ### System Requirements
 
@@ -336,7 +336,7 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 
 ---
 
-## 🐛 Known Issues
+## Known Issues
 
 ### Non-Critical Issues
 
@@ -377,7 +377,7 @@ Vibe-Quality-Searcharr automates backlog searching for Sonarr and Radarr, intell
 
 ---
 
-## 🔄 Upgrading
+## Upgrading
 
 ### From Development Versions (v0.x.x)
 
@@ -402,7 +402,7 @@ No breaking changes - all v0.x.x data is compatible.
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 ### Complete Documentation Suite
 
@@ -423,7 +423,7 @@ All documentation is available in the `/docs` directory:
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 ### Development
 
@@ -456,9 +456,9 @@ Thank you to the maintainers and contributors of:
 **This entire codebase is 100% AI-generated using Claude Code.**
 
 While implementing OWASP Top 10 2025 and NIST security guidelines, this codebase is:
-- ❌ **NOT professionally security-audited**
-- ❌ **NOT battle-tested in production**
-- ❌ **NOT warranted for any purpose**
+- **NOT professionally security-audited**
+- **NOT battle-tested in production**
+- **NOT warranted for any purpose**
 
 AI-generated code may contain:
 - Subtle security flaws
@@ -473,13 +473,13 @@ AI-generated code may contain:
 **This software is provided for educational purposes.**
 
 Before deploying:
-- ✅ Conduct professional security audit
-- ✅ Perform penetration testing
-- ✅ Review all cryptographic implementations
-- ✅ Run static analysis tools (Bandit, Semgrep)
-- ✅ Deploy in isolated environments
-- ✅ Implement aggressive monitoring
-- ✅ Maintain regular backups
+- Conduct professional security audit
+- Perform penetration testing
+- Review all cryptographic implementations
+- Run static analysis tools (Bandit, Semgrep)
+- Deploy in isolated environments
+- Implement aggressive monitoring
+- Maintain regular backups
 
 **Do NOT use for:**
 - Production deployments without security review
@@ -490,15 +490,15 @@ Before deploying:
 ### Security Vulnerability Reporting
 
 **Public disclosure is welcome.** Since this is clearly marked as requiring security review:
-- ✅ Open GitHub issues for vulnerabilities
-- ✅ Submit pull requests with fixes
-- ✅ No embargo needed - users are warned
+- Open GitHub issues for vulnerabilities
+- Submit pull requests with fixes
+- No embargo needed - users are warned
 
 Your findings help improve the codebase and demonstrate where AI code generation falls short!
 
 ---
 
-## 🚧 What's Next
+## What's Next
 
 ### v1.0.1 (Maintenance Release)
 
@@ -551,7 +551,7 @@ Your findings help improve the codebase and demonstrate where AI code generation
 
 ---
 
-## 📞 Getting Help
+## Getting Help
 
 ### Resources
 
@@ -580,7 +580,7 @@ Contributions welcome! Especially from security professionals who can:
 
 ---
 
-## 📜 License
+## License
 
 **MIT License**
 
@@ -593,7 +593,7 @@ Use at your own risk. See [LICENSE](LICENSE) for details.
 
 ---
 
-## 🎉 Thank You!
+## Thank You!
 
 Thank you for trying Vibe-Quality-Searcharr v1.0.0!
 
@@ -608,7 +608,7 @@ This release represents months of AI-assisted development, focusing on security,
 
 ---
 
-**Happy automated searching! 🔍🎬📺**
+**Happy automated searching!**
 
 ---
 

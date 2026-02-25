@@ -96,11 +96,11 @@ This creates:
 - `secrets/pepper.txt` - Password hashing pepper (256-bit)
 
 The script includes:
-- ✅ Prerequisite checks (Python 3 / PowerShell 5.1+)
-- ✅ Cryptographically secure random generation
-- ✅ Automatic validation of generated secrets
-- ✅ File permission enforcement (600 on Linux/macOS, current user only on Windows)
-- ✅ Error handling and clear success/failure messages
+- Prerequisite checks (Python 3 / PowerShell 5.1+)
+- Cryptographically secure random generation
+- Automatic validation of generated secrets
+- File permission enforcement (600 on Linux/macOS, current user only on Windows)
+- Error handling and clear success/failure messages
 
 ### 3. Start the Container
 
@@ -1010,26 +1010,26 @@ volumes:
 
 ## Security Best Practices
 
-### ✅ DO
+### DO
 
-- ✅ Use Docker secrets for production
-- ✅ Run container with read-only filesystem
-- ✅ Bind to localhost, use reverse proxy
-- ✅ Set resource limits
-- ✅ Keep Docker and image updated
-- ✅ Regular backups
-- ✅ Use HTTPS with reverse proxy
-- ✅ Monitor logs for suspicious activity
+- Use Docker secrets for production
+- Run container with read-only filesystem
+- Bind to localhost, use reverse proxy
+- Set resource limits
+- Keep Docker and image updated
+- Regular backups
+- Use HTTPS with reverse proxy
+- Monitor logs for suspicious activity
 
-### ❌ DON'T
+### DON'T
 
-- ❌ Expose port 7337 directly to internet
-- ❌ Store secrets in environment variables
-- ❌ Run with `--privileged` flag
-- ❌ Disable health checks
-- ❌ Skip backups
-- ❌ Use `latest` tag in production
-- ❌ Commit secrets to version control
+- Expose port 7337 directly to internet
+- Store secrets in environment variables
+- Run with `--privileged` flag
+- Disable health checks
+- Skip backups
+- Use `latest` tag in production
+- Commit secrets to version control
 
 ---
 

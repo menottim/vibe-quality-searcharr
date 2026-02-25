@@ -284,14 +284,14 @@ Initial alpha release with comprehensive security fixes and documentation. This 
 
 This project was developed through 8 comprehensive phases:
 
-1. **Phase 1:** Core Security & Database (10,592 lines)
-2. **Phase 2:** Authentication & Authorization (3,179 lines)
-3. **Phase 3:** Data Models & Schemas (1,774 lines)
-4. **Phase 4:** Sonarr/Radarr Integration (3,766 lines)
-5. **Phase 5:** Search Scheduling (3,350 lines)
-6. **Phase 6:** Web Dashboard (Phase 6 implementation)
-7. **Phase 7:** Testing & Security Audit (3,000+ lines of tests)
-8. **Phase 8:** Docker & Deployment (5,000+ lines of docs/scripts)
+- **Phase 1:** Core Security & Database (10,592 lines)
+- **Phase 2:** Authentication & Authorization (3,179 lines)
+- **Phase 3:** Data Models & Schemas (1,774 lines)
+- **Phase 4:** Sonarr/Radarr Integration (3,766 lines)
+- **Phase 5:** Search Scheduling (3,350 lines)
+- **Phase 6:** Web Dashboard (Phase 6 implementation)
+- **Phase 7:** Testing & Security Audit (3,000+ lines of tests)
+- **Phase 8:** Docker & Deployment (5,000+ lines of docs/scripts)
 
 ---
 
