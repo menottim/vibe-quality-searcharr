@@ -15,7 +15,7 @@ from collections.abc import Generator
 from typing import Any
 
 import structlog
-from sqlalchemy import create_engine, event, pool
+from sqlalchemy import create_engine, event, pool, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
@@ -348,11 +348,11 @@ def test_database_connection() -> bool:
         engine = get_engine()
         with engine.connect() as conn:
             # Test basic query
-            result = conn.execute("SELECT 1")
+            result = conn.execute(text("SELECT 1"))
             result.fetchone()
 
             # Verify encryption is enabled (SQLCipher)
-            result = conn.execute("PRAGMA cipher_version")
+            result = conn.execute(text("PRAGMA cipher_version"))
             cipher_version = result.fetchone()
 
             if cipher_version:
@@ -404,10 +404,10 @@ def database_health_check() -> dict[str, Any]:
         engine = get_engine()
         # Test connection
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
 
             # Check encryption
-            result = conn.execute("PRAGMA cipher_version")
+            result = conn.execute(text("PRAGMA cipher_version"))
             cipher_version = result.fetchone()
 
         # Get pool status
