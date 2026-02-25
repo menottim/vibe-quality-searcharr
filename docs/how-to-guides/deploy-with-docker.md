@@ -624,7 +624,76 @@ docker inspect vibe-quality-searcharr | jq '.[0].HostConfig.Memory'
 
 ## Logging
 
-### Log Configuration
+### Application Logging System
+
+Vibe-Quality-Searcharr includes a built-in logging system with multiple log files and automatic rotation.
+
+**Log Files:**
+- `logs/all.log` - All messages (INFO and above)
+- `logs/error.log` - Errors only (ERROR and CRITICAL)
+- `logs/debug.log` - Debug messages (when DEBUG enabled)
+
+**Log Rotation:**
+- Maximum size: 10 MB per file
+- Backup count: 5 files kept
+- Total space: ~150 MB for all logs
+
+**Configure Log Level:**
+```yaml
+environment:
+  - LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+```
+
+**Log Levels Explained:**
+- `DEBUG` - Most verbose; shows all operations (development/troubleshooting)
+- `INFO` - Normal operations; recommended for production
+- `WARNING` - Only warnings and errors
+- `ERROR` - Only errors and critical issues
+- `CRITICAL` - Only critical failures
+
+**Sensitive Data Protection:**
+All logs automatically filter sensitive information:
+- Passwords → `***REDACTED***`
+- API keys → Partially masked
+- JWT tokens → Truncated
+- Database keys → Never logged
+- Secret keys → Never logged
+
+### View Application Logs
+
+**Container stdout/stderr (Docker logs):**
+```bash
+# Follow logs
+docker-compose logs -f
+
+# Last 100 lines
+docker-compose logs --tail=100
+
+# Since timestamp
+docker-compose logs --since 2026-02-24T10:00:00
+
+# Specific service
+docker-compose logs vibe-quality-searcharr
+```
+
+**Application log files:**
+```bash
+# View from host (if logs/ directory is mapped)
+tail -f logs/all.log
+tail -f logs/error.log
+tail -f logs/debug.log
+
+# View from inside container
+docker exec vibe-quality-searcharr tail -f /data/logs/all.log
+docker exec vibe-quality-searcharr tail -f /data/logs/error.log
+
+# Find errors
+docker exec vibe-quality-searcharr grep ERROR /data/logs/all.log
+```
+
+### Docker Logging Configuration
+
+Configure Docker's logging driver for container logs (separate from application logs):
 
 ```yaml
 logging:
@@ -635,21 +704,7 @@ logging:
     compress: "true"
 ```
 
-### View Logs
-
-```bash
-# Follow logs
-docker-compose logs -f
-
-# Last 100 lines
-docker-compose logs --tail=100
-
-# Since timestamp
-docker-compose logs --since 2024-02-24T10:00:00
-
-# Specific service
-docker-compose logs vibe-quality-searcharr
-```
+**Note:** This controls Docker's container logs. The application logs are separate and stored in `logs/` directory.
 
 ### External Logging
 
@@ -669,6 +724,69 @@ logging:
     fluentd-address: "localhost:24224"
     tag: "vibe-quality-searcharr"
 ```
+
+### Production Logging Recommendations
+
+**Standard Deployment:**
+```yaml
+environment:
+  - LOG_LEVEL=INFO  # Reasonable verbosity
+  - LOG_FORMAT=json  # For log aggregation
+```
+
+**High-Traffic Deployment:**
+```yaml
+environment:
+  - LOG_LEVEL=WARNING  # Reduce log volume
+  - LOG_FORMAT=json
+```
+
+**Troubleshooting:**
+```yaml
+environment:
+  - LOG_LEVEL=DEBUG  # Maximum verbosity
+  - LOG_FORMAT=text  # Easier to read
+```
+
+**Volume Mapping:**
+```yaml
+volumes:
+  - ./logs:/data/logs  # Access logs from host
+```
+
+This allows you to:
+- View logs without `docker exec`
+- Process logs with external tools
+- Back up logs easily
+- Analyze logs with your preferred tools
+
+### Log Aggregation
+
+For centralized logging, you can:
+
+1. **Map log directory** to host
+2. **Use log shipper** (Filebeat, Fluentd, Logstash)
+3. **Send to aggregator** (Elasticsearch, Splunk, Datadog)
+
+**Example with Filebeat:**
+```yaml
+# filebeat.yml
+filebeat.inputs:
+  - type: log
+    paths:
+      - /path/to/logs/all.log
+    fields:
+      app: vibe-quality-searcharr
+    json.keys_under_root: true
+    json.add_error_key: true
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+```
+
+### Troubleshooting Logs
+
+See the [Troubleshooting Guide](./troubleshoot.md#logging-system) for detailed instructions on using logs to diagnose issues.
 
 ---
 

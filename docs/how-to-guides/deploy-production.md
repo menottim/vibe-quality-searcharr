@@ -522,32 +522,103 @@ healthcheck:
 
 ### Logging Configuration
 
+**Production Log Levels:**
+
+```bash
+# Standard production: reasonable verbosity
+LOG_LEVEL=INFO
+
+# High-traffic: reduce log volume
+LOG_LEVEL=WARNING
+
+# Troubleshooting: maximum verbosity
+LOG_LEVEL=DEBUG
+
+# Critical only: minimal logging
+LOG_LEVEL=ERROR
+```
+
+**Application Logging:**
+
+The application includes built-in logging with automatic rotation:
+
+```yaml
+# docker-compose.yml or .env
+environment:
+  - LOG_LEVEL=INFO  # Recommended for production
+  - LOG_FORMAT=json  # Structured logging for SIEM
+```
+
+**Log Files:**
+- `logs/all.log` - All messages (INFO+)
+- `logs/error.log` - Errors only
+- `logs/debug.log` - Debug messages (when enabled)
+
+**Automatic Rotation:**
+- 10 MB max per file
+- 5 backups kept
+- ~150 MB total disk usage
+
+**Sensitive Data Protection:**
+All logs automatically filter sensitive information (even in DEBUG mode):
+- Passwords → `***REDACTED***`
+- API keys → Partially masked
+- Tokens → Truncated
+- Database keys → Never logged
+
+**Access Logs:**
+```bash
+# Via Docker
+docker-compose logs -f
+
+# Via log files
+tail -f logs/all.log
+tail -f logs/error.log
+
+# Find errors
+grep ERROR logs/all.log
+```
+
 **Structured Logging:**
 ```bash
 LOG_LEVEL=INFO
-STRUCTURED_LOGGING=true
-LOG_FORMAT=json
+LOG_FORMAT=json  # For SIEM/log aggregation
 ```
 
 **Log Aggregation (ELK Stack):**
 ```yaml
 # filebeat.yml
 filebeat.inputs:
-  - type: container
+  - type: log
+    enabled: true
     paths:
-      - '/var/lib/docker/containers/*/*.log'
-    processors:
-      - add_docker_metadata:
-          host: "unix:///var/run/docker.sock"
+      - /path/to/vibe-quality-searcharr/logs/all.log
+    fields:
+      app: vibe-quality-searcharr
+      environment: production
+    json.keys_under_root: true
+    json.add_error_key: true
 
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
+  index: "vibe-quality-searcharr-%{+yyyy.MM.dd}"
 ```
 
-**Log Rotation (Manual):**
+**Docker Container Logs:**
+```yaml
+# docker-compose.yml
+logging:
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+    compress: "true"
+```
+
+**External Log Rotation (Manual Install):**
 ```bash
 # /etc/logrotate.d/vibe-quality-searcharr
-/var/log/vibe-quality-searcharr/*.log {
+/opt/vibe-quality-searcharr/logs/*.log {
     daily
     rotate 14
     compress
@@ -559,6 +630,31 @@ output.elasticsearch:
         systemctl reload vibe-quality-searcharr > /dev/null 2>&1 || true
     endscript
 }
+```
+
+**Production Recommendations:**
+
+1. **Use INFO level** for normal operations
+2. **Enable JSON format** for log aggregation
+3. **Map logs directory** for external access
+4. **Monitor error.log** for issues
+5. **Set up alerts** on ERROR/CRITICAL logs
+6. **Use DEBUG only** for troubleshooting (temporarily)
+
+**Example Production Configuration:**
+```yaml
+services:
+  vibe-quality-searcharr:
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    volumes:
+      - ./logs:/data/logs  # Access from host
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 ```
 
 ### Monitoring Tools

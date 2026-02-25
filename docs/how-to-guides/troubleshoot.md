@@ -606,26 +606,225 @@ services:
 
 ---
 
-## Debug Mode
+## Logging System
 
-### Enable Debug Logging
+### Understanding the Logging System
 
-**Environment:**
+Vibe-Quality-Searcharr includes a comprehensive logging system with multiple log files and automatic rotation:
+
+**Log Files:**
+- `logs/all.log` - All log messages (INFO level and above)
+- `logs/error.log` - Error messages only (ERROR and CRITICAL)
+- `logs/debug.log` - Debug messages (when DEBUG mode enabled)
+
+**Log Rotation:**
+- Maximum file size: 10 MB
+- Backup count: 5 files
+- Total disk usage per log type: ~50 MB
+
+**Log Location:**
+- Docker: `./logs/` directory (mapped volume)
+- Manual install: `./logs/` in application directory
+
+### Configure Logging Level
+
+**Environment Variables:**
 ```bash
+# Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+LOG_LEVEL=INFO  # Default: reasonable verbosity
+
+# Enable debug mode for troubleshooting (most verbose)
+LOG_LEVEL=DEBUG
+
+# Production: only errors and critical issues
+LOG_LEVEL=ERROR
+```
+
+**Docker Compose:**
+```yaml
+environment:
+  - LOG_LEVEL=DEBUG
+```
+
+**Restart to apply:**
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+### View Logs
+
+**Docker:**
+```bash
+# Follow all logs
+docker-compose logs -f
+
+# Last 100 lines
+docker-compose logs --tail=100
+
+# Specific log file
+docker exec vibe-quality-searcharr cat /data/logs/all.log
+docker exec vibe-quality-searcharr cat /data/logs/error.log
+docker exec vibe-quality-searcharr tail -f /data/logs/debug.log
+```
+
+**Direct file access:**
+```bash
+# From host (if volume mapped)
+tail -f ./logs/all.log
+tail -f ./logs/error.log
+
+# View errors only
+tail -f ./logs/error.log
+
+# View all with timestamps
+tail -f ./logs/all.log | grep ERROR
+```
+
+**Systemd:**
+```bash
+sudo journalctl -u vibe-quality-searcharr -f -n 100
+```
+
+### Debug Mode
+
+**Enable Debug Logging:**
+```bash
+# Maximum verbosity - shows all operations
 LOG_LEVEL=DEBUG
 DEBUG=true  # Development only
 ```
 
-**Check logs:**
+**What DEBUG mode logs:**
+- Database queries and connection details
+- HTTP requests/responses (URLs, headers, status codes)
+- Authentication attempts and session creation
+- Search queue processing details
+- Scheduler job execution
+- Configuration loading and validation
+- Internal function calls and data transformations
+
+**Sensitive Data Protection:**
+Even in DEBUG mode, sensitive data is automatically filtered:
+- Passwords (replaced with `***REDACTED***`)
+- API keys (partially masked)
+- Secret keys (never logged)
+- Database encryption keys (never logged)
+- JWT tokens (partially masked)
+
+### Troubleshooting with Logs
+
+**Issue: Application won't start**
 ```bash
-# Docker
-docker-compose logs -f --tail=100
+# Check startup errors
+docker-compose logs --tail=50 | grep ERROR
 
-# Systemd
-sudo journalctl -u vibe-quality-searcharr -f -n 100
+# Look for:
+# - Database connection issues
+# - Missing secret files
+# - Configuration validation errors
+# - Port binding conflicts
+```
 
-# File
-tail -f /var/log/vibe-quality-searcharr/app.log
+**Issue: Searches not running**
+```bash
+# Enable debug logging
+LOG_LEVEL=DEBUG
+
+# Check scheduler logs
+docker-compose logs -f | grep -i "scheduler\|search"
+
+# Look for:
+# - Job registration
+# - Cron trigger execution
+# - Search queue processing
+# - API call failures
+```
+
+**Issue: Authentication problems**
+```bash
+# Check auth-related logs
+docker-compose logs | grep -i "auth\|login\|token"
+
+# Look for:
+# - Failed login attempts
+# - Token validation errors
+# - Session creation issues
+# - Rate limiting triggers
+```
+
+**Issue: Performance problems**
+```bash
+# Enable debug to see timing
+LOG_LEVEL=DEBUG
+
+# Monitor logs for:
+# - Slow database queries
+# - HTTP request timeouts
+# - Large batch operations
+# - Memory warnings
+```
+
+### Log Analysis
+
+**Find all errors:**
+```bash
+# Docker logs
+docker-compose logs | grep ERROR
+
+# Log files
+grep ERROR logs/all.log
+cat logs/error.log  # Errors only
+```
+
+**Find specific issue:**
+```bash
+# Database issues
+grep -i "database\|sqlite" logs/all.log
+
+# API connection issues
+grep -i "connection\|timeout\|refused" logs/all.log
+
+# Authentication issues
+grep -i "auth\|login\|password" logs/all.log
+```
+
+**Log rotation information:**
+```bash
+# Check log file sizes
+ls -lh logs/
+
+# View rotated logs
+ls logs/*.log.*
+
+# Logs are automatically rotated when they reach 10MB
+# Up to 5 backup files are kept per log type
+```
+
+### Common Log Messages
+
+**Normal operation:**
+```
+INFO - Application starting
+INFO - Database connection established
+INFO - Scheduler initialized
+INFO - Search queue registered: <queue_name>
+INFO - Search completed: 10 items processed
+```
+
+**Expected warnings:**
+```
+WARNING - No items found for search
+WARNING - Rate limit approaching
+WARNING - Configuration drift detected
+```
+
+**Issues to investigate:**
+```
+ERROR - Database connection failed
+ERROR - Unable to connect to Sonarr/Radarr
+ERROR - Search execution failed
+CRITICAL - Unhandled exception
 ```
 
 ### Interactive Debugging

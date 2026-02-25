@@ -255,6 +255,30 @@ vibe-quality-searcharr    Up 30 seconds   127.0.0.1:7337->7337/tcp
 
 The `STATUS` should say "Up" (not "Exited" or "Restarting").
 
+**Check the logs:**
+```powershell
+# View recent logs
+docker-compose logs --tail=50
+
+# Follow logs in real-time
+docker-compose logs -f
+```
+
+**You should see:**
+```
+INFO - Application starting
+INFO - Database connection established
+INFO - Scheduler initialized
+INFO - Server started at http://0.0.0.0:7337
+```
+
+**Log files are located at:**
+- `logs/all.log` - All messages
+- `logs/error.log` - Errors only
+- `logs/debug.log` - Debug info (when DEBUG mode enabled)
+
+Logs automatically rotate when they reach 10MB (5 backups kept).
+
 **⚠️ IMPORTANT: Backup Your Encryption Keys!**
 
 The setup script created encryption keys in the `secrets/` folder. If you lose these, you cannot decrypt your data!
@@ -381,13 +405,27 @@ You should see a welcome screen! Follow the setup wizard:
 **Solution:**
 1. Check the logs:
    ```powershell
-   docker-compose logs
+   docker-compose logs --tail=100
    ```
 2. Look for errors (usually missing secret files or configuration issues)
 3. Common fixes:
    - Regenerate secret files: `.\scripts\generate-secrets.ps1`
    - Ensure data directory exists: `New-Item -ItemType Directory -Force -Path .\data`
+   - Ensure logs directory exists: `New-Item -ItemType Directory -Force -Path .\logs`
    - Check Docker Desktop has enough memory (Settings → Resources → Increase memory to 4GB+)
+
+**Enable debug logging for more details:**
+```powershell
+# Edit docker-compose.yml or create .env file:
+LOG_LEVEL=DEBUG
+```
+
+Then restart:
+```powershell
+docker-compose down
+docker-compose up -d
+docker-compose logs -f
+```
 
 ### Problem: "unable to open database file" error
 
@@ -397,25 +435,36 @@ ERROR: (sqlcipher3.dbapi2.OperationalError) unable to open database file
 RuntimeError: Failed to initialize database
 ```
 
-**Solution:**
-1. Stop the container:
+**This issue has been FIXED** in the current version. The fix includes:
+- Custom SQLCipher connection creator that sets encryption immediately
+- Proper pragma key configuration before any database operations
+- Windows-compatible volume permission handling
+
+**If you still see this error:**
+1. Make sure you're using the latest version
+2. Stop the container:
    ```powershell
    docker-compose down
    ```
-2. Ensure the data directory exists:
+3. Ensure the data directory exists:
    ```powershell
    New-Item -ItemType Directory -Force -Path .\data
    ```
-3. Verify Docker has write permissions (Settings → Resources → File Sharing → Add your project directory)
-4. Rebuild and restart:
+4. Verify Docker has write permissions (Settings → Resources → File Sharing → Add your project directory)
+5. Rebuild and restart:
    ```powershell
    docker-compose build
    docker-compose up -d
    ```
-5. If still failing, try running the automated setup script again:
+6. If still failing, try running the automated setup script again:
    ```powershell
    .\scripts\setup-windows.ps1 -AutoStart
    ```
+
+**Check logs for details:**
+```powershell
+docker-compose logs --tail=50
+```
 
 ### Problem: "WSL 2 installation is incomplete"
 

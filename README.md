@@ -60,6 +60,7 @@ This tool is **not intended for broad deployment**. It is specifically designed 
 - **Multi-Instance Support** - Manage multiple Sonarr/Radarr instances from one interface
 - **Local Authentication** - Secure password storage with Argon2id hashing
 - **Configuration Drift Detection** - Alerts when Sonarr/Radarr config changes
+- **Comprehensive Logging** - Multi-level logging with automatic rotation and sensitive data filtering
 
 ## Documentation
 
@@ -107,7 +108,7 @@ Documentation is organized following the [Diátaxis](https://diataxis.fr/) frame
 
 ### Docker Deployment (Recommended)
 
-**Windows users:** See the dedicated **[Windows Quick Start Guide](docs/how-to-guides/windows-quick-start.md)** for step-by-step instructions.
+**Windows users:** See the dedicated **[Windows Quick Start Guide](docs/how-to-guides/windows-quick-start.md)** for step-by-step instructions with detailed Windows-specific setup.
 
 **Linux/macOS:**
 
@@ -125,7 +126,12 @@ docker-compose up -d
 
 # 4. Access web interface
 # Open http://localhost:7337/setup
+
+# 5. View logs (optional)
+docker-compose logs -f
 ```
+
+**Note:** The application runs as root inside the Docker container on Windows due to volume permission limitations. This is safe because the container is isolated from your Windows system. On Linux, it runs as a non-root user (UID 1000).
 
 **⚠️ IMPORTANT:** After installation, complete the [Post-Deployment Security Steps](docs/how-to-guides/deploy-with-docker.md#5-post-deployment-security-hardening) to:
 - Update dependencies (fix known CVEs)
@@ -231,29 +237,12 @@ Vibe-Quality-Searcharr is built with:
 
 ## Known Issues
 
-### Windows Docker Compose Configuration
+### Windows Docker Compatibility
 
-**Issue:** Running `docker-compose up` from the project root on Windows may fail with `no configuration file provided: not found`.
-
-**Solutions:**
-
-1. **Use the root-level docker-compose.yml (Recommended):**
-   ```powershell
-   # From project root
-   docker-compose up -d
-   ```
-   A `docker-compose.yml` is now provided in the project root for convenience.
-
-2. **Run from docker/ directory:**
-   ```powershell
-   cd docker
-   docker-compose up -d
-   ```
-
-3. **Specify the file explicitly:**
-   ```powershell
-   docker-compose -f docker/docker-compose.yml up -d
-   ```
+**Container runs as root on Windows:** The application runs with root privileges inside the Docker container on Windows due to volume permission limitations. This is a standard Docker-on-Windows compromise and is safe because:
+- The container is isolated from your Windows system
+- On Linux deployments, the application automatically runs as a non-root user
+- Your Windows system remains protected by Docker's container isolation
 
 **For complete Windows setup instructions**, see **[Windows Quick Start Guide](docs/how-to-guides/windows-quick-start.md)**.
 

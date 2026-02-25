@@ -85,12 +85,27 @@ SQLite with SQLCipher encryption provides an ideal solution for single-server de
 
 **Security**: No network attack surface, encrypted at rest, in-memory operation support
 
+**Reliable Connection Handling**: Custom connection creator ensures encryption settings are applied correctly on all platforms, including Windows
+
 **Trade-offs**: Not suitable for:
 - Multi-server deployments (no concurrent write access)
 - Massive scale (millions of records)
 - Geographic distribution
 
 For future scaling, the SQLAlchemy abstraction allows migration to PostgreSQL with minimal code changes.
+
+### SQLCipher Connection Architecture
+
+The application uses a custom connection creator to ensure proper encryption:
+
+**Connection Initialization:**
+1. Creates raw SQLite connection
+2. Immediately sets `PRAGMA key` with encryption key
+3. Configures cipher settings (aes-256-cfb)
+4. Sets KDF iterations (256,000)
+5. Only then allows database operations
+
+This approach fixes the "unable to open database file" error that occurred on Windows and ensures encryption is properly configured before any database access.
 
 ### Database Schema Design
 
@@ -178,6 +193,8 @@ Background job processing uses APScheduler for its flexibility and reliability:
 
 **Misfire Handling**: Grace periods prevent job pile-up after downtime
 
+**Shared Database Connection**: Scheduler uses the same encrypted database connection as the main application via `get_engine()`, ensuring all operations benefit from SQLCipher encryption
+
 ### Search Queue Processing
 
 Search queues operate independently:
@@ -262,13 +279,29 @@ The Docker image follows best practices:
 
 **Multi-Stage Build**: Separates build dependencies from runtime
 
-**Non-Root User**: Application runs as unprivileged user
+**Conditional User Switching**: Application runs as unprivileged user (UID 1000) on Linux, but as root on Windows to handle volume permission issues
 
 **Minimal Base**: python:3.13-slim for security and size
 
-**Read-Only Filesystem**: Only /data is writable
+**Read-Only Filesystem**: Only /data and /data/logs are writable
 
 **Health Checks**: Kubernetes-compatible health endpoints
+
+**Windows Compatibility**: Automatic detection and handling of Windows-specific Docker limitations, including volume permissions and line endings
+
+### Logging Infrastructure
+
+The application includes a comprehensive logging system:
+
+**Multiple Log Files**: Separate files for all messages, errors only, and debug output
+
+**Automatic Rotation**: Logs rotate at 10MB with 5 backups (50MB max per log type)
+
+**Sensitive Data Filtering**: Automatic redaction of passwords, keys, and tokens
+
+**Configurable Verbosity**: Five log levels from DEBUG to CRITICAL
+
+**Location**: All logs stored in `/data/logs/` directory for easy access and backup
 
 ### Volume Strategy
 

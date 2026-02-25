@@ -9,7 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-*Future releases will be documented here.*
+### Added
+- Comprehensive logging system with multiple log files
+- Automatic log rotation (10MB max, 5 backups per log type)
+- Configurable log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- Automatic sensitive data filtering in logs
+- Separate log files for all messages, errors, and debug output
+
+### Fixed
+- SQLCipher database connection on Windows ("unable to open database file")
+- Custom connection creator ensures encryption settings applied immediately
+- Scheduler now uses shared encrypted database connection via `get_engine()`
+- Windows Docker volume permission handling
+
+### Changed
+- Container runs as root on Windows for volume compatibility (safe due to isolation)
+- Improved Windows Docker support with automatic platform detection
+- Enhanced documentation with comprehensive logging information
 
 ---
 

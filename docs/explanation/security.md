@@ -75,17 +75,35 @@ Strict-Transport-Security: max-age=31536000 (production)
 
 ### 5. Logging & Monitoring
 
+**Comprehensive Logging System:**
+- Multiple log files (all.log, error.log, debug.log)
+- Automatic rotation at 10MB (5 backups kept)
+- Total disk usage ~150MB max for all logs
+- Five log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+
 **Security Events Logged:**
-- Failed login attempts
-- Successful authentication
+- Failed login attempts with source IP
+- Successful authentication events
 - Authorization failures
 - Configuration changes
-- API errors
+- API errors and exceptions
+- Rate limit violations
+- Suspicious activity patterns
+
+**Sensitive Data Protection:**
+- Automatic filtering in all log levels (even DEBUG)
+- Passwords replaced with `***REDACTED***`
+- API keys partially masked (first/last 4 chars)
+- JWT tokens truncated
+- Database keys never logged
+- Secret keys never logged
 
 **Structured Logging:**
 - JSON format (SIEM-compatible)
 - Configurable log levels
-- PII filtering
+- Timestamp on every entry
+- Contextual information (user, IP, endpoint)
+- Stack traces for errors
 
 ---
 

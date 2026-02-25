@@ -13,7 +13,7 @@ Configuration is managed through environment variables, either directly or via `
 | `APP_NAME` | string | `Vibe-Quality-Searcharr` | Application name displayed in UI and logs |
 | `ENVIRONMENT` | enum | `production` | Environment mode: `development`, `staging`, `production` |
 | `DEBUG` | boolean | `false` | Enable debug mode (never use in production) |
-| `LOG_LEVEL` | enum | `INFO` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
+| `LOG_LEVEL` | enum | `INFO` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` (see [Logging Configuration](#logging-configuration) below) |
 
 ### Security Configuration
 
@@ -124,14 +124,112 @@ default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-
 
 ### Logging Configuration
 
+Vibe-Quality-Searcharr includes a comprehensive logging system with automatic rotation and sensitive data filtering.
+
+#### Log Level Configuration
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `LOG_LEVEL` | enum | `INFO` | Controls logging verbosity (see levels below) |
+
+**Log Levels (from most to least verbose):**
+
+| Level | When to Use | What Gets Logged |
+|-------|-------------|------------------|
+| `DEBUG` | Development, troubleshooting | All operations: database queries, HTTP requests, function calls, scheduler events. **Most verbose.** |
+| `INFO` | Production (recommended) | Important events: app startup, search execution, authentication, configuration changes. **Default.** |
+| `WARNING` | Quiet production | Warnings and issues: rate limits, missing data, config drift, deprecation notices. |
+| `ERROR` | Critical only | Errors: failed operations, connection issues, exceptions. |
+| `CRITICAL` | Emergencies only | Critical failures that may crash the application. |
+
+**Example configuration:**
+```bash
+# Development: See everything
+LOG_LEVEL=DEBUG
+
+# Production: Reasonable verbosity (recommended)
+LOG_LEVEL=INFO
+
+# Quiet: Only problems
+LOG_LEVEL=WARNING
+
+# Silent: Only critical issues
+LOG_LEVEL=ERROR
+```
+
+#### Log Files
+
+The application creates multiple log files with automatic rotation:
+
+| File | Contents | Max Size | Backups | Total Space |
+|------|----------|----------|---------|-------------|
+| `logs/all.log` | All messages (INFO+) | 10 MB | 5 | ~50 MB |
+| `logs/error.log` | Errors only (ERROR+) | 10 MB | 5 | ~50 MB |
+| `logs/debug.log` | Debug messages | 10 MB | 5 | ~50 MB |
+
+**Log Rotation:**
+- Files automatically rotate when they reach max size
+- Old logs are compressed and numbered (.log.1, .log.2, etc.)
+- Only the configured number of backups are kept
+- Total disk usage is limited (~150 MB max for all logs combined)
+
+#### Additional Logging Options
+
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `LOG_FORMAT` | enum | `json` | Log format: `json` (production), `text` (development) |
-| `LOG_OUTPUT` | enum | `console` | Log output: `console`, `file` |
-| `LOG_FILE` | path | `/data/logs/vibe-quality-searcharr.log` | Log file path (if `LOG_OUTPUT=file`) |
-| `LOG_MAX_SIZE` | integer | `10` | Maximum log file size (MB) |
-| `LOG_BACKUP_COUNT` | integer | `5` | Number of log files to keep |
-| `LOG_SANITIZE` | boolean | `true` | Sanitize sensitive data in logs |
+| `LOG_OUTPUT` | enum | `file` | Log output: `console`, `file`, `both` |
+| `LOG_FILE` | path | `/data/logs/all.log` | Main log file path |
+| `LOG_MAX_SIZE` | integer | `10` | Maximum log file size in MB before rotation |
+| `LOG_BACKUP_COUNT` | integer | `5` | Number of rotated log files to keep |
+| `LOG_SANITIZE` | boolean | `true` | Automatically filter sensitive data (passwords, keys, tokens) |
+
+#### Sensitive Data Protection
+
+Even in `DEBUG` mode, the logging system automatically filters sensitive information:
+
+**Always filtered:**
+- Passwords → `***REDACTED***`
+- Secret keys → Never logged
+- Database encryption keys → Never logged
+- Pepper values → Never logged
+
+**Partially masked:**
+- API keys → Shows first/last 4 chars: `abcd...wxyz`
+- JWT tokens → Shows first 8 chars: `eyJhbGci...`
+- Session IDs → Hashed or truncated
+
+**Example:**
+```bash
+# In logs, you'll see:
+DEBUG - Authenticating user with password: ***REDACTED***
+INFO - API key validated: abcd...wxyz
+DEBUG - JWT token issued: eyJhbGci...
+```
+
+#### Viewing Logs
+
+**Docker:**
+```bash
+# Container logs (stdout/stderr)
+docker-compose logs -f
+
+# Application log files
+docker exec vibe-quality-searcharr tail -f /data/logs/all.log
+docker exec vibe-quality-searcharr tail -f /data/logs/error.log
+docker exec vibe-quality-searcharr tail -f /data/logs/debug.log
+```
+
+**Host (if volumes mapped):**
+```bash
+tail -f logs/all.log
+tail -f logs/error.log
+grep ERROR logs/all.log
+```
+
+#### Troubleshooting with Logs
+
+See the [Troubleshooting Guide](../how-to-guides/troubleshoot.md#logging-system) for detailed instructions on using logs to diagnose issues.
 
 ### HTTP Client Configuration
 
