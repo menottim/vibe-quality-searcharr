@@ -172,7 +172,38 @@ try {
         }
 
         Write-Host ""
-        Write-Host "Step 3: Generating Encryption Keys" -ForegroundColor White
+        Write-Host "Step 3: Fixing Shell Script Line Endings" -ForegroundColor White
+        Write-Host "----------------------------------------" -ForegroundColor Gray
+        Write-Host ""
+
+        # Fix line endings for shell scripts (Git on Windows uses CRLF, Docker needs LF)
+        Write-InfoMsg "Converting shell scripts to Unix line endings..."
+        $shellScripts = Get-ChildItem -Path $scriptDir -Filter "*.sh" -Recurse -File
+        $fixedCount = 0
+        foreach ($script in $shellScripts) {
+            try {
+                $content = Get-Content -Raw $script.FullName
+                if ($content -match "`r`n") {
+                    $content = $content -replace "`r`n", "`n"
+                    [System.IO.File]::WriteAllText($script.FullName, $content)
+                    $fixedCount++
+                    Write-InfoMsg "Fixed: $($script.Name)"
+                }
+            }
+            catch {
+                Write-WarningMsg "Could not fix line endings for: $($script.Name)"
+            }
+        }
+
+        if ($fixedCount -gt 0) {
+            Write-Success "Fixed line endings in $fixedCount shell script(s)"
+        }
+        else {
+            Write-InfoMsg "All shell scripts already have correct line endings"
+        }
+
+        Write-Host ""
+        Write-Host "Step 4: Generating Encryption Keys" -ForegroundColor White
         Write-Host "----------------------------------------" -ForegroundColor Gray
         Write-Host ""
 
@@ -219,7 +250,7 @@ try {
         }
 
         Write-Host ""
-        Write-Host "Step 4: Docker Setup" -ForegroundColor White
+        Write-Host "Step 5: Docker Setup" -ForegroundColor White
         Write-Host "----------------------------------------" -ForegroundColor Gray
         Write-Host ""
 
