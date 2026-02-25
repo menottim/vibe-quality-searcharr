@@ -299,38 +299,32 @@ class Settings(BaseSettings):
 
     def get_database_url(self) -> str:
         """
-        Construct SQLCipher database URL with encryption parameters.
+        Construct SQLCipher database URL.
 
-        Uses URL encoding and validated parameters to prevent SQL injection.
+        The encryption key and parameters are set via PRAGMA in the connection
+        event listener (database.py), not in the URL. This is the correct approach
+        for pysqlcipher3, which requires PRAGMA key to be set immediately after
+        connecting.
 
         Returns:
-            str: Complete SQLCipher database URL with encryption settings
+            str: SQLCipher database URL (without embedded credentials)
         """
-        from urllib.parse import urlencode, urlparse
-
-        db_key = self.get_database_key()
+        from urllib.parse import urlparse
 
         # Extract base path from database_url
         # Handle both sqlite:/// and sqlite+pysqlcipher:/// schemes
         if "sqlite" in self.database_url:
             # Parse the URL to extract just the path (strip scheme and query params)
             parsed = urlparse(self.database_url)
-            db_path = parsed.path.lstrip("/")  # Remove leading slash for absolute path
-            if not db_path:
-                db_path = "data/vibe-quality-searcharr.db"
+            db_path = parsed.path
+            if not db_path or db_path == "/":
+                db_path = "/data/vibe-quality-searcharr.db"
         else:
-            db_path = "data/vibe-quality-searcharr.db"
+            db_path = "/data/vibe-quality-searcharr.db"
 
-        # Use URL encoding for safety (parameters are already validated by Pydantic)
-        params = urlencode(
-            {
-                "cipher": self.database_cipher,  # Validated against whitelist
-                "kdf_iter": str(self.database_kdf_iter),  # Validated integer range
-            }
-        )
-
-        # Construct SQLCipher URL with encoded parameters
-        return f"sqlite+pysqlcipher://:{db_key}@/{db_path}?{params}"
+        # Return URL without credentials - encryption is set via PRAGMA in event listener
+        # The sqlite+pysqlcipher:// scheme tells SQLAlchemy to use pysqlcipher3 driver
+        return f"sqlite+pysqlcipher://{db_path}"
 
     @staticmethod
     def _read_secret(file_path: str | None, env_value: str) -> str:
