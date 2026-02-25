@@ -306,15 +306,20 @@ class Settings(BaseSettings):
         Returns:
             str: Complete SQLCipher database URL with encryption settings
         """
-        from urllib.parse import urlencode
+        from urllib.parse import urlencode, urlparse
 
         db_key = self.get_database_key()
 
         # Extract base path from database_url
-        if "sqlite:///" in self.database_url:
-            db_path = self.database_url.replace("sqlite:///", "")
+        # Handle both sqlite:/// and sqlite+pysqlcipher:/// schemes
+        if "sqlite" in self.database_url:
+            # Parse the URL to extract just the path (strip scheme and query params)
+            parsed = urlparse(self.database_url)
+            db_path = parsed.path.lstrip("/")  # Remove leading slash for absolute path
+            if not db_path:
+                db_path = "data/vibe-quality-searcharr.db"
         else:
-            db_path = "./data/vibe-quality-searcharr.db"
+            db_path = "data/vibe-quality-searcharr.db"
 
         # Use URL encoding for safety (parameters are already validated by Pydantic)
         params = urlencode(
