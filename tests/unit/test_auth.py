@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 import pyotp
 from freezegun import freeze_time
-from jose import jwt
+import jwt
 
 from vibe_quality_searcharr.config import settings
 from vibe_quality_searcharr.core.auth import (

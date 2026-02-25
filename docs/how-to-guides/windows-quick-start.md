@@ -1,521 +1,266 @@
 # Windows Quick Start Guide
 
-**Complete step-by-step guide for Windows users new to Docker**
+---
 
-This guide assumes you have **no Docker experience** and will walk you through every step needed to run Vibe-Quality-Searcharr on Windows.
+## Quick Start
+
+For experienced users who already have Docker Desktop installed and running:
+
+```powershell
+# 1. Clone or download the repository
+git clone https://github.com/menottim/vibe-quality-searcharr.git
+cd vibe-quality-searcharr
+
+# 2. Allow PowerShell scripts (one-time)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# 3. Run automated setup (generates keys, builds, starts)
+.\scripts\setup-windows.ps1 -AutoStart
+
+# 4. Open http://localhost:7337 and complete the setup wizard
+```
+
+The setup script generates encryption keys, builds the Docker image, and starts the container. When it finishes, open your browser to `http://localhost:7337` to create your admin account and connect your first Sonarr/Radarr instance.
+
+**Password reset (if locked out):**
+```powershell
+docker-compose exec vibe-quality-searcharr python -m vibe_quality_searcharr.cli reset-password
+```
 
 ---
 
-## ⚠️ Important: Windows Security Notice
+## Detailed Setup
 
-**On Windows, this application runs with elevated privileges inside the Docker container.**
+This section walks through every step for users who have never used Docker before.
 
-**What this means:**
-- The application runs as the `root` user **inside the container** (not on your Windows system)
-- This is necessary due to how Windows handles Docker volume permissions
-- Your Windows system remains protected - the container is isolated
+**Estimated time:** 30-45 minutes for first-time setup.
 
-**Why is this required on Windows?**
-Windows and Linux handle file permissions differently. When Docker mounts a Windows directory into a Linux container, the permission system doesn't translate properly. Running as root inside the container is the pragmatic solution that ensures the application can write to its database.
+### Prerequisites
 
-**Security implications:**
-- ✅ **Your Windows system is safe**: The container is sandboxed and isolated from your Windows installation
-- ✅ **On Linux, runs as non-root**: If you deploy on a Linux server, the application automatically runs as a non-root user
-- ⚠️ **Container compromise**: If the application inside the container were compromised, the attacker would have root privileges *within that container* (but not on your Windows system)
-- ℹ️ **Standard trade-off**: This is a common compromise for Docker applications on Windows in home/development environments
-
-**For production use:** If deploying on a Linux server, the application will automatically detect that it can run as a non-root user and do so. The root fallback only activates on Windows.
-
-**Bottom line:** For home use on Windows, this is an acceptable trade-off. The application works reliably, and your Windows system remains protected by Docker's container isolation.
-
----
-
-## Table of Contents
-1. [Prerequisites](#prerequisites)
-2. [Install Docker Desktop](#install-docker-desktop)
-3. [Download the Application](#download-the-application)
-4. [Automated Setup](#automated-setup)
-5. [Access the Application](#access-the-application)
-6. [Troubleshooting](#troubleshooting)
-
----
-
-## Prerequisites
-
-**What you need:**
-- Windows 10/11 (64-bit) with WSL 2 enabled
+- Windows 10 or 11 (64-bit) with WSL 2 enabled
 - At least 4GB of RAM available
 - 10GB of free disk space
 - Internet connection
 - Administrator access
 
-**Estimated time:** 30-45 minutes for first-time setup
-
----
-
-## Install Docker Desktop
+### Install Docker Desktop
 
 Docker Desktop is the application that runs containers on Windows.
 
-### Step 1: Download Docker Desktop
+**1. Download Docker Desktop**
 
-1. Open your web browser
-2. Go to: https://www.docker.com/products/docker-desktop/
-3. Click the **"Download for Windows"** button
-4. Wait for the download to complete (approximately 500MB)
+Go to https://www.docker.com/products/docker-desktop/ and click "Download for Windows." The download is approximately 500MB.
 
-### Step 2: Install Docker Desktop
+**2. Install Docker Desktop**
 
-1. **Locate the downloaded file** in your Downloads folder (usually `Docker Desktop Installer.exe`)
-2. **Right-click** on the installer and select **"Run as administrator"**
-3. **Follow the installation wizard:**
-   - ✅ Check **"Use WSL 2 instead of Hyper-V"** (recommended)
-   - ✅ Check **"Add shortcut to desktop"** (optional, but helpful)
-   - Click **"OK"** to start installation
-4. **Wait** for installation (5-10 minutes)
-5. Click **"Close and restart"** when prompted
-6. **Restart your computer** (very important!)
+- Locate the downloaded `Docker Desktop Installer.exe` in your Downloads folder
+- Right-click and select "Run as administrator"
+- Check "Use WSL 2 instead of Hyper-V" (recommended)
+- Click "OK" and wait 5-10 minutes for installation
+- Click "Close and restart" when prompted
+- Restart your computer
 
-### Step 3: Start Docker Desktop
+**3. Start Docker Desktop**
 
-1. After restart, **open Docker Desktop** from the Start Menu or desktop shortcut
-2. **Accept the license agreement** if prompted
-3. Wait for Docker Desktop to start (you'll see a whale icon in your system tray)
-4. When you see **"Docker Desktop is running"**, you're ready!
+- After restart, open Docker Desktop from the Start Menu
+- Accept the license agreement if prompted
+- Wait for the whale icon in the system tray to stop animating
+- When you see "Docker Desktop is running", you're ready
 
-### Step 4: Verify Docker Installation
+**4. Verify installation**
 
-1. Open **PowerShell** or **Command Prompt**:
-   - Press `Windows + R`
-   - Type `powershell` and press Enter
-2. Type this command and press Enter:
-   ```powershell
-   docker --version
-   ```
-3. You should see output like: `Docker version 24.0.x, build xxxxxxx`
-4. If you see an error, Docker Desktop is not running. Go back to Step 3.
-
----
-
-## Download the Application
-
-You have two options: download a ZIP file or use Git.
-
-### Option A: Download ZIP (Easiest for Beginners)
-
-1. Go to: https://github.com/menottim/vibe-quality-searcharr
-2. Click the green **"Code"** button
-3. Click **"Download ZIP"**
-4. **Extract the ZIP file:**
-   - Right-click the downloaded ZIP
-   - Select **"Extract All..."**
-   - Choose a location (e.g., `C:\Users\YourName\vibe-quality-searcharr`)
-   - Click **"Extract"**
-5. **Remember this location** - you'll need it in the next steps!
-
-### Option B: Use Git (If you have Git installed)
-
-1. Open **PowerShell** or **Git Bash**
-2. Navigate to where you want the files:
-   ```powershell
-   cd C:\Users\YourName
-   ```
-3. Clone the repository:
-   ```powershell
-   git clone https://github.com/menottim/vibe-quality-searcharr.git
-   ```
-4. Enter the directory:
-   ```powershell
-   cd vibe-quality-searcharr
-   ```
-
----
-
-## Automated Setup
-
-**The easy way:** Run our automated setup script that does everything for you!
-
-### Step 1: Navigate to the Project Folder
-
-1. Open **File Explorer**
-2. Navigate to where you extracted/cloned the project
-3. **Right-click in the folder** (not on a file)
-4. Select **"Open in Terminal"** or **"Open PowerShell window here"**
-   - If you don't see this option, open PowerShell and use `cd` to navigate:
-     ```powershell
-     cd "C:\Users\YourName\vibe-quality-searcharr"
-     ```
-
-### Step 2: Allow PowerShell Scripts (One-Time Setup)
+Open PowerShell (press `Windows + R`, type `powershell`, press Enter):
 
 ```powershell
-# Allow scripts to run (one-time setup)
+docker --version
+```
+
+You should see output like `Docker version 24.0.x, build xxxxxxx`. If you see an error, Docker Desktop is not running -- go back to step 3.
+
+### Download the Application
+
+**Option A: Download ZIP (easiest)**
+
+1. Go to https://github.com/menottim/vibe-quality-searcharr
+2. Click the green "Code" button, then "Download ZIP"
+3. Right-click the ZIP, select "Extract All...", choose a location (e.g., `C:\Users\YourName\vibe-quality-searcharr`)
+
+**Option B: Use Git**
+
+```powershell
+cd C:\Users\YourName
+git clone https://github.com/menottim/vibe-quality-searcharr.git
+cd vibe-quality-searcharr
+```
+
+### Run the Setup Script
+
+**1. Open PowerShell in the project folder**
+
+Navigate to where you extracted/cloned the project, right-click in the folder, and select "Open in Terminal" or "Open PowerShell window here." Alternatively:
+
+```powershell
+cd "C:\Users\YourName\vibe-quality-searcharr"
+```
+
+**2. Allow PowerShell scripts (one-time)**
+
+```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-### Step 3: Run the Setup Script
-
-**Option A: Complete Automated Setup (Recommended)**
-
-This builds and starts everything automatically:
+**3. Run the setup**
 
 ```powershell
 .\scripts\setup-windows.ps1 -AutoStart
 ```
 
-**Option B: Setup Only (Manual Start)**
+This script will:
+- Check that Docker and Docker Compose are installed and running
+- Create the `data` and `secrets` directories
+- Generate 3 cryptographically secure encryption keys
+- Fix shell script line endings for Docker compatibility
+- Build the Docker image
+- Start the application
 
-This prepares everything but lets you start manually:
+If you prefer to build and start manually, omit the `-AutoStart` flag.
 
-```powershell
-.\scripts\setup-windows.ps1
-```
-
-**What the setup script does:**
-- ✅ Checks Docker and Docker Compose are installed
-- ✅ Verifies Docker is running
-- ✅ Creates the `data` directory for your database
-- ✅ Creates the `secrets` directory
-- ✅ Generates 3 cryptographically secure encryption keys
-- ✅ Validates all keys were created correctly
-- ✅ Sets secure file permissions
-- ✅ (With `-AutoStart`) Builds the Docker image
-- ✅ (With `-AutoStart`) Starts the application
-
-**What you'll see:**
-
-```
-================================================================
-  Vibe-Quality-Searcharr - Windows Setup
-================================================================
-
-ℹ️  This script will set up Vibe-Quality-Searcharr on your system.
-
-Step 1: Checking Prerequisites
-----------------------------------------
-
-ℹ️  Checking for Docker...
-✓ Docker found: Docker version 24.0.7, build afdd53b
-ℹ️  Checking for Docker Compose...
-✓ Docker Compose found: Docker Compose version v2.24.5
-ℹ️  Checking if Docker is running...
-✓ Docker is running
-
-Step 2: Creating Required Directories
-----------------------------------------
-
-ℹ️  Creating data directory...
-✓ Created: C:\Users\YourName\vibe-quality-searcharr\data
-ℹ️  Creating secrets directory...
-✓ Created: C:\Users\YourName\vibe-quality-searcharr\secrets
-
-Step 3: Generating Encryption Keys
-----------------------------------------
-
-ℹ️  Running secret generation script...
-
-[... secret generation output ...]
-
-Step 4: Docker Setup
-----------------------------------------
-
-ℹ️  Building Docker image...
-[... build output ...]
-✓ Docker image built successfully
-
-ℹ️  Starting application...
-✓ Application started
-
-================================================================
-Setup Complete!
-================================================================
-
-Next Steps:
-
-  1. Check the application logs:
-     docker-compose logs -f
-
-  2. Open your browser to:
-     http://localhost:7337
-
-  3. Follow the setup wizard to create your admin account
-```
-
-### Step 4: Verify It's Running
+**4. Verify it's running**
 
 ```powershell
 docker-compose ps
 ```
 
-You should see:
-```
-NAME                      STATUS          PORTS
-vibe-quality-searcharr    Up 30 seconds   127.0.0.1:7337->7337/tcp
-```
+The STATUS column should say "Up." If it says "Exited" or "Restarting," check the [Troubleshooting](#troubleshooting) section below.
 
-The `STATUS` should say "Up" (not "Exited" or "Restarting").
+### Back Up Your Encryption Keys
 
-**Check the logs:**
-```powershell
-# View recent logs
-docker-compose logs --tail=50
-
-# Follow logs in real-time
-docker-compose logs -f
-```
-
-**You should see:**
-```
-INFO - Application starting
-INFO - Database connection established
-INFO - Scheduler initialized
-INFO - Server started at http://0.0.0.0:7337
-```
-
-**Log files are located at:**
-- `logs/all.log` - All messages
-- `logs/error.log` - Errors only
-- `logs/debug.log` - Debug info (when DEBUG mode enabled)
-
-Logs automatically rotate when they reach 10MB (5 backups kept).
-
-**⚠️ IMPORTANT: Backup Your Encryption Keys!**
-
-The setup script created encryption keys in the `secrets/` folder. If you lose these, you cannot decrypt your data!
+The setup script created encryption keys in the `secrets/` folder. If you lose these, you cannot decrypt your data.
 
 ```powershell
-# View your secret files
 Get-ChildItem -Path secrets
 ```
 
-You should see:
-- `db_key.txt`
-- `secret_key.txt`
-- `pepper.txt`
+You should see `db_key.txt`, `secret_key.txt`, and `pepper.txt`. Copy these to a secure location (password manager, encrypted USB drive, etc.).
 
-**Copy these to a secure location:**
-- Password manager (1Password, Bitwarden, etc.)
-- Encrypted USB drive
-- Secure cloud storage (encrypted)
+### Access the Application
 
----
-
-## Manual Setup (Alternative)
-
-If you prefer to run commands individually or the automated script fails:
-
-### Generate Security Keys Manually
-
-```powershell
-# Run the key generation script
-.\scripts\generate-secrets.ps1
-```
-
-### Build and Start Manually
-
-```powershell
-# Create data directory
-New-Item -ItemType Directory -Force -Path .\data
-
-# Build the Docker image
-docker-compose build
-
-# Start the container
-docker-compose up -d
-
-# Verify it's running
-docker-compose ps
-```
-
----
-
-## Access the Application
-
-### Step 1: Open Your Browser
-
-1. Open your favorite web browser (Chrome, Edge, Firefox)
-2. Go to: **http://localhost:7337**
-
-### Step 2: Complete Setup Wizard
-
-You should see a welcome screen! Follow the setup wizard:
-
-1. **Create Admin Account:**
-   - Choose a username (e.g., `admin`)
-   - Create a strong password (min 12 characters, with uppercase, lowercase, number, special character)
-   - Click **"Create Account"**
-
-2. **Add Your First Instance:**
-   - Choose instance type (Sonarr or Radarr)
-   - Enter your Sonarr/Radarr URL (e.g., `http://192.168.1.100:8989`)
-   - Enter your API key (found in Settings → General in Sonarr/Radarr)
-   - Click **"Test Connection"**
-   - Click **"Save"**
-
-3. **Start Searching!**
-   - Configure your search preferences
-   - Create search queues
-   - Let the automation begin!
+1. Open your browser to **http://localhost:7337**
+2. Follow the setup wizard:
+   - Create an admin account (username + strong password with 12+ characters, uppercase, lowercase, digit, special character)
+   - Add your first Sonarr or Radarr instance (enter the URL and API key from Settings > General in Sonarr/Radarr)
+   - Click "Test Connection" to verify, then save
+3. Configure search queues and start automating
 
 ---
 
 ## Troubleshooting
 
-### Problem: "docker: command not found"
+### "docker: command not found"
 
-**Solution:**
-1. Make sure Docker Desktop is running (check system tray for whale icon)
+1. Make sure Docker Desktop is running (check system tray for the whale icon)
 2. Restart PowerShell
 3. If still failing, reinstall Docker Desktop
 
-### Problem: "Cannot connect to Docker daemon"
+### "Cannot connect to Docker daemon"
 
-**Solution:**
-1. Open Docker Desktop from Start Menu
+1. Open Docker Desktop from the Start Menu
 2. Wait for it to fully start (whale icon stops animating)
 3. Try the command again
 
-### Problem: "Port 7337 is already in use"
+### "Port 7337 is already in use"
 
-**Solution:**
-1. Another program is using port 7337
-2. Stop the other program, OR
-3. Change the port in `docker-compose.yml`:
-   ```yaml
-   ports:
-     - "127.0.0.1:8080:7337"  # Change 7337 to 8080 (or any available port)
-   ```
-4. Access at `http://localhost:8080` instead
+Another program is using port 7337. Either stop that program, or change the port in `docker-compose.yml`:
 
-### Problem: "no configuration file provided: not found"
-
-**Solution:**
-1. Make sure you're in the correct directory:
-   ```powershell
-   pwd  # Shows current directory
-   ```
-2. The directory should contain `docker-compose.yml`
-3. If not, navigate to the correct directory:
-   ```powershell
-   cd "C:\Users\YourName\vibe-quality-searcharr"
-   ```
-
-### Problem: Container keeps restarting
-
-**Solution:**
-1. Check the logs:
-   ```powershell
-   docker-compose logs --tail=100
-   ```
-2. Look for errors (usually missing secret files or configuration issues)
-3. Common fixes:
-   - Regenerate secret files: `.\scripts\generate-secrets.ps1`
-   - Ensure data directory exists: `New-Item -ItemType Directory -Force -Path .\data`
-   - Ensure logs directory exists: `New-Item -ItemType Directory -Force -Path .\logs`
-   - Check Docker Desktop has enough memory (Settings → Resources → Increase memory to 4GB+)
-
-**Enable debug logging for more details:**
-```powershell
-# Edit docker-compose.yml or create .env file:
-LOG_LEVEL=DEBUG
+```yaml
+ports:
+  - "127.0.0.1:8080:7337"  # Change 7337 to any available port
 ```
 
-Then restart:
+Then access the application at `http://localhost:8080`.
+
+### "no configuration file provided: not found"
+
+Make sure you're in the correct directory. Run `pwd` to check, then navigate to the project folder:
+
 ```powershell
-docker-compose down
-docker-compose up -d
+cd "C:\Users\YourName\vibe-quality-searcharr"
+```
+
+The directory must contain `docker-compose.yml`.
+
+### Container keeps restarting
+
+Check the logs for error details:
+
+```powershell
+docker-compose logs --tail=100
+```
+
+Common fixes:
+- Regenerate secret files: `.\scripts\generate-secrets.ps1`
+- Ensure data directory exists: `New-Item -ItemType Directory -Force -Path .\data`
+- Ensure logs directory exists: `New-Item -ItemType Directory -Force -Path .\logs`
+- Increase Docker Desktop memory: Settings > Resources > set to 4GB+
+
+### "unable to open database file"
+
+This usually means the data directory doesn't exist or Docker can't write to it:
+
+1. Stop the container: `docker-compose down`
+2. Create the data directory: `New-Item -ItemType Directory -Force -Path .\data`
+3. Verify Docker has file sharing access: Docker Desktop > Settings > Resources > File Sharing > add your project directory
+4. Rebuild and restart: `docker-compose build && docker-compose up -d`
+
+### "WSL 2 installation is incomplete"
+
+Open PowerShell as Administrator and run:
+
+```powershell
+wsl --install
+```
+
+Restart your computer, then start Docker Desktop again.
+
+### Application is slow
+
+Open Docker Desktop > Settings > Resources and increase:
+- CPUs: at least 2
+- Memory: at least 4GB
+
+Click "Apply & Restart."
+
+### Enable debug logging
+
+Edit your `.env` file (or `docker-compose.yml` environment section) to set `LOG_LEVEL=DEBUG`, then restart:
+
+```powershell
+docker-compose down && docker-compose up -d
 docker-compose logs -f
 ```
 
-### Problem: "unable to open database file" error
-
-**Symptoms:**
-```
-ERROR: (sqlcipher3.dbapi2.OperationalError) unable to open database file
-RuntimeError: Failed to initialize database
-```
-
-**This issue has been FIXED** in the current version. The fix includes:
-- Custom SQLCipher connection creator that sets encryption immediately
-- Proper pragma key configuration before any database operations
-- Windows-compatible volume permission handling
-
-**If you still see this error:**
-1. Make sure you're using the latest version
-2. Stop the container:
-   ```powershell
-   docker-compose down
-   ```
-3. Ensure the data directory exists:
-   ```powershell
-   New-Item -ItemType Directory -Force -Path .\data
-   ```
-4. Verify Docker has write permissions (Settings → Resources → File Sharing → Add your project directory)
-5. Rebuild and restart:
-   ```powershell
-   docker-compose build
-   docker-compose up -d
-   ```
-6. If still failing, try running the automated setup script again:
-   ```powershell
-   .\scripts\setup-windows.ps1 -AutoStart
-   ```
-
-**Check logs for details:**
-```powershell
-docker-compose logs --tail=50
-```
-
-### Problem: "WSL 2 installation is incomplete"
-
-**Solution:**
-1. Open PowerShell as Administrator
-2. Run:
-   ```powershell
-   wsl --install
-   ```
-3. Restart your computer
-4. Try starting Docker Desktop again
-
-### Problem: Application is slow
-
-**Solution:**
-1. Open Docker Desktop
-2. Go to Settings → Resources
-3. Increase:
-   - **CPUs:** At least 2
-   - **Memory:** At least 4GB
-4. Click **"Apply & Restart"**
+Log files are located at `logs/all.log`, `logs/error.log`, and `logs/debug.log`. They rotate automatically at 10MB (5 backups kept).
 
 ---
 
-## Stopping the Application
+## Stopping and Updating
 
-To stop the container:
+**Stop the application:**
 
 ```powershell
 docker-compose down
 ```
 
-To stop and remove all data (⚠️ destructive!):
+**Stop and remove all data (destructive):**
 
 ```powershell
 docker-compose down -v
 ```
 
----
-
-## Updating the Application
-
-When a new version is released:
+**Update to a new version:**
 
 ```powershell
-# Pull latest code (if using Git)
-git pull
-
-# Or download new ZIP and extract over old files
-
-# Rebuild and restart
+git pull                              # or download new ZIP
 docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
@@ -523,150 +268,11 @@ docker-compose up -d
 
 ---
 
-## Getting Help
+## Backups
 
-**Still stuck?**
+Set up weekly backups using Windows Task Scheduler:
 
-1. Check the [Troubleshooting Guide](./troubleshoot.md)
-2. Search [GitHub Issues](https://github.com/menottim/vibe-quality-searcharr/issues)
-3. Create a new issue with:
-   - Your Windows version
-   - Docker Desktop version
-   - Full error message
-   - Steps you've tried
-
-**Remember:** Include logs but **NEVER** share your secret keys!
-
-```powershell
-# Get logs (safe to share)
-docker-compose logs > logs.txt
-```
-
----
-
-## Post-Deployment: Critical Security Steps
-
-**⚠️ IMPORTANT:** Before using the application, complete these security hardening steps!
-
-### Step 1: Update Dependencies (Fix Known CVEs)
-
-Some dependencies have known security vulnerabilities that are easy to fix:
-
-```powershell
-# Stop the container
-docker-compose down
-
-# The application needs updated dependencies
-# Download the latest version from GitHub (it includes the fixes)
-# Or if you're using Git:
-git pull
-
-# Rebuild with latest dependencies
-docker-compose build --no-cache
-
-# Restart
-docker-compose up -d
-```
-
-**What this fixes:**
-- CVE-2025-62727: DoS vulnerability in Starlette
-- CVE-2025-54121: DoS vulnerability in Starlette
-
-### Step 2: Verify Production Configuration
-
-Make sure these settings are correct:
-
-```powershell
-# Navigate to your project folder
-cd C:\Users\YourName\vibe-quality-searcharr
-
-# Check your configuration
-Get-Content .env
-```
-
-**Required settings for security:**
-
-Create a `.env` file in your project folder with these settings:
-
-```
-# Production mode (REQUIRED)
-ENVIRONMENT=production
-
-# Security cookies (REQUIRED)
-SECURE_COOKIES=true
-
-# Block local instance URLs unless testing (REQUIRED)
-ALLOW_LOCAL_INSTANCES=false
-
-# Single worker mode (REQUIRED for rate limiting)
-WORKERS=1
-
-# Your secret keys are already in the secrets/ folder ✅
-SECRET_KEY_FILE=/run/secrets/secret_key
-PEPPER_FILE=/run/secrets/pepper
-DATABASE_KEY_FILE=/run/secrets/db_key
-```
-
-**Apply the changes:**
-```powershell
-docker-compose down
-docker-compose up -d
-```
-
-### Step 3: Enable HTTPS (Recommended)
-
-For secure access, you should use HTTPS. The easiest way on Windows is using Cloudflare Tunnel (free):
-
-**Option A: Cloudflare Tunnel (Easiest for Windows)**
-
-1. Sign up for free Cloudflare account at https://dash.cloudflare.com
-2. Download cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/
-3. Run the tunnel:
-   ```powershell
-   cloudflared tunnel --url http://localhost:7337
-   ```
-4. Follow the link to access your app securely via HTTPS
-
-**Option B: Self-Signed Certificate (Local Network Only)**
-
-If you only access from your local network, you can skip HTTPS for now, but understand this is **less secure**.
-
-### Step 4: Verify Everything is Working Securely
-
-```powershell
-# Check the application is running in production mode
-docker-compose exec vibe-quality-searcharr env | Select-String "ENVIRONMENT"
-# Should show: ENVIRONMENT=production
-
-# Check logs for any errors
-docker-compose logs --tail 50
-```
-
-### Step 5: Set Up Regular Backups
-
-**Your data is important!** Set up automated backups:
-
-```powershell
-# Create a backup folder
-New-Item -ItemType Directory -Force -Path backups
-
-# Manual backup command (run this weekly)
-Copy-Item -Path data\* -Destination backups\backup_$(Get-Date -Format "yyyy-MM-dd")\ -Recurse
-Copy-Item -Path secrets\* -Destination backups\backup_$(Get-Date -Format "yyyy-MM-dd")\secrets\ -Recurse
-```
-
-**Set up automatic backups** using Windows Task Scheduler:
-
-1. Open **Task Scheduler** from Start Menu
-2. Create Basic Task → Name it "Vibe Backup"
-3. Trigger: Weekly (Sunday at 2 AM)
-4. Action: Start a Program
-5. Program: `powershell.exe`
-6. Arguments:
-   ```
-   -File "C:\Users\YourName\vibe-quality-searcharr\backup.ps1"
-   ```
-7. Create `backup.ps1` in your project folder:
+1. Create a `backup.ps1` file in your project folder:
    ```powershell
    $date = Get-Date -Format "yyyy-MM-dd"
    $backup = "backups\backup_$date"
@@ -675,37 +281,45 @@ Copy-Item -Path secrets\* -Destination backups\backup_$(Get-Date -Format "yyyy-M
    Copy-Item -Path secrets\* -Destination "$backup\secrets\" -Recurse
    Write-Host "Backup completed: $backup"
    ```
+2. Open Task Scheduler from the Start Menu
+3. Create Basic Task > name it "Vibe Backup"
+4. Trigger: Weekly (e.g., Sunday at 2 AM)
+5. Action: Start a Program
+6. Program: `powershell.exe`
+7. Arguments: `-File "C:\Users\YourName\vibe-quality-searcharr\backup.ps1"`
+
+---
+
+## Windows Security Notice
+
+On Windows, this application runs with elevated privileges (root) inside the Docker container. This is necessary because Windows and Linux handle file permissions differently -- when Docker mounts a Windows directory into a Linux container, the permission system doesn't translate properly. Running as root inside the container is the standard workaround.
+
+**What this means in practice:**
+- The container is sandboxed and isolated from your Windows installation by Docker's container isolation layer
+- On Linux deployments, the application runs as a non-root user automatically
+- If the container itself were compromised, an attacker would have root privileges within that container (but not on your Windows host)
+- This is a common trade-off for Docker on Windows in home and development environments
+
+For a homelab deployment, this is an acceptable trade-off. If you want to eliminate the root container risk entirely, deploy on a Linux system where the application runs as a non-root user with a read-only filesystem.
+
+---
+
+## Getting Help
+
+1. Check the [full Troubleshooting Guide](./troubleshoot.md) for more solutions
+2. Search [GitHub Issues](https://github.com/menottim/vibe-quality-searcharr/issues)
+3. Create a new issue with your Windows version, Docker Desktop version, full error message, and steps tried
+
+Include logs but **never share your secret keys:**
+
+```powershell
+docker-compose logs > logs.txt
+```
 
 ---
 
 ## Next Steps
 
-Now that security is configured, explore these features:
-
-- [Configure Search Strategies](../explanation/search-strategies.md) - Set up automated searches
-- [Advanced Configuration](../reference/configuration.md) - Fine-tune settings
-- [Security Best Practices](../explanation/security.md) - Learn more about security
-- [Troubleshooting Guide](./troubleshoot.md) - Solutions to common problems
-
----
-
-## Security Checklist ✅
-
-Before considering your installation complete, verify:
-
-- [ ] Dependencies updated (rebuilt with latest code)
-- [ ] ENVIRONMENT=production in .env file
-- [ ] SECURE_COOKIES=true in .env file
-- [ ] WORKERS=1 in .env file
-- [ ] Secret keys generated (in secrets/ folder)
-- [ ] HTTPS enabled (via Cloudflare or reverse proxy)
-- [ ] Backups configured (weekly recommended)
-- [ ] Application accessible at http://localhost:7337 (or your domain)
-- [ ] Setup wizard completed
-- [ ] First admin account created with strong password (12+ characters)
-
-**Once all boxes are checked, you're ready to use the application securely!**
-
----
-
-**Congratulations!** 🎉 You've successfully installed **and secured** Vibe-Quality-Searcharr on Windows!
+- [Search Strategies](../explanation/search-strategies.md) - configure automated searches
+- [Configuration Reference](../reference/configuration.md) - all available settings
+- [Security Guide](../explanation/security.md) - security features and best practices

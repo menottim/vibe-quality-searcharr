@@ -14,7 +14,8 @@ from typing import Any
 
 import pyotp
 import structlog
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError as JWTError
 from sqlalchemy.orm import Session
 
 from vibe_quality_searcharr.config import settings
