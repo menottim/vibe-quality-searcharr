@@ -1,7 +1,7 @@
 # Security Vulnerability Fixes - COMPLETED
 
 **Date Completed:** 2026-02-24
-**Penetration Test Report:** `SECURITY_PENETRATION_TEST_REPORT.md`
+**Penetration Test Report:** [Security Penetration Test Report](security-penetration-test-report.md)
 **Fixes Applied:** 15 of 15 vulnerabilities addressed
 
 ---
@@ -137,7 +137,7 @@ from vibe_quality_searcharr.core.ssrf_protection import validate_instance_url
 
 **Issue:** In-memory rate limiting vulnerable to multi-worker bypass
 
-**Fix:** `RATE_LIMITING_REDIS_GUIDE.md`
+**Fix:** [Rate Limiting Redis Guide](../how-to-guides/configure-redis-rate-limiting.md)
 - Documented the vulnerability
 - Provided Redis integration guide
 - Recommended single worker for homelab deployments
@@ -254,7 +254,7 @@ from vibe_quality_searcharr.core.ssrf_protection import validate_instance_url
 
 ### Files Created (3 files):
 7. `src/vibe_quality_searcharr/core/ssrf_protection.py` - SSRF protection module
-8. `RATE_LIMITING_REDIS_GUIDE.md` - Rate limiting documentation
+8. [Rate Limiting Redis Guide](../how-to-guides/configure-redis-rate-limiting.md) - Rate limiting documentation
 9. `SECURITY_FIXES_COMPLETED.md` - This file
 
 ---
@@ -345,8 +345,8 @@ safety check
 
 ## 📚 References
 
-- Original Penetration Test: `SECURITY_PENETRATION_TEST_REPORT.md`
-- Rate Limiting Guide: `RATE_LIMITING_REDIS_GUIDE.md`
+- Original Penetration Test: [Security Penetration Test Report](security-penetration-test-report.md)
+- Rate Limiting Guide: [Rate Limiting Redis Guide](../how-to-guides/configure-redis-rate-limiting.md)
 - Security Architecture: `docs/explanation/security.md`
 - Configuration Reference: `docs/reference/configuration.md`
 

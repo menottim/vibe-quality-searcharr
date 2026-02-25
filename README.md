@@ -32,7 +32,7 @@ I am a **Security Engineering professional** with expertise in infrastructure se
 
 **Security Implementation Approach:**
 
-During this vibe-coding exercise, I made every effort to implement security best practices by drawing on my professional knowledge and industry best practices. However, there is a **significant difference** between understanding security principles and correctly implementing them in production code. Subtle implementation flaws—such as improper error handling that leaks information, race conditions in authentication flows, or cryptographic API misuse—can undermine even well-intentioned security measures.
+During this vibe-coding exercise, I made every effort to implement security best practices by drawing on my professional knowledge and industry best practices. However, there is a **significant difference** between understanding security principles and correctly implementing them in production code. Subtle implementation flaws (such as improper error handling that leaks information, race conditions in authentication flows, or cryptographic API misuse) can undermine even well-intentioned security measures.
 
 **The combination of:**
 1. AI-generated code (which may have subtle flaws despite appearing correct)
@@ -49,7 +49,7 @@ Vibe-Quality-Searcharr automates systematic backlog searching for missing and up
 
 ### Intended Audience
 
-This tool is **not intended for broad deployment**. It is specifically designed for **homelab enthusiasts tinkering with media management stacks**—individuals running personal Sonarr/Radarr instances who want to experiment with automated search optimization in their home environments. If you're looking for production-ready, enterprise-grade, or publicly-deployed software, this is not it.
+This tool is **not intended for broad deployment**. It is specifically designed for **homelab enthusiasts tinkering with media management stacks**, individuals running personal Sonarr/Radarr instances who want to experiment with automated search optimization in their home environments. If you're looking for production-ready, enterprise-grade, or publicly-deployed software, this is not it.
 
 ### Key Features
 

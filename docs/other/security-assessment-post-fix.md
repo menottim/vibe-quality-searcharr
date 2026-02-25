@@ -258,7 +258,7 @@ def hash_password(self, password: str) -> str:
 - **CVSS Before:** 7.5
 
 **Fix Implementation:**
-1. **Documentation:** `RATE_LIMITING_REDIS_GUIDE.md` (new file)
+1. **Documentation:** [Rate Limiting Redis Guide](../how-to-guides/configure-redis-rate-limiting.md) (new file)
 2. **Mitigation:** Default `WORKERS=1` for homelab deployments
 3. **Guidance:** Single worker recommended; Redis for multi-worker production
 

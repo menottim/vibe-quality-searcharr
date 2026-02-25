@@ -925,7 +925,7 @@ max_failed_login_attempts: int = Field(
 
 **Overall Risk Assessment:** **HIGH** ⚠️
 
-This application demonstrates **good security awareness** but suffers from **critical implementation flaws** that undermine the security measures. The most severe issues—weak cryptographic key derivation, JWT algorithm confusion, and SQL injection—could lead to **complete system compromise**.
+This application demonstrates **good security awareness** but suffers from **critical implementation flaws** that undermine the security measures. The most severe issues (weak cryptographic key derivation, JWT algorithm confusion, and SQL injection) could lead to **complete system compromise**.
 
 **The application is NOT production-ready** in its current state.
 

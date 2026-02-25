@@ -12,7 +12,7 @@ Vibe-Quality-Searcharr provides multiple search strategies to address different 
 
 **What It Searches For**: Content that is completely absent from your library
 
-**Core Concept**: The "missing" strategy addresses the most fundamental gap in a media library—content that you want but don't have at all. This differs from upgrades (content you have but want better versions of) or recent additions (content that just became available).
+**Core Concept**: The "missing" strategy addresses the most fundamental gap in a media library: content that you want but don't have at all. This differs from upgrades (content you have but want better versions of) or recent additions (content that just became available).
 
 **How It Works**:
 
@@ -70,7 +70,7 @@ The strategy prioritizes items furthest below cutoff because they represent the 
 
 **What It Searches For**: Newly added or recently aired content
 
-**Core Concept**: The "recent" strategy focuses on time-sensitive content—episodes that just aired, movies that just released. This content has the highest chance of finding new releases because indexers are actively uploading them.
+**Core Concept**: The "recent" strategy focuses on time-sensitive content: episodes that just aired, movies that just released. This content has the highest chance of finding new releases because indexers are actively uploading them.
 
 **How It Works**:
 
