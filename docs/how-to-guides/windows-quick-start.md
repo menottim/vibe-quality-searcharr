@@ -6,6 +6,30 @@ This guide assumes you have **no Docker experience** and will walk you through e
 
 ---
 
+## ⚠️ Important: Windows Security Notice
+
+**On Windows, this application runs with elevated privileges inside the Docker container.**
+
+**What this means:**
+- The application runs as the `root` user **inside the container** (not on your Windows system)
+- This is necessary due to how Windows handles Docker volume permissions
+- Your Windows system remains protected - the container is isolated
+
+**Why is this required on Windows?**
+Windows and Linux handle file permissions differently. When Docker mounts a Windows directory into a Linux container, the permission system doesn't translate properly. Running as root inside the container is the pragmatic solution that ensures the application can write to its database.
+
+**Security implications:**
+- ✅ **Your Windows system is safe**: The container is sandboxed and isolated from your Windows installation
+- ✅ **On Linux, runs as non-root**: If you deploy on a Linux server, the application automatically runs as a non-root user
+- ⚠️ **Container compromise**: If the application inside the container were compromised, the attacker would have root privileges *within that container* (but not on your Windows system)
+- ℹ️ **Standard trade-off**: This is a common compromise for Docker applications on Windows in home/development environments
+
+**For production use:** If deploying on a Linux server, the application will automatically detect that it can run as a non-root user and do so. The root fallback only activates on Windows.
+
+**Bottom line:** For home use on Windows, this is an acceptable trade-off. The application works reliably, and your Windows system remains protected by Docker's container isolation.
+
+---
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
 2. [Install Docker Desktop](#install-docker-desktop)
