@@ -7,12 +7,13 @@ This directory contains internal documentation, historical reports, and suppleme
 ### Internal Process Documents
 - **[release-checklist.md](release-checklist.md)** - Internal checklist for release process
 
-### Historical Security Documents
-- **[security-assessment-post-fix.md](security-assessment-post-fix.md)** - Post-fix security assessment
+### Security Audit Reports
+- **[security-audit-api-docker-2026-02-25.md](security-audit-api-docker-2026-02-25.md)** - Comprehensive audit against OWASP API Top 10, Docker security, and API key transmission standards (20 findings, all remediated)
+- **[security-audit.md](security-audit.md)** - Initial automated security audit (SAST, dependency scanning)
+- **[security-penetration-test-report.md](security-penetration-test-report.md)** - Penetration test report (15 findings)
+- **[security-assessment-post-fix.md](security-assessment-post-fix.md)** - Post-penetration-test fix verification
 - **[security-fixes-completed.md](security-fixes-completed.md)** - Completed security fixes from penetration test
 - **[security-fixes-in-progress.md](security-fixes-in-progress.md)** - Security fixes in progress (historical)
-- **[security-penetration-test-report.md](security-penetration-test-report.md)** - Original penetration test report
-- **[security-audit.md](security-audit.md)** - Security audit results
 
 ### Test Reports
 - **[test-report.md](test-report.md)** - Test coverage and results report

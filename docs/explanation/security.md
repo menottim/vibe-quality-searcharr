@@ -14,6 +14,9 @@ This guide covers security features, best practices, and deployment security for
 - Global pepper (stored separately)
 - Per-user salt (automatic)
 - Parameters: 3 iterations, 128 MiB memory, 8 threads
+- Case-preserved storage (never normalized)
+- 100+ common password blocklist (per NIST SP 800-63B)
+- 12-128 character length enforcement
 
 **Session Management:**
 - JWT with HS256 (HMAC-SHA256)
@@ -42,7 +45,9 @@ This guide covers security features, best practices, and deployment security for
 
 **Rate Limiting:**
 - Global: 100 requests/minute (configurable)
-- Login: Stricter limits to prevent brute force
+- Authentication: 3-10/minute (login, register, password change, refresh)
+- Data read endpoints: 30-60/minute
+- Data write/delete endpoints: 5-20/minute
 - Headers: X-RateLimit-* for clients
 
 **CORS:**
@@ -54,11 +59,13 @@ This guide covers security features, best practices, and deployment security for
 ```
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
-Content-Security-Policy: default-src 'self'
+Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-<per-request>'
 Referrer-Policy: strict-origin-when-cross-origin
 X-XSS-Protection: 1; mode=block
 Strict-Transport-Security: max-age=31536000 (production)
 ```
+
+CSP uses per-request nonces for inline scripts instead of `'unsafe-inline'`, providing real XSS protection while allowing the application's inline scripts to execute.
 
 ### 4. Input Validation
 
@@ -66,7 +73,7 @@ Strict-Transport-Security: max-age=31536000 (production)
 - SQL Injection (SQLAlchemy ORM)
 - XSS (Content-Type headers, CSP)
 - Command Injection (no shell execution)
-- SSRF (URL validation, configurable local access)
+- SSRF (URL validation with DNS resolution, blocked network lists, cloud metadata protection)
 
 **Validation:**
 - Pydantic schemas for all inputs
@@ -546,5 +553,14 @@ DELETE /api/auth/account
 ---
 
 **Version:** 0.1.0
-**Last Updated:** 2026-02-24
-**Next Review:** 2026-05-24
+**Last Updated:** 2026-02-25
+**Next Review:** 2026-05-25
+
+### Security Audit History
+
+| Date | Report | Findings | Status |
+|------|--------|----------|--------|
+| 2026-02-24 | [Initial Security Audit](../other/security-audit.md) | Automated SAST + dependency scanning | Complete |
+| 2026-02-24 | [Penetration Test](../other/security-penetration-test-report.md) | 15 vulnerabilities (3 critical) | All fixed |
+| 2026-02-24 | [Post-Fix Assessment](../other/security-assessment-post-fix.md) | Verification of all pen test fixes | Complete |
+| 2026-02-25 | [API & Docker Audit](../other/security-audit-api-docker-2026-02-25.md) | 20 vulnerabilities (3 critical) | All fixed |
