@@ -24,9 +24,15 @@ services:
     # have permission issues on Windows. Re-enable for Linux production deployments.
     # read_only: true
 
-    # Security: Drop all capabilities
-    cap_drop:
-      - ALL
+    # Security: Drop capabilities (but keep SETUID/SETGID for gosu)
+    # Note: On Windows, we need SETUID/SETGID for the entrypoint to switch users
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - SETUID
+    #   - SETGID
+    # For simplicity on Windows, we'll skip capability dropping
+    # Re-enable for Linux production deployments
 
     # Security: No new privileges
     security_opt:
