@@ -56,7 +56,12 @@
       "Bash(pip install:*)",
       "Bash(export C_INCLUDE_PATH=/opt/homebrew/opt/sqlcipher/include)",
       "Bash(export LIBRARY_PATH=/opt/homebrew/opt/sqlcipher/lib)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(named 'vibe_quality_searcharr'\" because Python couldn''t find the module in \n/app/src/vibe_quality_searcharr/.\n\nSetting PYTHONPATH=/app/src allows Python to import the module correctly.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(docker-compose exec:*)",
+      "Bash(docker compose exec:*)",
+      "WebFetch(domain:sqlalche.me)",
+      "WebFetch(domain:docs.sqlalchemy.org)"
     ]
   }
 }

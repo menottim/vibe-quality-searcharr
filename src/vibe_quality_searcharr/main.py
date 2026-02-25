@@ -23,29 +23,12 @@ from slowapi.util import get_remote_address
 from vibe_quality_searcharr.api import auth, dashboard, instances, search_history, search_queue
 from vibe_quality_searcharr.config import settings
 from vibe_quality_searcharr.database import close_db, get_session_factory, init_db, test_database_connection
+from vibe_quality_searcharr.logging_config import configure_logging
 from vibe_quality_searcharr.services import start_scheduler, stop_scheduler
 
-# Configure structured logging
-structlog.configure(
-    processors=[
-        structlog.stdlib.filter_by_level,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-        structlog.processors.JSONRenderer() if settings.environment == "production"
-        else structlog.dev.ConsoleRenderer(),
-    ],
-    wrapper_class=structlog.stdlib.BoundLogger,
-    context_class=dict,
-    logger_factory=structlog.stdlib.LoggerFactory(),
-    cache_logger_on_first_use=True,
-)
-
-logger = structlog.get_logger()
+# Configure comprehensive logging system
+configure_logging()
+logger = structlog.get_logger(__name__)
 
 # Initialize rate limiter
 limiter = Limiter(
