@@ -109,28 +109,36 @@
                     <option value="{{ instance.id }}">{{ instance.name }}</option>
                     {% endfor %}
                 </select>
+                <small>Which Sonarr or Radarr instance to search against</small>
             </label>
 
             <label for="name">
                 Queue Name
                 <input type="text" id="name" name="name" required placeholder="e.g., Recent TV Shows">
+                <small>A label to identify this queue in your dashboard (e.g., "Nightly TV Search", "Weekend Movies")</small>
             </label>
 
             <label for="strategy">
                 Search Strategy
                 <select id="strategy" name="strategy" required>
                     <option value="">Select strategy...</option>
+                    <option value="missing">Missing - Find missing items</option>
+                    <option value="cutoff_unmet">Quality Upgrade - Below quality cutoff</option>
                     <option value="recent">Recent - Newest items first</option>
-                    <option value="popular">Popular - Highest rated first</option>
-                    <option value="oldest">Oldest - Oldest items first</option>
-                    <option value="random">Random - Random selection</option>
+                    <option value="custom">Custom - Custom filter configuration</option>
                 </select>
-                <small>Strategy determines the order items are searched</small>
+                <small>
+                    <strong>Missing</strong> — Searches for items not yet downloaded, prioritizing gaps in your library<br>
+                    <strong>Quality Upgrade</strong> — Searches for items below your quality cutoff, finding better versions<br>
+                    <strong>Recent</strong> — Searches newest additions first, prioritizing recently added items<br>
+                    <strong>Custom</strong> — Uses custom filters you define for targeted searching
+                </small>
             </label>
 
             <label for="recurring">
                 <input type="checkbox" id="recurring" name="recurring">
                 Recurring search
+                <small>When enabled, this queue will re-run automatically on a schedule. One-time queues run once and stop.</small>
             </label>
 
             <label for="interval_hours" id="intervalLabel" style="display: none;">
