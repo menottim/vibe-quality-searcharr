@@ -631,6 +631,35 @@ cat secrets/pepper
 cat secrets/db_key
 ```
 
+#### Issue: Docker Build Fails with "parent snapshot does not exist"
+
+**Symptoms:**
+```
+failed to prepare extraction snapshot "extract-..." parent snapshot ... does not exist: not found
+```
+
+**Cause:**
+
+Docker Desktop's build cache has become corrupted. This is a known Docker Desktop bug unrelated to the application.
+
+**Solutions:**
+
+Prune the build cache and retry:
+```bash
+# Linux/macOS
+docker builder prune --all --force
+
+# Windows (PowerShell)
+docker builder prune --all --force
+```
+
+If that doesn't help, do a full cleanup:
+```bash
+docker system prune --all --force
+```
+
+Then re-run the build or setup script.
+
 #### Issue: Volume Mount Issues
 
 **Symptoms:**

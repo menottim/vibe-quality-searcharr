@@ -212,6 +212,24 @@ This usually means the data directory doesn't exist or Docker can't write to it:
 3. Verify Docker has file sharing access: Docker Desktop > Settings > Resources > File Sharing > add your project directory
 4. Rebuild and restart: `docker-compose build && docker-compose up -d`
 
+### Docker build fails with "parent snapshot does not exist"
+
+Docker Desktop's build cache has become corrupted. Clear it and rebuild:
+
+```powershell
+docker builder prune --all --force
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+If that doesn't resolve it, do a full cleanup:
+
+```powershell
+docker system prune --all --force
+docker-compose build
+docker-compose up -d
+```
+
 ### "WSL 2 installation is incomplete"
 
 Open PowerShell as Administrator and run:
