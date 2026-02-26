@@ -162,9 +162,18 @@ async function testConnection() {
                 </div>
             `;
         } else {
+            let errorMsg = data.message || '';
+            if (!errorMsg && data.detail) {
+                if (Array.isArray(data.detail)) {
+                    errorMsg = data.detail.map(e => e.msg || e).join('; ');
+                } else {
+                    errorMsg = data.detail;
+                }
+            }
+            errorMsg = errorMsg || 'Unknown error';
             testResult.innerHTML = `
                 <div class="alert alert-danger" style="margin-top: 1rem;">
-                    <strong>✗ Connection failed:</strong> ${data.message || 'Unknown error'}<br>
+                    <strong>✗ Connection failed:</strong> ${errorMsg}<br>
                     <small>See <strong>Docker Networking Tips</strong> below if you're using localhost</small>
                 </div>
             `;

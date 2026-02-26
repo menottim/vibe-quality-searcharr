@@ -63,7 +63,7 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=15
       - REFRESH_TOKEN_EXPIRE_DAYS=30
       - API_RATE_LIMIT=100/minute
-      - ALLOW_LOCAL_INSTANCES=false
+      - ALLOW_LOCAL_INSTANCES=true
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7337}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
 
