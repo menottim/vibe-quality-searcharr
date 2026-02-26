@@ -144,8 +144,6 @@ a:not([role="button"]):hover { color: var(--brand-primary); }
    ============================================ */
 
 .app-layout {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
     min-height: 100vh;
 }
 
@@ -609,7 +607,7 @@ label small {
 
 @media (max-width: 768px) {
     .app-layout {
-        grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+        /* sidebar collapses via fixed width change; no grid needed */
     }
 
     .sidebar {
