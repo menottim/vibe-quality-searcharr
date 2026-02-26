@@ -1,7 +1,6 @@
 """Tests for global exception handlers in main.py."""
 
 import logging
-from unittest.mock import patch
 
 import pytest
 
@@ -12,9 +11,8 @@ class TestRequestValidationErrorHandler:
     def test_validation_error_returns_422(self, client):
         """Validation errors still return 422 with error details."""
         response = client.post(
-            "/api/search-queues",
-            json={"instance_id": "not_a_number"},
-            cookies=client.cookies,
+            "/api/auth/login",
+            json={"username": 123},
         )
         assert response.status_code == 422
 
@@ -22,22 +20,21 @@ class TestRequestValidationErrorHandler:
         """Validation errors are logged at WARNING level."""
         with caplog.at_level(logging.WARNING):
             client.post(
-                "/api/search-queues",
-                json={"instance_id": "not_a_number"},
-                cookies=client.cookies,
+                "/api/auth/login",
+                json={"username": 123},
             )
 
         warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
-        assert any("validation" in r.getMessage().lower() for r in warning_records) or \
-               any("http_validation_error" in getattr(r, "msg", "") for r in warning_records) or \
-               len(warning_records) > 0, "Expected a WARNING log for validation error"
+        assert any(
+            "http_validation_error" in getattr(r, "msg", str(r.getMessage()))
+            for r in warning_records
+        ), "Expected a WARNING log containing 'http_validation_error'"
 
     def test_validation_error_response_contains_details(self, client):
         """Validation error response includes field-level error details."""
         response = client.post(
-            "/api/search-queues",
-            json={"instance_id": "not_a_number"},
-            cookies=client.cookies,
+            "/api/auth/login",
+            json={"username": 123},
         )
         data = response.json()
         assert "detail" in data
@@ -67,7 +64,40 @@ class TestUnhandledExceptionHandler:
 
     def test_unhandled_exception_returns_500(self, client):
         """Unhandled exceptions return 500 with generic message."""
-        with patch("vibe_quality_searcharr.main.database_health_check", side_effect=RuntimeError("boom")):
-            response = client.get("/health")
-        # Health endpoint has its own try-except, so it returns 503
-        assert response.status_code in (500, 503)
+        from vibe_quality_searcharr.main import app
+        from fastapi import Request
+
+        @app.get("/test-crash")
+        async def crash_endpoint(request: Request):
+            raise RuntimeError("test unhandled crash")
+
+        try:
+            response = client.get("/test-crash")
+            assert response.status_code == 500
+            data = response.json()
+            assert data["detail"] == "Internal server error"
+        finally:
+            # Clean up the test route
+            app.routes[:] = [r for r in app.routes if getattr(r, "path", None) != "/test-crash"]
+
+    def test_unhandled_exception_logs_error(self, client, caplog):
+        """Unhandled exceptions are logged at ERROR level."""
+        import logging
+        from vibe_quality_searcharr.main import app
+        from fastapi import Request
+
+        @app.get("/test-crash-log")
+        async def crash_log_endpoint(request: Request):
+            raise RuntimeError("test logging crash")
+
+        try:
+            with caplog.at_level(logging.ERROR):
+                client.get("/test-crash-log")
+
+            error_records = [r for r in caplog.records if r.levelno == logging.ERROR]
+            assert any(
+                "unhandled" in getattr(r, "msg", str(r.getMessage())).lower()
+                for r in error_records
+            ), "Expected an ERROR log containing 'unhandled'"
+        finally:
+            app.routes[:] = [r for r in app.routes if getattr(r, "path", None) != "/test-crash-log"]
