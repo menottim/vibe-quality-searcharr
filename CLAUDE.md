@@ -1,0 +1,88 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Vibe-Quality-Searcharr is a homelab application that automates intelligent backlog searching for Sonarr and Radarr media management instances. It's a Docker-first, single-container Python app with an encrypted SQLCipher database, JWT authentication, and a FastAPI REST API with Jinja2 server-rendered UI.
+
+## Common Commands
+
+### Development Setup
+```bash
+poetry install                # Install all dependencies (including dev)
+```
+
+### Running Tests
+```bash
+poetry run pytest                          # All tests with coverage (80% minimum enforced)
+poetry run pytest tests/unit/              # Unit tests only
+poetry run pytest tests/integration/       # Integration tests only
+poetry run pytest tests/security/          # Security tests only
+poetry run pytest tests/unit/test_auth.py  # Single test file
+poetry run pytest -k "test_login"          # Run tests matching pattern
+poetry run pytest --no-cov                 # Skip coverage (faster iteration)
+```
+
+Tests use in-memory SQLCipher databases. The `conftest.py` sets environment variables **before** importing app code — order matters. The `client` fixture patches `settings`, `init_db`, and `test_database_connection` before importing `main.app`.
+
+### Linting & Type Checking
+```bash
+poetry run ruff check src/                 # Lint (pycodestyle, pyflakes, isort, bugbear, security)
+poetry run ruff check src/ --fix           # Auto-fix lint issues
+poetry run ruff format src/                # Format code
+poetry run mypy src/                       # Type check (strict mode)
+poetry run bandit -r src/ -c pyproject.toml  # Security linting
+```
+
+### Running Locally
+```bash
+# Generate secrets first
+bash scripts/generate-secrets.sh
+
+# Run with Docker
+docker-compose up
+
+# Or directly (requires env vars from .env.example)
+poetry run uvicorn vibe_quality_searcharr.main:app --reload --port 7337
+```
+
+## Architecture
+
+### Layer Structure
+```
+api/        → FastAPI route handlers (thin controllers, use Depends() for DI)
+schemas/    → Pydantic request/response models (validation layer)
+services/   → Business logic + external API clients (Sonarr/Radarr via httpx)
+models/     → SQLAlchemy ORM models (5 tables: User, RefreshToken, Instance, SearchQueue, SearchHistory)
+core/       → Cross-cutting: auth (JWT/TOTP), security (Argon2id/Fernet), SSRF protection
+```
+
+### Key Architectural Decisions
+
+- **Database encryption**: SQLCipher with AES-256-CFB. Encryption PRAGMAs must be set immediately on connection before any queries — handled by a custom `creator()` function in `database.py`, not by SQLAlchemy's URL params.
+- **API key storage**: Instance API keys (for Sonarr/Radarr) are Fernet-encrypted in the database, not plaintext.
+- **Password hashing**: Argon2id with a global pepper (from env/secret file) + per-user salt.
+- **Auth flow**: JWT access tokens (short-lived, 15min) + refresh tokens (long-lived, 30 days) stored in httpOnly cookies. Token rotation on refresh.
+- **Rate limiting**: In-memory via slowapi — does NOT share state across workers. Single-worker only.
+- **SSRF protection**: `core/ssrf_protection.py` blocks private IP ranges on instance URLs. Bypassed by `ALLOW_LOCAL_INSTANCES=true` (intended for homelab use).
+- **Static files**: Mounted at `/static` from `src/vibe_quality_searcharr/static/`. UI uses Pico CSS with Jinja2 templates and CSP nonce-based inline scripts.
+
+### Configuration
+
+Pydantic Settings in `config.py`. Secrets can come from environment variables or Docker secret files (`/run/secrets/*`). Key settings: `SECRET_KEY`, `PEPPER`, `DATABASE_KEY` (all require 32+ byte minimum). See `.env.example` for all options.
+
+### Entry Points
+- **Web**: `src/vibe_quality_searcharr/main.py` → FastAPI app with startup/shutdown lifecycle
+- **CLI**: `src/vibe_quality_searcharr/cli.py` → Admin commands (password reset, account unlock)
+- **Health**: `GET /health` (unauthenticated, used by Docker healthcheck)
+- **API docs**: `GET /api/docs` (Swagger, disabled in production)
+
+## Code Conventions
+
+- **Python 3.13**, line length 100 chars
+- **Strict mypy** with Pydantic plugin. `sqlcipher3`, `apscheduler`, `slowapi` have `ignore_missing_imports`
+- **Ruff** for linting and formatting (replaces black, isort, flake8)
+- **structlog** for all logging — JSON-structured, no print statements
+- **Async**: httpx for external HTTP calls, APScheduler for background jobs. DB operations are synchronous (SQLAlchemy sync session)
+- **Tests**: pytest-asyncio with `asyncio_mode = "auto"`. Fixtures scope: `test_settings` is session-scoped, `db_engine`/`db_session`/`client` are function-scoped
