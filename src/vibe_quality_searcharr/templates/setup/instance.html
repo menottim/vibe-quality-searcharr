@@ -55,11 +55,11 @@
                             required
                             placeholder="http://localhost:8989"
                             value="{{ url or '' }}">
-                        <small>Full URL including port (e.g., http://localhost:8989 or http://192.168.1.100:7878)</small>
+                        <small>Full URL including port (e.g., <code class="copy-url" title="Click to copy">http://localhost:8989</code> or <code class="copy-url" title="Click to copy">http://192.168.1.100:7878</code>)</small>
                     </label>
                     <div class="alert alert-info" style="margin-top: 0.75rem; font-size: 0.875rem;">
                         <strong>Docker Networking Tip:</strong> If <code>localhost</code> or your machine's IP
-                        doesn't work inside Docker, try <code>http://host.docker.internal:8989</code> instead.
+                        doesn't work inside Docker, try <code class="copy-url" title="Click to copy">http://host.docker.internal:8989</code> instead.
                     </div>
                 </div>
 
@@ -166,5 +166,23 @@ async function testConnection() {
 }
 
 document.getElementById('testConnectionBtn').addEventListener('click', testConnection);
+
+// Click-to-copy for example URLs
+document.querySelectorAll('.copy-url').forEach(function(el) {
+    el.style.cursor = 'pointer';
+    el.style.borderBottom = '1px dashed var(--brand-info)';
+    el.addEventListener('click', function() {
+        var text = this.textContent;
+        navigator.clipboard.writeText(text).then(function() {
+            var orig = el.textContent;
+            el.textContent = 'Copied!';
+            el.style.color = 'var(--brand-success)';
+            setTimeout(function() {
+                el.textContent = orig;
+                el.style.color = '';
+            }, 1200);
+        });
+    });
+});
 </script>
 {% endblock %}
