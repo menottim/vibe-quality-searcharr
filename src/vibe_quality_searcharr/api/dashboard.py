@@ -433,7 +433,7 @@ async def setup_instance_create(
             name=name,
             instance_type=instance_type,
             url=url,
-            api_key_encrypted=encrypted_api_key,
+            api_key=encrypted_api_key,
             is_active=True,
         )
 
