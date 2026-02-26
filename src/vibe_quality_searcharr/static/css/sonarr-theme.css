@@ -413,6 +413,8 @@ label small {
 .setup-actions button,
 .setup-actions [role="button"] {
     height: 3rem;
+    width: auto;
+    flex: none;
 }
 
 /* Status badges */
