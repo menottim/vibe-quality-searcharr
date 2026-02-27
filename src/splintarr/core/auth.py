@@ -475,6 +475,7 @@ def revoke_all_user_tokens(db: Session, user_id: int) -> int:
     Revoke all refresh tokens for a user.
 
     Useful for security events like password change or account compromise.
+    Uses a single bulk UPDATE instead of loading each token into Python.
 
     Args:
         db: Database session
@@ -487,19 +488,12 @@ def revoke_all_user_tokens(db: Session, user_id: int) -> int:
         TokenError: If revocation fails
     """
     try:
-        # Get all active tokens for user
-        tokens = (
+        now = datetime.utcnow()
+        count = (
             db.query(RefreshToken)
             .filter(RefreshToken.user_id == user_id, RefreshToken.revoked == False)  # noqa: E712
-            .all()
+            .update({"revoked": True, "revoked_at": now}, synchronize_session=False)
         )
-
-        # Revoke each token
-        count = 0
-        for token in tokens:
-            token.revoke()
-            count += 1
-
         db.commit()
 
         logger.info("all_user_tokens_revoked", user_id=user_id, count=count)

@@ -177,15 +177,15 @@ def create_database_engine() -> Engine:
             return conn
 
         # Create engine with custom creator
+        # NullPool is intentional for SQLCipher: each connection sets encryption
+        # PRAGMAs in the creator() function, so pooling/reuse could lead to
+        # unencrypted connections. pool_pre_ping and pool_recycle are omitted
+        # because they have no effect with NullPool (connections are not kept).
+        # StaticPool is used only in tests for in-memory database persistence.
         engine = create_engine(
             database_url,
             creator=creator,  # Use our custom connection creator
-            # Connection pool settings
             poolclass=pool.StaticPool if settings.environment == "test" else pool.NullPool,
-            # Test connections before use to detect stale connections
-            pool_pre_ping=True,
-            # Recycle connections after 1 hour to prevent stale connections
-            pool_recycle=3600,
             # Echo SQL statements in development
             echo=settings.log_level == "DEBUG",
             # Raise exceptions on warnings

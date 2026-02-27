@@ -14,8 +14,9 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import structlog
-from sqlalchemy import func
+from sqlalchemy import case, cast, func
 from sqlalchemy.orm import Session
+from sqlalchemy.types import Date
 
 from splintarr.models import SearchHistory
 
@@ -172,6 +173,10 @@ class SearchHistoryService:
         """
         Get search statistics for the specified period.
 
+        Uses SQL aggregation (GROUP BY, conditional aggregates) instead of
+        loading all rows into Python, reducing memory usage and improving
+        performance for large history tables.
+
         Args:
             instance_id: Filter by instance ID
             queue_id: Filter by queue ID
@@ -197,55 +202,116 @@ class SearchHistoryService:
             end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=days)
 
-            # Base query with date filter
-            base_query = db.query(SearchHistory).filter(
+            # Build common filter conditions
+            filters = [
                 SearchHistory.started_at >= start_date,
                 SearchHistory.started_at <= end_date,
-            )
+            ]
 
             if instance_id is not None:
-                base_query = base_query.filter(SearchHistory.instance_id == instance_id)
+                filters.append(SearchHistory.instance_id == instance_id)
 
             if queue_id is not None:
-                base_query = base_query.filter(SearchHistory.search_queue_id == queue_id)
+                filters.append(SearchHistory.search_queue_id == queue_id)
 
-            # Get all records for analysis
-            records = base_query.all()
+            # Single query for aggregate stats using conditional aggregates
+            stats = (
+                db.query(
+                    func.count(SearchHistory.id).label("total"),
+                    func.sum(
+                        case(
+                            (
+                                SearchHistory.status.in_(["success", "partial_success"]),
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ).label("successful"),
+                    func.sum(
+                        case((SearchHistory.status == "failed", 1), else_=0)
+                    ).label("failed"),
+                    func.coalesce(func.sum(SearchHistory.items_searched), 0).label(
+                        "total_items_searched"
+                    ),
+                    func.coalesce(func.sum(SearchHistory.items_found), 0).label(
+                        "total_items_found"
+                    ),
+                    func.coalesce(func.sum(SearchHistory.searches_triggered), 0).label(
+                        "total_searches_triggered"
+                    ),
+                    func.avg(SearchHistory.duration_seconds).label("avg_duration"),
+                )
+                .filter(*filters)
+                .one()
+            )
 
-            # Calculate statistics
-            total_searches = len(records)
-            successful_searches = sum(1 for r in records if r.was_successful)
-            failed_searches = sum(1 for r in records if r.status == "failed")
+            total_searches = stats.total or 0
+            successful_searches = int(stats.successful or 0)
+            failed_searches = int(stats.failed or 0)
             success_rate = successful_searches / total_searches if total_searches > 0 else 0.0
+            total_items_searched = int(stats.total_items_searched)
+            total_items_found = int(stats.total_items_found)
+            total_searches_triggered = int(stats.total_searches_triggered)
+            avg_duration_seconds = float(stats.avg_duration or 0.0)
 
-            total_items_searched = sum(r.items_searched for r in records)
-            total_items_found = sum(r.items_found for r in records)
-            total_searches_triggered = sum(r.searches_triggered for r in records)
+            # Searches by strategy using GROUP BY
+            strategy_rows = (
+                db.query(
+                    SearchHistory.strategy,
+                    func.count(SearchHistory.id).label("count"),
+                )
+                .filter(*filters)
+                .group_by(SearchHistory.strategy)
+                .all()
+            )
+            searches_by_strategy = {row.strategy: row.count for row in strategy_rows}
 
-            # Average duration
-            durations = [r.duration_seconds for r in records if r.duration_seconds is not None]
-            avg_duration_seconds = sum(durations) / len(durations) if durations else 0.0
+            # Searches by day using GROUP BY on date cast
+            day_rows = (
+                db.query(
+                    cast(SearchHistory.started_at, Date).label("day"),
+                    func.count(SearchHistory.id).label("count"),
+                    func.sum(
+                        case(
+                            (
+                                SearchHistory.status.in_(["success", "partial_success"]),
+                                1,
+                            ),
+                            else_=0,
+                        )
+                    ).label("successful"),
+                    func.sum(
+                        case((SearchHistory.status == "failed", 1), else_=0)
+                    ).label("failed"),
+                )
+                .filter(*filters)
+                .group_by(cast(SearchHistory.started_at, Date))
+                .all()
+            )
 
-            # Searches by strategy
-            searches_by_strategy: dict[str, int] = {}
-            for record in records:
-                strategy = record.strategy
-                searches_by_strategy[strategy] = searches_by_strategy.get(strategy, 0) + 1
+            # Build a lookup from the SQL results
+            day_lookup = {
+                row.day.isoformat() if hasattr(row.day, "isoformat") else str(row.day): {
+                    "count": row.count,
+                    "successful": int(row.successful or 0),
+                    "failed": int(row.failed or 0),
+                }
+                for row in day_rows
+            }
 
-            # Searches by day
+            # Fill in all days (including zero-activity days)
             searches_by_day = []
             for day_offset in range(days):
                 day = start_date + timedelta(days=day_offset)
-                day_end = day + timedelta(days=1)
-
-                day_records = [r for r in records if day <= r.started_at < day_end]
+                day_key = day.date().isoformat()
+                day_data = day_lookup.get(day_key, {"count": 0, "successful": 0, "failed": 0})
 
                 searches_by_day.append(
                     {
-                        "date": day.date().isoformat(),
-                        "count": len(day_records),
-                        "successful": sum(1 for r in day_records if r.was_successful),
-                        "failed": sum(1 for r in day_records if r.status == "failed"),
+                        "date": day_key,
+                        "count": day_data["count"],
+                        "successful": day_data["successful"],
+                        "failed": day_data["failed"],
                     }
                 )
 

@@ -22,8 +22,9 @@ import structlog
 from fastapi import APIRouter, Cookie, Depends, Form, Query, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from splintarr.api.auth import set_auth_cookies
 from splintarr.config import settings
@@ -525,10 +526,11 @@ async def dashboard_index(
     # Get statistics
     stats = await get_dashboard_stats(db, current_user)
 
-    # Get recent activity
+    # Get recent activity (joinedload prevents N+1 when accessing search.instance)
     recent_searches = (
         db.query(SearchHistory)
         .join(Instance)
+        .options(joinedload(SearchHistory.instance))
         .filter(Instance.user_id == current_user.id)
         .order_by(SearchHistory.started_at.desc())
         .limit(10)
@@ -797,61 +799,67 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
     """
     Get dashboard statistics for a user.
 
+    Uses consolidated SQL queries with conditional aggregates to minimize
+    database round-trips (2 queries instead of 7).
+
     Returns:
         dict: Statistics including instance health, queue status, and search metrics
     """
-    # Instance statistics
-    total_instances = db.query(Instance).filter(Instance.user_id == user.id).count()
-
-    active_instances = (
-        db.query(Instance)
-        .filter(Instance.user_id == user.id, Instance.is_active == True)  # noqa: E712
-        .count()
-    )
-
-    # Search queue statistics
-    total_queues = db.query(SearchQueue).join(Instance).filter(Instance.user_id == user.id).count()
-
-    active_queues = (
-        db.query(SearchQueue)
-        .join(Instance)
-        .filter(
-            Instance.user_id == user.id,
-            SearchQueue.is_active == True,  # noqa: E712
-            SearchQueue.status.in_(["pending", "running"]),
+    # Single query for instance + queue stats using conditional aggregates
+    instance_stats = (
+        db.query(
+            func.count(Instance.id).label("total"),
+            func.sum(case((Instance.is_active == True, 1), else_=0)).label("active"),  # noqa: E712
         )
-        .count()
+        .filter(Instance.user_id == user.id)
+        .one()
     )
+    total_instances = instance_stats.total or 0
+    active_instances = int(instance_stats.active or 0)
 
-    # Search history statistics
+    queue_stats = (
+        db.query(
+            func.count(SearchQueue.id).label("total"),
+            func.sum(
+                case(
+                    (
+                        (SearchQueue.is_active == True)  # noqa: E712
+                        & SearchQueue.status.in_(["pending", "running"]),
+                        1,
+                    ),
+                    else_=0,
+                )
+            ).label("active"),
+        )
+        .join(Instance)
+        .filter(Instance.user_id == user.id)
+        .one()
+    )
+    total_queues = queue_stats.total or 0
+    active_queues = int(queue_stats.active or 0)
+
+    # Single query for all search history stats using conditional aggregates
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     week_ago = today - timedelta(days=7)
 
-    searches_today = (
-        db.query(SearchHistory)
-        .join(Instance)
-        .filter(Instance.user_id == user.id, SearchHistory.started_at >= today)
-        .count()
-    )
-
-    searches_this_week = (
-        db.query(SearchHistory)
+    search_stats = (
+        db.query(
+            func.sum(case((SearchHistory.started_at >= today, 1), else_=0)).label(
+                "searches_today"
+            ),
+            func.count(SearchHistory.id).label("searches_this_week"),
+            func.sum(
+                case((SearchHistory.status == "completed", 1), else_=0)
+            ).label("successful_searches"),
+        )
         .join(Instance)
         .filter(Instance.user_id == user.id, SearchHistory.started_at >= week_ago)
-        .count()
+        .one()
     )
 
-    # Success rate
-    successful_searches = (
-        db.query(SearchHistory)
-        .join(Instance)
-        .filter(
-            Instance.user_id == user.id,
-            SearchHistory.status == "completed",
-            SearchHistory.started_at >= week_ago,
-        )
-        .count()
-    )
+    searches_today = int(search_stats.searches_today or 0)
+    searches_this_week = search_stats.searches_this_week or 0
+    successful_searches = int(search_stats.successful_searches or 0)
 
     success_rate = (successful_searches / searches_this_week * 100) if searches_this_week > 0 else 0
 
@@ -902,6 +910,7 @@ async def api_dashboard_activity(
     recent_searches = (
         db.query(SearchHistory)
         .join(Instance)
+        .options(joinedload(SearchHistory.instance))
         .filter(Instance.user_id == current_user.id)
         .order_by(SearchHistory.started_at.desc())
         .limit(limit)
