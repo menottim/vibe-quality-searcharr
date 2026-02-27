@@ -25,6 +25,7 @@ from splintarr.core.auth import (
     AuthenticationError,
     TokenError,
     authenticate_user,
+    blacklist_2fa_pending_token,
     blacklist_access_token,
     create_2fa_pending_token,
     create_access_token,
@@ -768,7 +769,10 @@ async def login_verify_2fa(
             detail="Invalid TOTP code",
         )
 
-    # 2FA passed — issue full tokens
+    # 2FA passed — blacklist the pending token to prevent replay attacks
+    blacklist_2fa_pending_token(pending_token)
+
+    # Issue full tokens
     ip_address = get_client_ip(request)
     access_token = create_access_token(user.id, user.username)
     user_agent = request.headers.get("User-Agent", "unknown")

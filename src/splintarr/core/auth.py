@@ -60,6 +60,29 @@ def blacklist_access_token(token: str) -> None:
         logger.warning("failed_to_blacklist_access_token", error=str(e))
 
 
+def blacklist_2fa_pending_token(token: str) -> None:
+    """Add a 2FA pending token's JTI to the blacklist (called after successful 2FA login).
+
+    Prevents replay of the 2FA pending token within its 5-minute lifetime.
+    Reuses the same in-memory blacklist as access tokens since the JTI
+    namespace is globally unique (UUIDs) and cleanup logic is shared.
+    """
+    try:
+        payload = jwt.decode(token, settings.get_secret_key(), algorithms=ALLOWED_JWT_ALGORITHMS)
+        jti = payload.get("jti")
+        if jti:
+            exp = payload.get("exp")
+            expiry = (
+                datetime.utcfromtimestamp(exp)
+                if exp
+                else datetime.utcnow() + timedelta(minutes=5)
+            )
+            _access_token_blacklist[jti] = expiry
+            logger.debug("2fa_pending_token_blacklisted", jti=jti)
+    except Exception as e:
+        logger.warning("failed_to_blacklist_2fa_pending_token", error=str(e))
+
+
 def _cleanup_blacklist() -> None:
     """Remove expired entries from the access token blacklist."""
     now = datetime.utcnow()
@@ -698,7 +721,7 @@ def verify_2fa_pending_token(token: str) -> dict[str, Any]:
         dict: Decoded token claims
 
     Raises:
-        TokenError: If token is invalid, expired, or not type "2fa_pending"
+        TokenError: If token is invalid, expired, blacklisted, or not type "2fa_pending"
     """
     try:
         payload = jwt.decode(
@@ -708,6 +731,15 @@ def verify_2fa_pending_token(token: str) -> dict[str, Any]:
         )
         if payload.get("type") != "2fa_pending":
             raise TokenError("Invalid token type")
+
+        # Check if token has been blacklisted (replay protection)
+        jti = payload.get("jti")
+        if jti and jti in _access_token_blacklist:
+            _cleanup_blacklist()
+            if jti in _access_token_blacklist:
+                logger.warning("2fa_pending_token_replay_rejected", jti=jti)
+                raise TokenError("2FA pending token has already been used")
+
         logger.debug("2fa_pending_token_verified", user_id=payload.get("sub"))
         return payload
     except JWTError as e:
