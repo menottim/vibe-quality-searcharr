@@ -43,7 +43,7 @@ class TestSonarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.sonarr.validate_instance_url"
+                "splintarr.services.base_client.validate_instance_url"
             ) as mock_validate,
         ):
             client._client = AsyncMock()
@@ -65,7 +65,7 @@ class TestSonarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.sonarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=SSRFError("URL resolves to blocked network: 10.0.0.0/8"),
             ),
         ):
@@ -83,7 +83,7 @@ class TestSonarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.sonarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=SSRFError("blocked"),
             ),
         ):
@@ -111,7 +111,7 @@ class TestSonarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.sonarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=counting_validate,
             ),
         ):
@@ -136,7 +136,7 @@ class TestSonarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.sonarr.validate_instance_url"
+                "splintarr.services.base_client.validate_instance_url"
             ) as mock_validate,
         ):
             client._client = AsyncMock()
@@ -158,7 +158,7 @@ class TestSonarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.sonarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=original,
             ),
         ):
@@ -197,7 +197,7 @@ class TestRadarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.radarr.validate_instance_url"
+                "splintarr.services.base_client.validate_instance_url"
             ) as mock_validate,
         ):
             client._client = AsyncMock()
@@ -219,7 +219,7 @@ class TestRadarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.radarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=SSRFError("URL resolves to blocked network: 10.0.0.0/8"),
             ),
         ):
@@ -237,7 +237,7 @@ class TestRadarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.radarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=SSRFError("blocked"),
             ),
         ):
@@ -265,7 +265,7 @@ class TestRadarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.radarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=counting_validate,
             ),
         ):
@@ -289,7 +289,7 @@ class TestRadarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.radarr.validate_instance_url"
+                "splintarr.services.base_client.validate_instance_url"
             ) as mock_validate,
         ):
             client._client = AsyncMock()
@@ -311,7 +311,7 @@ class TestRadarrSSRFRevalidation:
             patch.object(client, "_ensure_client", new_callable=AsyncMock),
             patch.object(client, "_rate_limit", new_callable=AsyncMock),
             patch(
-                "splintarr.services.radarr.validate_instance_url",
+                "splintarr.services.base_client.validate_instance_url",
                 side_effect=original,
             ),
         ):
