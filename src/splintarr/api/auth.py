@@ -697,14 +697,18 @@ async def verify_2fa(
             detail="2FA setup not initiated. Call /2fa/setup first.",
         )
 
-    if not verify_totp_code(user.totp_secret, verify_data.code):
+    is_valid, used_counter = verify_totp_code(
+        user.totp_secret, verify_data.code, user.totp_last_used_counter
+    )
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid TOTP code",
         )
 
-    # Enable 2FA
+    # Enable 2FA and record used counter for replay protection
     user.totp_enabled = True
+    user.totp_last_used_counter = used_counter
     db.commit()
 
     logger.info("2fa_enabled", user_id=user.id)
@@ -762,11 +766,18 @@ async def login_verify_2fa(
             detail="2FA is not enabled for this account",
         )
 
-    if not verify_totp_code(user.totp_secret, verify_data.code):
+    is_valid, used_counter = verify_totp_code(
+        user.totp_secret, verify_data.code, user.totp_last_used_counter
+    )
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid TOTP code",
         )
+
+    # Record used counter for replay protection
+    user.totp_last_used_counter = used_counter
+    db.commit()
 
     # 2FA passed — issue full tokens
     ip_address = get_client_ip(request)
@@ -867,15 +878,19 @@ async def disable_2fa(
         )
 
     # Verify TOTP code
-    if not verify_totp_code(user.totp_secret, disable_data.code):
+    is_valid, used_counter = verify_totp_code(
+        user.totp_secret, disable_data.code, user.totp_last_used_counter
+    )
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid TOTP code",
         )
 
-    # Clear secret and disable
+    # Clear secret, counter, and disable
     user.totp_secret = None
     user.totp_enabled = False
+    user.totp_last_used_counter = None
     db.commit()
 
     logger.info("2fa_disabled", user_id=user.id)
