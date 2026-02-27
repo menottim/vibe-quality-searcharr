@@ -5,9 +5,10 @@ Stores a read-only local mirror of series/movie data pulled from connected
 instances. Updated on sync; never written by user action.
 """
 
-import json as _json
-from typing import Literal
+import json
+from typing import Any
 
+import structlog
 from sqlalchemy import (
     Boolean,
     Column,
@@ -24,8 +25,7 @@ from sqlalchemy.sql import func
 
 from splintarr.database import Base
 
-# Content types
-ContentType = Literal["series", "movie"]
+logger = structlog.get_logger()
 
 
 class LibraryItem(Base):
@@ -113,7 +113,10 @@ class LibraryItem(Base):
     poster_path = Column(
         String(500),
         nullable=True,
-        comment="Relative path to cached poster: {instance_id}/{content_type}/{external_id}.jpg",
+        comment=(
+            "Relative path to cached poster: "
+            "{instance_id}/{content_type}/{external_id}.jpg"
+        ),
     )
 
     # Raw API data
@@ -170,27 +173,38 @@ class LibraryItem(Base):
     @property
     def completion_pct(self) -> float:
         """Percentage of monitored content downloaded (0.0-100.0)."""
-        if not self.episode_count:
+        count = self.episode_count or 0
+        have = self.episode_have or 0
+        if count == 0:
             return 0.0
-        return round(self.episode_have / self.episode_count * 100, 1)
+        return round(have / count * 100, 1)
 
     @property
     def is_complete(self) -> bool:
         """True if all monitored content is downloaded."""
-        return self.episode_count > 0 and self.episode_have >= self.episode_count
+        count = self.episode_count or 0
+        have = self.episode_have or 0
+        return count > 0 and have >= count
 
     @property
     def missing_count(self) -> int:
         """Number of monitored items not yet downloaded."""
-        return max(0, self.episode_count - self.episode_have)
+        return max(0, (self.episode_count or 0) - (self.episode_have or 0))
 
-    def get_metadata(self) -> dict:
+    def get_metadata(self) -> dict[str, Any]:
         """Deserialize metadata_json to dict (empty dict on failure)."""
         if not self.metadata_json:
             return {}
         try:
-            return _json.loads(self.metadata_json)
-        except Exception:
+            result = json.loads(self.metadata_json)
+            if not isinstance(result, dict):
+                return {}
+            return result
+        except (ValueError, TypeError):
+            logger.warning(
+                "metadata_json_parse_failed",
+                library_item_id=self.id,
+            )
             return {}
 
 
@@ -280,13 +294,16 @@ class LibraryEpisode(Base):
 
     def __repr__(self) -> str:
         """String representation of LibraryEpisode."""
+        sn = f"{self.season_number:02d}" if self.season_number is not None else "?"
+        en = f"{self.episode_number:02d}" if self.episode_number is not None else "?"
         return (
-            f"<LibraryEpisode(id={self.id}, "
-            f"S{self.season_number:02d}E{self.episode_number:02d}, "
+            f"<LibraryEpisode(id={self.id}, S{sn}E{en}, "
             f"has_file={self.has_file})>"
         )
 
     @property
     def episode_code(self) -> str:
         """Format as S01E05 style code."""
-        return f"S{self.season_number:02d}E{self.episode_number:02d}"
+        sn = f"{self.season_number:02d}" if self.season_number is not None else "?"
+        en = f"{self.episode_number:02d}" if self.episode_number is not None else "?"
+        return f"S{sn}E{en}"
