@@ -17,7 +17,6 @@ from typing import Annotated
 import structlog
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from splintarr.config import settings
@@ -39,6 +38,7 @@ from splintarr.core.auth import (
     verify_2fa_pending_token,
     verify_totp_code,
 )
+from splintarr.core.rate_limit import rate_limit_key_func
 from splintarr.core.security import hash_password, verify_password
 from splintarr.database import get_db
 from splintarr.models.user import User
@@ -57,7 +57,7 @@ from splintarr.schemas.user import (
 logger = structlog.get_logger()
 
 # Initialize rate limiter
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=rate_limit_key_func)
 
 # Create router
 router = APIRouter(
@@ -68,10 +68,10 @@ router = APIRouter(
 
 def get_client_ip(request: Request) -> str:
     """
-    Extract client IP address from request.
+    Extract client IP address from request for logging purposes.
 
-    Only trusts X-Forwarded-For in production (where a reverse proxy is expected).
-    In development/test, uses the direct client IP to prevent spoofing.
+    Delegates to the shared rate_limit_key_func to ensure consistent
+    IP extraction logic between rate limiting and audit logging.
 
     Args:
         request: FastAPI request object
@@ -79,14 +79,7 @@ def get_client_ip(request: Request) -> str:
     Returns:
         str: Client IP address
     """
-    # Only trust X-Forwarded-For when behind a reverse proxy (production)
-    # In development, attackers can spoof this header to bypass rate limiting
-    if settings.environment == "production":
-        forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
-            # Take the first IP (client IP set by the reverse proxy)
-            return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    return rate_limit_key_func(request)
 
 
 def set_auth_cookies(
