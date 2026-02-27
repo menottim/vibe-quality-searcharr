@@ -145,7 +145,7 @@ class SonarrClient:
             self._client = httpx.AsyncClient(
                 timeout=httpx.Timeout(self.timeout),
                 verify=self.verify_ssl,
-                follow_redirects=True,  # httpx strips sensitive headers on cross-origin redirects
+                follow_redirects=False,  # Disabled: prevents X-Api-Key leaking to redirect targets
                 headers={
                     "X-Api-Key": self.api_key,
                     "User-Agent": f"{settings.app_name}/0.1.0",
@@ -262,6 +262,20 @@ class SonarrClient:
                 logger.warning("sonarr_rate_limit_exceeded", url=self.url)
                 raise SonarrRateLimitError("Rate limit exceeded")
 
+            # Handle redirects (don't follow — prevents API key leaking to redirect target)
+            if 300 <= response.status_code < 400:
+                location = response.headers.get("Location", "unknown")
+                logger.warning(
+                    "sonarr_redirect_not_followed",
+                    url=self.url,
+                    location=location,
+                    status_code=response.status_code,
+                )
+                raise SonarrConnectionError(
+                    f"Instance returned redirect ({response.status_code}) to {location}. "
+                    "Check the instance URL configuration."
+                )
+
             # Handle client errors (4xx)
             if 400 <= response.status_code < 500:
                 error_detail = response.text
@@ -306,6 +320,9 @@ class SonarrClient:
                 error=str(e),
             )
             raise SonarrAPIError(f"HTTP error: {e}") from e
+
+        except SonarrError:
+            raise
 
         except Exception as e:
             logger.error("sonarr_unexpected_error", url=self.url, error=str(e))
