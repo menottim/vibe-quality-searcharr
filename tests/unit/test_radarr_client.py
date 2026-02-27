@@ -440,7 +440,8 @@ class TestRadarrErrorHandling:
         mock_response.status_code = 401
         mock_response.text = "Unauthorized"
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -460,7 +461,8 @@ class TestRadarrErrorHandling:
         mock_response.status_code = 429
         mock_response.text = "Too Many Requests"
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -480,7 +482,8 @@ class TestRadarrErrorHandling:
         mock_response.status_code = 404
         mock_response.text = "Not Found"
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -500,7 +503,8 @@ class TestRadarrErrorHandling:
         mock_response.status_code = 500
         mock_response.text = "Internal Server Error"
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -516,7 +520,8 @@ class TestRadarrErrorHandling:
             api_key="a" * 32,
         )
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(
@@ -534,7 +539,8 @@ class TestRadarrErrorHandling:
             api_key="a" * 32,
         )
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(
@@ -570,7 +576,8 @@ class TestRadarrRetryLogic:
                 raise httpx.ConnectError("Connection refused")
             return mock_response
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = mock_request_with_retries
@@ -588,7 +595,8 @@ class TestRadarrRetryLogic:
             api_key="a" * 32,
         )
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 # Always fail
