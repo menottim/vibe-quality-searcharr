@@ -40,7 +40,7 @@ from splintarr.core.auth import (
     verify_totp_code,
 )
 from splintarr.core.rate_limit import rate_limit_key_func
-from splintarr.core.security import hash_password, verify_password
+from splintarr.core.security import decrypt_field, encrypt_field, hash_password, verify_password
 from splintarr.database import get_db
 from splintarr.models.user import User
 from splintarr.schemas.user import (
@@ -625,9 +625,9 @@ async def setup_2fa(
             detail="2FA is already enabled",
         )
 
-    # Generate and store secret (not yet enabled)
+    # Generate secret and encrypt before storing
     secret = generate_totp_secret()
-    user.totp_secret = secret
+    user.totp_secret = encrypt_field(secret)
     db.commit()
 
     uri = generate_totp_uri(secret, user.username)
@@ -692,7 +692,7 @@ async def verify_2fa(
         )
 
     is_valid, used_counter = verify_totp_code(
-        user.totp_secret, verify_data.code, user.totp_last_used_counter
+        decrypt_field(user.totp_secret), verify_data.code, user.totp_last_used_counter
     )
     if not is_valid:
         raise HTTPException(
@@ -773,7 +773,7 @@ async def login_verify_2fa(
         )
 
     is_valid, used_counter = verify_totp_code(
-        user.totp_secret, verify_data.code, user.totp_last_used_counter
+        decrypt_field(user.totp_secret), verify_data.code, user.totp_last_used_counter
     )
     if not is_valid:
         # Track failed TOTP attempt for per-account lockout (fixes #14)
@@ -900,7 +900,7 @@ async def disable_2fa(
 
     # Verify TOTP code
     is_valid, used_counter = verify_totp_code(
-        user.totp_secret, disable_data.code, user.totp_last_used_counter
+        decrypt_field(user.totp_secret), disable_data.code, user.totp_last_used_counter
     )
     if not is_valid:
         raise HTTPException(
