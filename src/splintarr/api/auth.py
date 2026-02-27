@@ -754,6 +754,18 @@ async def login_verify_2fa(
             detail="Authentication failed",
         )
 
+    # Check account lockout before TOTP verification (fixes #14)
+    if user.is_locked():
+        logger.warning(
+            "2fa_login_rejected_account_locked",
+            user_id=user.id,
+            locked_until=str(user.account_locked_until),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is temporarily locked due to too many failed attempts",
+        )
+
     if not user.totp_secret or not user.totp_enabled:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -764,6 +776,17 @@ async def login_verify_2fa(
         user.totp_secret, verify_data.code, user.totp_last_used_counter
     )
     if not is_valid:
+        # Track failed TOTP attempt for per-account lockout (fixes #14)
+        user.increment_failed_login(
+            max_attempts=settings.max_failed_login_attempts,
+            lockout_duration_minutes=settings.account_lockout_duration_minutes,
+        )
+        db.commit()
+        logger.warning(
+            "2fa_login_invalid_totp",
+            user_id=user.id,
+            failed_attempts=user.failed_login_attempts,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid TOTP code",
@@ -772,7 +795,8 @@ async def login_verify_2fa(
     # 2FA passed — blacklist the pending token to prevent replay attacks
     blacklist_2fa_pending_token(pending_token)
 
-    # Record used counter for replay protection
+    # Reset failed attempt counter and record used TOTP counter
+    user.reset_failed_login()
     user.totp_last_used_counter = used_counter
     db.commit()
 
