@@ -118,14 +118,19 @@ class TestTenantIsolation:
         instance_b: Instance,
     ) -> None:
         """User A's cleanup must not delete User B's history records."""
+        # Eagerly capture IDs before cleanup expires session objects
+        user_a_id = user_a.id
+        inst_a_id = instance_a.id
+        inst_b_id = instance_b.id
+
         # Create old records for both users (120 days old, cutoff is 90)
-        records_a = _create_history_records(db_session, instance_a.id, 3, days_old=120)
-        records_b = _create_history_records(db_session, instance_b.id, 4, days_old=120)
+        _create_history_records(db_session, inst_a_id, 3, days_old=120)
+        _create_history_records(db_session, inst_b_id, 4, days_old=120)
 
         service = SearchHistoryService(lambda: db_session)
 
         # User A triggers cleanup
-        deleted = service.cleanup_old_history(days=90, user_id=user_a.id)
+        deleted = service.cleanup_old_history(days=90, user_id=user_a_id)
 
         # Only User A's 3 records should be deleted
         assert deleted == 3
@@ -133,7 +138,7 @@ class TestTenantIsolation:
         # User B's records must still exist
         remaining_b = (
             db_session.query(SearchHistory)
-            .filter(SearchHistory.instance_id == instance_b.id)
+            .filter(SearchHistory.instance_id == inst_b_id)
             .all()
         )
         assert len(remaining_b) == 4
@@ -141,7 +146,7 @@ class TestTenantIsolation:
         # User A's records should be gone
         remaining_a = (
             db_session.query(SearchHistory)
-            .filter(SearchHistory.instance_id == instance_a.id)
+            .filter(SearchHistory.instance_id == inst_a_id)
             .all()
         )
         assert len(remaining_a) == 0
@@ -155,20 +160,24 @@ class TestTenantIsolation:
         instance_b: Instance,
     ) -> None:
         """User B's cleanup must not delete User A's history records."""
-        _create_history_records(db_session, instance_a.id, 5, days_old=100)
-        _create_history_records(db_session, instance_b.id, 2, days_old=100)
+        user_b_id = user_b.id
+        inst_a_id = instance_a.id
+        inst_b_id = instance_b.id
+
+        _create_history_records(db_session, inst_a_id, 5, days_old=100)
+        _create_history_records(db_session, inst_b_id, 2, days_old=100)
 
         service = SearchHistoryService(lambda: db_session)
 
         # User B triggers cleanup
-        deleted = service.cleanup_old_history(days=90, user_id=user_b.id)
+        deleted = service.cleanup_old_history(days=90, user_id=user_b_id)
 
         assert deleted == 2
 
         # User A's records must still exist
         remaining_a = (
             db_session.query(SearchHistory)
-            .filter(SearchHistory.instance_id == instance_a.id)
+            .filter(SearchHistory.instance_id == inst_a_id)
             .all()
         )
         assert len(remaining_a) == 5
@@ -201,20 +210,23 @@ class TestTenantIsolation:
         instance_a: Instance,
     ) -> None:
         """Cleanup must only delete records older than the cutoff, not recent ones."""
+        user_a_id = user_a.id
+        inst_a_id = instance_a.id
+
         # Old records (should be deleted)
-        _create_history_records(db_session, instance_a.id, 2, days_old=120)
+        _create_history_records(db_session, inst_a_id, 2, days_old=120)
         # Recent records (should survive)
-        _create_history_records(db_session, instance_a.id, 3, days_old=10)
+        _create_history_records(db_session, inst_a_id, 3, days_old=10)
 
         service = SearchHistoryService(lambda: db_session)
 
-        deleted = service.cleanup_old_history(days=90, user_id=user_a.id)
+        deleted = service.cleanup_old_history(days=90, user_id=user_a_id)
 
         assert deleted == 2
 
         remaining = (
             db_session.query(SearchHistory)
-            .filter(SearchHistory.instance_id == instance_a.id)
+            .filter(SearchHistory.instance_id == inst_a_id)
             .all()
         )
         assert len(remaining) == 3
@@ -228,15 +240,20 @@ class TestTenantIsolation:
         instance_b: Instance,
     ) -> None:
         """The returned count must accurately reflect only the user's deleted records."""
-        _create_history_records(db_session, instance_a.id, 6, days_old=200)
-        _create_history_records(db_session, instance_b.id, 8, days_old=200)
+        user_a_id = user_a.id
+        user_b_id = user_b.id
+        inst_a_id = instance_a.id
+        inst_b_id = instance_b.id
+
+        _create_history_records(db_session, inst_a_id, 6, days_old=200)
+        _create_history_records(db_session, inst_b_id, 8, days_old=200)
 
         service = SearchHistoryService(lambda: db_session)
 
-        count_a = service.cleanup_old_history(days=90, user_id=user_a.id)
+        count_a = service.cleanup_old_history(days=90, user_id=user_a_id)
         assert count_a == 6
 
-        count_b = service.cleanup_old_history(days=90, user_id=user_b.id)
+        count_b = service.cleanup_old_history(days=90, user_id=user_b_id)
         assert count_b == 8
 
     def test_cleanup_with_no_matching_records_returns_zero(

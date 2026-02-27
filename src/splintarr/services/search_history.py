@@ -302,7 +302,7 @@ class SearchHistoryService:
 
             # delete() returns the count of deleted rows, no need for a
             # separate count() query
-            deleted_count = query.delete(synchronize_session="fetch")
+            deleted_count = query.delete(synchronize_session=False)
 
             db.commit()
 
