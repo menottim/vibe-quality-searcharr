@@ -14,14 +14,14 @@ All dashboard pages require authentication except the setup wizard.
 The setup wizard is only accessible when no users exist.
 """
 
+import re
 from datetime import datetime, timedelta
 from typing import Annotated, Any
 
 import structlog
-from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, Response, status
+from fastapi import APIRouter, Cookie, Depends, Form, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -34,7 +34,8 @@ from vibe_quality_searcharr.core.auth import (
     get_current_user_from_cookie,
     get_current_user_id_from_token,
 )
-from vibe_quality_searcharr.core.security import decrypt_field, hash_password
+from vibe_quality_searcharr.core.security import encrypt_field, hash_password
+from vibe_quality_searcharr.core.ssrf_protection import SSRFError, validate_instance_url
 from vibe_quality_searcharr.database import get_db
 from vibe_quality_searcharr.models.instance import Instance
 from vibe_quality_searcharr.models.search_history import SearchHistory
@@ -55,9 +56,7 @@ templates = Jinja2Templates(directory="src/vibe_quality_searcharr/templates")
 templates.env.filters["datetime"] = lambda value: (
     value.strftime("%Y-%m-%d %H:%M:%S") if value else ""
 )
-templates.env.filters["timeago"] = lambda value: (
-    _timeago(value) if value else ""
-)
+templates.env.filters["timeago"] = lambda value: (_timeago(value) if value else "")
 
 
 def _timeago(dt: datetime) -> str:
@@ -242,9 +241,6 @@ async def setup_admin_create(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    # Validate password strength using full policy (HIGH-01).
-    # Same rules as the API registration schema.
-    import re
     password_errors = []
     if len(password) < 12:
         password_errors.append("Password must be at least 12 characters long")
@@ -348,7 +344,12 @@ async def setup_instance_page(
     """
     return templates.TemplateResponse(
         "setup/instance.html",
-        {"request": request, "app_name": settings.app_name, "user": current_user},
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "user": current_user,
+            "no_sidebar": True,
+        },
     )
 
 
@@ -374,6 +375,7 @@ async def setup_instance_create(
                     "request": request,
                     "app_name": settings.app_name,
                     "user": current_user,
+                    "no_sidebar": True,
                     "error": "Invalid instance type",
                     "name": name,
                     "url": url,
@@ -381,17 +383,16 @@ async def setup_instance_create(
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        # SSRF protection: validate URL before connecting (HIGH-03/MED-03)
         try:
-            from vibe_quality_searcharr.core.ssrf_protection import SSRFError, validate_instance_url
             validate_instance_url(url, allow_local=settings.allow_local_instances)
-        except (SSRFError, ValueError) as e:
+        except (SSRFError, ValueError):
             return templates.TemplateResponse(
                 "setup/instance.html",
                 {
                     "request": request,
                     "app_name": settings.app_name,
                     "user": current_user,
+                    "no_sidebar": True,
                     "error": "URL blocked for security reasons. Use a public hostname or enable local instances.",
                     "name": name,
                     "url": url,
@@ -400,22 +401,22 @@ async def setup_instance_create(
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Test connection
         try:
             if instance_type == "sonarr":
                 async with SonarrClient(url, api_key) as client:
-                    system_status = await client.get_system_status()
+                    await client.get_system_status()
             else:
                 async with RadarrClient(url, api_key) as client:
-                    system_status = await client.get_system_status()
-        except (SonarrError, RadarrError) as e:
+                    await client.get_system_status()
+        except (SonarrError, RadarrError):
             return templates.TemplateResponse(
                 "setup/instance.html",
                 {
                     "request": request,
                     "app_name": settings.app_name,
                     "user": current_user,
-                    "error": "Connection test failed. Check the URL and API key, and see Docker Networking Tips below.",
+                    "no_sidebar": True,
+                    "error": "Connection test failed. Check the URL and API key. If running inside Docker, see the networking tip below.",
                     "name": name,
                     "url": url,
                     "instance_type": instance_type,
@@ -423,8 +424,6 @@ async def setup_instance_create(
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Encrypt API key
-        from vibe_quality_searcharr.core.security import encrypt_field
         encrypted_api_key = encrypt_field(api_key)
 
         # Create instance
@@ -500,7 +499,12 @@ async def setup_complete(
     """
     return templates.TemplateResponse(
         "setup/complete.html",
-        {"request": request, "app_name": settings.app_name, "user": current_user},
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "user": current_user,
+            "no_sidebar": True,
+        },
     )
 
 
@@ -531,6 +535,14 @@ async def dashboard_index(
         .all()
     )
 
+    # Get instances for system status
+    instances = (
+        db.query(Instance)
+        .filter(Instance.user_id == current_user.id)
+        .order_by(Instance.created_at.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         "dashboard/index.html",
         {
@@ -538,6 +550,8 @@ async def dashboard_index(
             "user": current_user,
             "stats": stats,
             "recent_searches": recent_searches,
+            "instances": instances,
+            "active_page": "dashboard",
         },
     )
 
@@ -564,6 +578,7 @@ async def dashboard_instances(
             "request": request,
             "user": current_user,
             "instances": instances,
+            "active_page": "instances",
         },
     )
 
@@ -579,9 +594,6 @@ async def dashboard_add_instance(
     api_key: str = Form(...),
 ) -> Response:
     """Add a new instance from the dashboard."""
-    from vibe_quality_searcharr.core.security import encrypt_field
-    from vibe_quality_searcharr.core.ssrf_protection import SSRFError, validate_instance_url
-
     try:
         validate_instance_url(url, allow_local=settings.allow_local_instances)
     except (SSRFError, ValueError) as e:
@@ -657,6 +669,55 @@ async def dashboard_search_queues(
             "user": current_user,
             "queues": queues,
             "instances": instances,
+            "active_page": "queues",
+        },
+    )
+
+
+@router.get(
+    "/dashboard/search-queues/{queue_id}",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def dashboard_search_queue_detail(
+    request: Request,
+    queue_id: int,
+    current_user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db),
+) -> Response:
+    """
+    Search queue detail page.
+    """
+    queue = (
+        db.query(SearchQueue)
+        .join(Instance)
+        .filter(
+            SearchQueue.id == queue_id,
+            Instance.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not queue:
+        return RedirectResponse(url="/dashboard/search-queues", status_code=status.HTTP_302_FOUND)
+
+    # Get recent history for this queue
+    history = (
+        db.query(SearchHistory)
+        .filter(SearchHistory.search_queue_id == queue_id)
+        .order_by(SearchHistory.started_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "dashboard/search_queue_detail.html",
+        {
+            "request": request,
+            "user": current_user,
+            "queue": queue,
+            "history": history,
+            "active_page": "queues",
         },
     )
 
@@ -677,10 +738,7 @@ async def dashboard_search_history(
 
     # Get total count
     total_count = (
-        db.query(SearchHistory)
-        .join(Instance)
-        .filter(Instance.user_id == current_user.id)
-        .count()
+        db.query(SearchHistory).join(Instance).filter(Instance.user_id == current_user.id).count()
     )
 
     # Get paginated history
@@ -707,6 +765,7 @@ async def dashboard_search_history(
             "per_page": per_page,
             "total_count": total_count,
             "total_pages": total_pages,
+            "active_page": "history",
         },
     )
 
@@ -724,6 +783,7 @@ async def dashboard_settings(
         {
             "request": request,
             "user": current_user,
+            "active_page": "settings",
         },
     )
 
@@ -750,12 +810,7 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
     )
 
     # Search queue statistics
-    total_queues = (
-        db.query(SearchQueue)
-        .join(Instance)
-        .filter(Instance.user_id == user.id)
-        .count()
-    )
+    total_queues = db.query(SearchQueue).join(Instance).filter(Instance.user_id == user.id).count()
 
     active_queues = (
         db.query(SearchQueue)
@@ -798,9 +853,7 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
         .count()
     )
 
-    success_rate = (
-        (successful_searches / searches_this_week * 100) if searches_this_week > 0 else 0
-    )
+    success_rate = (successful_searches / searches_this_week * 100) if searches_this_week > 0 else 0
 
     return {
         "instances": {
@@ -857,15 +910,52 @@ async def api_dashboard_activity(
 
     activity = []
     for search in recent_searches:
-        activity.append({
-            "id": search.id,
-            "instance_name": search.instance.name,
-            "strategy": search.strategy,
-            "status": search.status,
-            "items_searched": search.items_searched,
-            "items_found": search.items_found,
-            "started_at": search.started_at.isoformat() if search.started_at else None,
-            "completed_at": search.completed_at.isoformat() if search.completed_at else None,
-        })
+        activity.append(
+            {
+                "id": search.id,
+                "instance_name": search.instance.name,
+                "strategy": search.strategy,
+                "status": search.status,
+                "items_searched": search.items_searched,
+                "items_found": search.items_found,
+                "started_at": search.started_at.isoformat() if search.started_at else None,
+                "completed_at": search.completed_at.isoformat() if search.completed_at else None,
+            }
+        )
 
     return JSONResponse(content={"activity": activity})
+
+
+@router.get("/api/dashboard/system-status", include_in_schema=False)
+async def api_dashboard_system_status(
+    current_user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """
+    Get instance health status (JSON API).
+
+    Returns per-instance health info for the system status panel.
+    """
+    instances = (
+        db.query(Instance)
+        .filter(Instance.user_id == current_user.id)
+        .order_by(Instance.created_at.desc())
+        .all()
+    )
+
+    instance_status = []
+    for inst in instances:
+        instance_status.append(
+            {
+                "id": inst.id,
+                "name": inst.name,
+                "instance_type": inst.instance_type,
+                "url": inst.sanitized_url,
+                "connection_status": inst.connection_status,
+                "last_connection_test": (
+                    inst.last_connection_test.isoformat() if inst.last_connection_test else None
+                ),
+            }
+        )
+
+    return JSONResponse(content={"instances": instance_status})

@@ -12,7 +12,8 @@ Main application entry point with:
 import secrets
 
 import structlog
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
@@ -21,10 +22,17 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from vibe_quality_searcharr.api import auth, dashboard, instances, search_history, search_queue
 from vibe_quality_searcharr.config import settings
-from vibe_quality_searcharr.database import close_db, get_session_factory, init_db, test_database_connection
+from vibe_quality_searcharr.database import (
+    close_db,
+    database_health_check,
+    get_session_factory,
+    init_db,
+    test_database_connection,
+)
 from vibe_quality_searcharr.logging_config import configure_logging
 from vibe_quality_searcharr.services import start_scheduler, stop_scheduler
 
@@ -113,7 +121,23 @@ async def add_security_headers(request: Request, call_next):
     nonce = secrets.token_urlsafe(16)
     request.state.csp_nonce = nonce
 
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        # BaseHTTPMiddleware.call_next() re-raises app exceptions even after
+        # ExceptionMiddleware handles them, so we must catch here to return
+        # a proper 500 response to the client.
+        logger.error(
+            "unhandled_exception",
+            path=request.url.path,
+            method=request.method,
+            error=str(exc),
+            exc_info=True,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "Internal server error"},
+        )
 
     # Basic security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -232,8 +256,6 @@ async def health_check():
     Returns application and database health status.
     """
     try:
-        from vibe_quality_searcharr.database import database_health_check
-
         db_health = database_health_check()
 
         # Filter out sensitive details (cipher_version, pool internals)
@@ -284,20 +306,58 @@ async def api_info():
     }
 
 
-# Error handlers
-@app.exception_handler(404)
-async def not_found_handler(request: Request, exc):
-    """Custom 404 handler."""
+# Error handlers — tiered logging for all HTTP errors
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Log validation errors at WARNING level."""
+    logger.warning(
+        "http_validation_error",
+        path=request.url.path,
+        method=request.method,
+        errors=exc.errors(),
+    )
     return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={"detail": "Resource not found"},
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={"detail": exc.errors()},
     )
 
 
-@app.exception_handler(500)
-async def internal_error_handler(request: Request, exc):
-    """Custom 500 handler."""
-    logger.error("internal_server_error", path=request.url.path, error=str(exc))
+@app.exception_handler(HTTPException)
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    """Log HTTP exceptions — WARNING for 4xx, ERROR for 5xx."""
+    if exc.status_code >= 500:
+        logger.error(
+            "http_server_error",
+            path=request.url.path,
+            method=request.method,
+            status_code=exc.status_code,
+            detail=str(exc.detail),
+        )
+    else:
+        logger.warning(
+            "http_client_error",
+            path=request.url.path,
+            method=request.method,
+            status_code=exc.status_code,
+            detail=str(exc.detail),
+        )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Catch-all for unhandled exceptions — always ERROR level."""
+    logger.error(
+        "unhandled_exception",
+        path=request.url.path,
+        method=request.method,
+        error=str(exc),
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error"},

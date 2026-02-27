@@ -1,74 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Vibe-Quality-Searcharr{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
     <!-- Pico CSS -->
     <link rel="stylesheet" href="/static/css/pico.min.css">
-    <link rel="stylesheet" href="/static/css/sonarr-theme.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="/static/css/custom.css">
 
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    {% if user %}
-    <!-- Navigation (only show if authenticated) -->
-    <nav class="container-fluid">
-        <ul>
-            <li><strong>Vibe-Quality-Searcharr</strong></li>
-        </ul>
-        <ul>
-            <li><a href="/dashboard">Dashboard</a></li>
-            <li><a href="/dashboard/instances">Instances</a></li>
-            <li><a href="/dashboard/search-queues">Queues</a></li>
-            <li><a href="/dashboard/search-history">History</a></li>
-            <li>
-                <details class="dropdown">
-                    <summary>{{ user.username }}</summary>
-                    <ul dir="rtl">
-                        <li><a href="/dashboard/settings">Settings</a></li>
-                        <li><a href="#" data-action="logout">Logout</a></li>
+    {% if user and not no_sidebar %}
+    <!-- Authenticated layout: sidebar + content -->
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">S</div>
+                <span class="sidebar-brand-text">Searcharr</span>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="/dashboard" class="{{ 'active' if active_page == 'dashboard' else '' }}">
+                            <span class="nav-icon">&#9673;</span>
+                            <span class="nav-label">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/instances" class="{{ 'active' if active_page == 'instances' else '' }}">
+                            <span class="nav-icon">&#9678;</span>
+                            <span class="nav-label">Instances</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/search-queues" class="{{ 'active' if active_page == 'queues' else '' }}">
+                            <span class="nav-icon">&#9776;</span>
+                            <span class="nav-label">Queues</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/search-history" class="{{ 'active' if active_page == 'history' else '' }}">
+                            <span class="nav-icon">&#9719;</span>
+                            <span class="nav-label">History</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="sidebar-section">
+                    <ul>
+                        <li>
+                            <a href="/dashboard/settings" class="{{ 'active' if active_page == 'settings' else '' }}">
+                                <span class="nav-icon">&#9881;</span>
+                                <span class="nav-label">Settings</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-action="logout">
+                                <span class="nav-icon">&#9211;</span>
+                                <span class="nav-label">Logout</span>
+                            </a>
+                        </li>
                     </ul>
-                </details>
-            </li>
-        </ul>
-    </nav>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="main-content">
+            <!-- Flash messages -->
+            {% include "components/flash.html" %}
+
+            <!-- Page content -->
+            {% block content %}{% endblock %}
+
+            <!-- Footer -->
+            <footer>
+                <small>
+                    Vibe-Quality-Searcharr v0.1.0 &middot;
+                    <a href="https://github.com/menottim/vibe-quality-searcharr" target="_blank">GitHub</a>
+                </small>
+            </footer>
+        </div>
+    </div>
+    {% else %}
+    <!-- Unauthenticated layout: no sidebar -->
+    {% include "components/flash.html" %}
+    {% block unauthenticated_content %}{% endblock %}
     {% endif %}
 
-    <!-- Flash messages -->
-    {% include "components/flash.html" %}
-
-    <!-- Main content -->
-    <main class="container">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Footer -->
-    <footer class="container">
-        <small>
-            Vibe-Quality-Searcharr v0.1.0 &middot;
-            <a href="https://github.com/menottim/vibe-quality-searcharr" target="_blank">GitHub</a>
-        </small>
-    </footer>
-
     <!-- Scripts -->
+    <script src="/static/js/app.js" nonce="{{ request.state.csp_nonce }}"></script>
     <script nonce="{{ request.state.csp_nonce }}">
         document.querySelectorAll('[data-action="logout"]').forEach(function(el) {
             el.addEventListener('click', function(e) { e.preventDefault(); logout(); });
         });
 
-        // Logout function
         function logout() {
             fetch('/api/auth/logout', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }).then(() => {
-                window.location.href = '/login';
-            });
+                headers: { 'Content-Type': 'application/json' }
+            }).then(() => { window.location.href = '/login'; });
         }
     </script>
 

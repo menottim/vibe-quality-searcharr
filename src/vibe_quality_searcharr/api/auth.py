@@ -917,9 +917,6 @@ async def change_password(
                 detail="Not authenticated",
             )
 
-        # Verify access token and get user
-        from vibe_quality_searcharr.core.auth import get_current_user_id_from_token
-
         try:
             user_id = get_current_user_id_from_token(access_token)
         except TokenError as e:

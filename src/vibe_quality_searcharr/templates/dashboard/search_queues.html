@@ -20,14 +20,14 @@
         <header>
             <h3>
                 {{ queue.name }}
-                {% if queue.is_active and queue.status in ['pending', 'running'] %}
-                <small style="color: var(--ins-color);">● Active</small>
-                {% elif queue.status == 'paused' %}
+                {% if not queue.is_active %}
                 <small style="color: var(--muted-color);">⏸ Paused</small>
-                {% elif queue.status == 'completed' %}
-                <small style="color: var(--primary);">✓ Completed</small>
                 {% elif queue.status == 'failed' %}
                 <small style="color: var(--del-color);">✗ Failed</small>
+                {% elif queue.status == 'completed' %}
+                <small style="color: var(--primary);">✓ Completed</small>
+                {% elif queue.status in ['pending', 'in_progress'] %}
+                <small style="color: var(--ins-color);">● Active</small>
                 {% else %}
                 <small style="color: var(--muted-color);">● {{ queue.status }}</small>
                 {% endif %}
@@ -52,18 +52,17 @@
 
             <dt>Next Run</dt>
             <dd>
-                {% if queue.next_run_at %}
-                {{ queue.next_run_at|timeago }}
+                {% if queue.next_run %}
+                {{ queue.next_run|timeago }}
                 {% else %}
                 Not scheduled
                 {% endif %}
             </dd>
 
-            <dt>Progress</dt>
+            <dt>Last Result</dt>
             <dd>
-                {% if queue.total_items %}
-                {{ queue.processed_items or 0 }} / {{ queue.total_items }} items
-                ({{ ((queue.processed_items or 0) / queue.total_items * 100)|round|int }}%)
+                {% if queue.items_searched %}
+                {{ queue.items_searched }} searched, {{ queue.items_found or 0 }} found
                 {% else %}
                 Not started
                 {% endif %}
@@ -72,9 +71,9 @@
 
         <footer>
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                {% if queue.status == 'paused' %}
+                {% if not queue.is_active %}
                 <button data-action="resume-queue" data-id="{{ queue.id }}">Resume</button>
-                {% elif queue.status in ['pending', 'running'] %}
+                {% elif queue.status in ['pending', 'completed'] %}
                 <button class="secondary" data-action="pause-queue" data-id="{{ queue.id }}">Pause</button>
                 {% endif %}
                 <button class="secondary" data-action="view-queue" data-id="{{ queue.id }}">View</button>
@@ -109,28 +108,28 @@
                     <option value="{{ instance.id }}">{{ instance.name }}</option>
                     {% endfor %}
                 </select>
-            </label>
-
-            <label for="name">
-                Queue Name
-                <input type="text" id="name" name="name" required placeholder="e.g., Recent TV Shows">
+                <small>Which Sonarr or Radarr instance to search against</small>
             </label>
 
             <label for="strategy">
                 Search Strategy
                 <select id="strategy" name="strategy" required>
                     <option value="">Select strategy...</option>
+                    <option value="missing">Missing - Find missing items</option>
+                    <option value="cutoff_unmet">Quality Upgrade - Below quality cutoff</option>
                     <option value="recent">Recent - Newest items first</option>
-                    <option value="popular">Popular - Highest rated first</option>
-                    <option value="oldest">Oldest - Oldest items first</option>
-                    <option value="random">Random - Random selection</option>
                 </select>
-                <small>Strategy determines the order items are searched</small>
+                <small>
+                    <strong>Missing</strong> — Searches for items not yet downloaded, prioritizing gaps in your library<br>
+                    <strong>Quality Upgrade</strong> — Searches for items below your quality cutoff, finding better versions<br>
+                    <strong>Recent</strong> — Searches newest additions first, prioritizing recently added items
+                </small>
             </label>
 
             <label for="recurring">
                 <input type="checkbox" id="recurring" name="recurring">
                 Recurring search
+                <small>When enabled, this queue will re-run automatically on a schedule. One-time queues run once and stop.</small>
             </label>
 
             <label for="interval_hours" id="intervalLabel" style="display: none;">
@@ -139,9 +138,16 @@
                 <small>How often to run this search (1-168 hours)</small>
             </label>
 
+            <label for="name">
+                Queue Name
+                <input type="text" id="name" name="name" required placeholder="Auto-generated from selections above">
+                <small>Auto-suggested based on your selections. You can override it.</small>
+            </label>
+
             <footer>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                     <button type="button" class="secondary" data-action="close-create-modal">Cancel</button>
+                    <button type="button" id="createAndSearchBtn" class="secondary">Create &amp; Search Now</button>
                     <button type="submit">Create Queue</button>
                 </div>
             </footer>
@@ -176,12 +182,40 @@ function toggleRecurring() {
         intervalLabel.style.display = 'none';
         intervalInput.required = false;
     }
+    updateSuggestedName();
 }
 
-document.getElementById('createQueueForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Auto-suggest queue name based on selections
+var nameManuallyEdited = false;
+document.getElementById('name').addEventListener('input', function() {
+    nameManuallyEdited = true;
+});
 
-    const formData = {
+function updateSuggestedName() {
+    if (nameManuallyEdited) return;
+    var instanceSelect = document.getElementById('instance_id');
+    var strategySelect = document.getElementById('strategy');
+    var recurring = document.getElementById('recurring').checked;
+
+    var parts = [];
+    if (instanceSelect.selectedIndex > 0) {
+        parts.push(instanceSelect.options[instanceSelect.selectedIndex].text);
+    }
+    if (strategySelect.value) {
+        parts.push(strategySelect.value);
+    }
+    if (recurring) {
+        parts.push('recurring');
+    }
+
+    document.getElementById('name').value = parts.length ? parts.join(' ') : '';
+}
+
+document.getElementById('instance_id').addEventListener('change', updateSuggestedName);
+document.getElementById('strategy').addEventListener('change', updateSuggestedName);
+
+function getFormData() {
+    return {
         instance_id: parseInt(document.getElementById('instance_id').value),
         name: document.getElementById('name').value,
         strategy: document.getElementById('strategy').value,
@@ -190,25 +224,61 @@ document.getElementById('createQueueForm').addEventListener('submit', async (e) 
             ? parseInt(document.getElementById('interval_hours').value)
             : null,
     };
+}
 
+async function createQueue() {
     try {
         const response = await fetch('/api/search-queues', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(getFormData())
         });
 
         if (response.ok) {
-            location.reload();
+            return await response.json();
         } else {
             const data = await response.json();
-            alert('Failed to create queue: ' + (data.detail || 'Unknown error'));
+            showNotification('Failed to create queue: ' + (data.detail || 'Unknown error'));
+            return null;
         }
     } catch (error) {
-        alert('Failed to create queue: ' + error.message);
+        showNotification('Failed to create queue: ' + error.message);
+        return null;
     }
+}
+
+document.getElementById('createQueueForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    var result = await createQueue();
+    if (result) location.reload();
+});
+
+document.getElementById('createAndSearchBtn').addEventListener('click', async () => {
+    var btn = document.getElementById('createAndSearchBtn');
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+
+    var result = await createQueue();
+    if (!result) {
+        btn.disabled = false;
+        btn.setAttribute('aria-busy', 'false');
+        return;
+    }
+
+    try {
+        var startResponse = await fetch('/api/search-queues/' + result.id + '/start', {
+            method: 'POST'
+        });
+        if (startResponse.ok) {
+            showNotification('Queue created and search started!', 'success');
+        } else {
+            showNotification('Queue created but search failed to start', 'info');
+        }
+    } catch (error) {
+        showNotification('Queue created but search failed: ' + error.message, 'info');
+    }
+
+    setTimeout(function() { location.reload(); }, 1500);
 });
 
 async function pauseQueue(queueId) {
@@ -221,10 +291,10 @@ async function pauseQueue(queueId) {
             location.reload();
         } else {
             const data = await response.json();
-            alert('Failed to pause queue: ' + (data.detail || 'Unknown error'));
+            showNotification('Failed to pause queue: ' + (data.detail || 'Unknown error'));
         }
     } catch (error) {
-        alert('Failed to pause queue: ' + error.message);
+        showNotification('Failed to pause queue: ' + error.message);
     }
 }
 
@@ -238,10 +308,10 @@ async function resumeQueue(queueId) {
             location.reload();
         } else {
             const data = await response.json();
-            alert('Failed to resume queue: ' + (data.detail || 'Unknown error'));
+            showNotification('Failed to resume queue: ' + (data.detail || 'Unknown error'));
         }
     } catch (error) {
-        alert('Failed to resume queue: ' + error.message);
+        showNotification('Failed to resume queue: ' + error.message);
     }
 }
 
@@ -263,15 +333,21 @@ async function deleteQueue(queueId, name) {
             location.reload();
         } else {
             const data = await response.json();
-            alert('Delete failed: ' + (data.detail || 'Unknown error'));
+            showNotification('Delete failed: ' + (data.detail || 'Unknown error'));
         }
     } catch (error) {
-        alert('Delete failed: ' + error.message);
+        showNotification('Delete failed: ' + error.message);
     }
 }
 
 function closeCreateModal() {
     document.getElementById('create-queue').close();
 }
+
+// Open modal from the Create Queue link
+document.querySelector('a[href="#create-queue"]').addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('create-queue').showModal();
+});
 </script>
 {% endblock %}

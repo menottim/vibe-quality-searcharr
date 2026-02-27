@@ -13,7 +13,10 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, field_validator
 
 # Search strategies
-SearchStrategy = Literal["missing", "cutoff_unmet", "recent", "custom"]
+SearchStrategy = Literal["missing", "cutoff_unmet", "recent"]
+
+# Includes "custom" for backwards compatibility with existing DB records
+SearchStrategyRead = Literal["missing", "cutoff_unmet", "recent", "custom"]
 
 # Search execution status
 SearchExecutionStatus = Literal["success", "partial_success", "failed"]
@@ -42,7 +45,7 @@ class SearchQueueCreate(BaseModel):
     )
     strategy: SearchStrategy = Field(
         ...,
-        description="Search strategy to use (missing, cutoff_unmet, recent, or custom)",
+        description="Search strategy to use (missing, cutoff_unmet, or recent)",
     )
     recurring: bool = Field(
         default=False,
@@ -117,25 +120,7 @@ class SearchQueueCreate(BaseModel):
     @field_validator("filters")
     @classmethod
     def validate_filters(cls, v: dict[str, Any] | None, info) -> dict[str, Any] | None:
-        """
-        Validate filters are provided if strategy is custom.
-
-        Args:
-            v: Filters dictionary
-            info: Validation context with other field values
-
-        Returns:
-            dict[str, Any] | None: Validated filters
-
-        Raises:
-            ValueError: If strategy is custom but filters are not provided
-        """
-        if hasattr(info, "data") and info.data.get("strategy") == "custom":
-            if v is None or not v:
-                raise ValueError(
-                    "filters are required when strategy is 'custom'. "
-                    "Provide custom search filter configuration."
-                )
+        """Validate optional filters."""
         return v
 
     model_config = {
@@ -151,11 +136,11 @@ class SearchQueueCreate(BaseModel):
                 },
                 {
                     "instance_id": 2,
-                    "name": "Custom Quality Upgrade",
-                    "strategy": "custom",
-                    "recurring": False,
-                    "interval_hours": None,
-                    "filters": {"quality": "Bluray-1080p", "minDays": 30},
+                    "name": "Weekly Quality Upgrade",
+                    "strategy": "cutoff_unmet",
+                    "recurring": True,
+                    "interval_hours": 168,
+                    "filters": None,
                 },
             ]
         }
@@ -237,22 +222,16 @@ class SearchQueueResponse(BaseModel):
     id: int = Field(..., description="Search queue item ID")
     instance_id: int = Field(..., description="Instance ID this search runs on")
     name: str = Field(..., description="User-friendly name")
-    strategy: SearchStrategy = Field(..., description="Search strategy")
+    strategy: SearchStrategyRead = Field(..., description="Search strategy")
     recurring: bool = Field(..., description="Whether search repeats automatically")
     interval_hours: int | None = Field(
         None, description="Interval between recurring searches (hours)"
     )
     is_active: bool = Field(..., description="Whether search is active")
     status: SearchQueueStatus = Field(..., description="Current execution status")
-    next_run: datetime | None = Field(
-        None, description="Next scheduled execution time (ISO 8601)"
-    )
-    last_run: datetime | None = Field(
-        None, description="Last execution time (ISO 8601)"
-    )
-    consecutive_failures: int = Field(
-        ..., description="Number of consecutive failed executions"
-    )
+    next_run: datetime | None = Field(None, description="Next scheduled execution time (ISO 8601)")
+    last_run: datetime | None = Field(None, description="Last execution time (ISO 8601)")
+    consecutive_failures: int = Field(..., description="Number of consecutive failed executions")
     created_at: datetime = Field(..., description="Queue item creation timestamp (ISO 8601)")
 
     model_config = {
@@ -291,21 +270,17 @@ class SearchHistoryResponse(BaseModel):
         None, description="Search queue item ID (NULL for manual searches)"
     )
     search_name: str = Field(..., description="Name of the search that was executed")
-    strategy: SearchStrategy = Field(..., description="Search strategy that was used")
+    strategy: SearchStrategyRead = Field(..., description="Search strategy that was used")
     started_at: datetime = Field(..., description="Search start timestamp (ISO 8601)")
     completed_at: datetime | None = Field(
         None, description="Search completion timestamp (ISO 8601, NULL if running)"
     )
-    duration_seconds: int | None = Field(
-        None, description="Total execution time in seconds"
-    )
+    duration_seconds: int | None = Field(None, description="Total execution time in seconds")
     status: SearchExecutionStatus = Field(..., description="Execution status")
     items_searched: int = Field(..., description="Number of items searched")
     items_found: int = Field(..., description="Number of items matching criteria")
     searches_triggered: int = Field(..., description="Number of searches triggered")
-    error_message: str | None = Field(
-        None, description="Error message if search failed"
-    )
+    error_message: str | None = Field(None, description="Error message if search failed")
 
     model_config = {
         "from_attributes": True,
