@@ -273,10 +273,6 @@ class SearchQueueManager:
                                     "episode_search_failed", episode_id=episode_id, error=str(e)
                                 )
 
-                        # Check if there are more pages
-                        if page >= result.get("totalRecords", 0) / 50:
-                            break
-
                         page += 1
 
             else:  # radarr
@@ -323,10 +319,6 @@ class SearchQueueManager:
                             except Exception as e:
                                 errors.append(f"Movie {movie_id}: {str(e)}")
                                 logger.error("movie_search_failed", movie_id=movie_id, error=str(e))
-
-                        # Check if there are more pages
-                        if page >= result.get("totalRecords", 0) / 50:
-                            break
 
                         page += 1
 
@@ -419,9 +411,6 @@ class SearchQueueManager:
                             except Exception as e:
                                 errors.append(f"Episode {episode_id}: {str(e)}")
 
-                        if page >= result.get("totalRecords", 0) / 50:
-                            break
-
                         page += 1
 
             else:  # radarr
@@ -464,9 +453,6 @@ class SearchQueueManager:
 
                             except Exception as e:
                                 errors.append(f"Movie {movie_id}: {str(e)}")
-
-                        if page >= result.get("totalRecords", 0) / 50:
-                            break
 
                         page += 1
 
@@ -568,12 +554,12 @@ class SearchQueueManager:
                     verify_ssl=instance.verify_ssl,
                     rate_limit_per_second=instance.rate_limit or 5.0,
                 ) as client:
-                    # Get recent missing movies
+                    # Get recent missing movies (sorted by added date descending)
                     result = await client.get_wanted_missing(
                         page=1,
                         page_size=50,
-                        sort_key="title",
-                        sort_dir="ascending",
+                        sort_key="added",
+                        sort_dir="descending",
                     )
                     records = result.get("records", [])
 
@@ -669,8 +655,13 @@ class SearchQueueManager:
 
         last_search = self._search_cooldowns[item_key]
         cooldown_end = last_search + timedelta(hours=cooldown_hours)
+        now = datetime.utcnow()
 
-        return datetime.utcnow() < cooldown_end
+        if now >= cooldown_end:
+            del self._search_cooldowns[item_key]
+            return False
+
+        return True
 
     def _set_cooldown(self, item_key: str) -> None:
         """
