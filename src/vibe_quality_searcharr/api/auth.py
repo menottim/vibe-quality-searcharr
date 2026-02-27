@@ -146,6 +146,7 @@ def clear_auth_cookies(response: Response) -> None:
     """
     response.delete_cookie(key="access_token", path="/")
     response.delete_cookie(key="refresh_token", path="/api/auth")
+    response.delete_cookie(key="2fa_pending_token", path="/")
     logger.debug("auth_cookies_cleared")
 
 
