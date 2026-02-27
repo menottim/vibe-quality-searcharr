@@ -9,7 +9,9 @@ This module provides JWT token management and two-factor authentication:
 """
 
 import base64
+import hmac
 import io
+import time
 import uuid
 from datetime import datetime, timedelta
 from typing import Annotated, Any
@@ -641,37 +643,60 @@ def generate_totp_uri(secret: str, username: str) -> str:
     return uri
 
 
-def verify_totp_code(secret: str, code: str) -> bool:
+def verify_totp_code(
+    secret: str,
+    code: str,
+    last_used_counter: int | None = None,
+) -> tuple[bool, int | None]:
     """
-    Verify a TOTP code against a secret.
+    Verify a TOTP code against a secret with replay protection.
 
-    Uses constant-time comparison to prevent timing attacks.
-    Validates the code with a time window of ±1 period (30 seconds).
+    Manually checks counters for offsets -1, 0, +1 (valid_window=1) using
+    constant-time comparison, and rejects any code whose counter is not
+    strictly greater than the last used counter.
 
     Args:
         secret: Base32-encoded TOTP secret
         code: 6-digit TOTP code from authenticator app
+        last_used_counter: Counter value of last successfully used code (or None)
 
     Returns:
-        bool: True if code is valid, False otherwise
+        tuple[bool, int | None]: (is_valid, matched_counter).
+            matched_counter is set when is_valid is True.
     """
     try:
         totp = pyotp.TOTP(secret)
+        current_counter = int(time.time()) // 30
 
-        # Verify with time window (allows ±1 period for clock drift)
-        # This gives a 90-second window (30s before, current 30s, 30s after)
-        is_valid = totp.verify(code, valid_window=1)
+        # Check offsets -1, 0, +1 (equivalent to valid_window=1)
+        # Use constant-time comparison to prevent timing side-channels
+        matched_counter: int | None = None
+        for offset in (-1, 0, 1):
+            candidate_counter = current_counter + offset
+            expected_code = totp.at(candidate_counter * 30)
+            if hmac.compare_digest(expected_code, code):
+                matched_counter = candidate_counter
+                break
 
-        if is_valid:
-            logger.debug("totp_code_verified")
-        else:
+        if matched_counter is None:
             logger.warning("totp_code_verification_failed")
+            return False, None
 
-        return is_valid
+        # Replay protection: reject if counter was already used or is older
+        if last_used_counter is not None and matched_counter <= last_used_counter:
+            logger.warning(
+                "totp_code_replay_rejected",
+                matched_counter=matched_counter,
+                last_used_counter=last_used_counter,
+            )
+            return False, None
+
+        logger.debug("totp_code_verified", counter=matched_counter)
+        return True, matched_counter
 
     except Exception as e:
         logger.error("totp_verification_error", error=str(e))
-        return False
+        return False, None
 
 
 def create_2fa_pending_token(user_id: int, username: str) -> str:
