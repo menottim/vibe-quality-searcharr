@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
 from splintarr.models import SearchHistory
+from splintarr.models.instance import Instance
+from splintarr.models.user import User
+from splintarr.core.security import hash_password
 from splintarr.services.search_history import SearchHistoryService, SearchHistoryError
 
 
@@ -160,23 +163,53 @@ class TestHistoryRetrieval:
         assert count == 42
 
 
+def _create_test_instance(db_session):
+    """Create a user and instance for foreign key constraints."""
+    user = User(
+        username="statsuser",
+        password_hash=hash_password("TestPass123!"),
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.flush()
+    instance = Instance(
+        user_id=user.id,
+        name="Test Instance",
+        instance_type="sonarr",
+        url="https://sonarr.test.com",
+        api_key="encrypted_key_placeholder",
+    )
+    db_session.add(instance)
+    db_session.flush()
+    return instance.id
+
+
 class TestStatistics:
-    """Test statistics calculation."""
+    """Test statistics calculation using real database."""
 
-    def test_get_statistics_basic(
-        self, history_service, mock_db_session, sample_history_records
-    ):
-        """Test getting basic statistics."""
-        # Mock query
-        mock_query = mock_db_session.query.return_value
-        mock_query.filter.return_value = mock_query
-        mock_query.all.return_value = sample_history_records
+    def test_get_statistics_basic(self, db_session):
+        """Test getting basic statistics returns all expected keys."""
+        instance_id = _create_test_instance(db_session)
+        now = datetime.utcnow()
+        for i in range(5):
+            record = SearchHistory(
+                instance_id=instance_id,
+                search_name=f"Test {i}",
+                strategy="missing",
+                started_at=now - timedelta(hours=i),
+                status="success" if i % 2 == 0 else "failed",
+                items_searched=10,
+                items_found=5 if i % 2 == 0 else 0,
+                searches_triggered=5 if i % 2 == 0 else 0,
+                duration_seconds=30.0,
+            )
+            db_session.add(record)
+        db_session.commit()
 
-        # Get statistics
-        stats = history_service.get_statistics(days=30)
+        service = SearchHistoryService(lambda: db_session)
+        stats = service.get_statistics(days=30)
 
-        # Verify
-        assert "total_searches" in stats
+        assert stats["total_searches"] == 5
         assert "successful_searches" in stats
         assert "failed_searches" in stats
         assert "success_rate" in stats
@@ -185,56 +218,65 @@ class TestStatistics:
         assert "searches_by_strategy" in stats
         assert "searches_by_day" in stats
 
-        assert stats["total_searches"] == len(sample_history_records)
-
-    def test_get_statistics_success_rate(
-        self, history_service, mock_db_session, sample_history_records
-    ):
+    def test_get_statistics_success_rate(self, db_session):
         """Test success rate calculation."""
-        # Mock query
-        mock_query = mock_db_session.query.return_value
-        mock_query.filter.return_value = mock_query
-        mock_query.all.return_value = sample_history_records
+        instance_id = _create_test_instance(db_session)
+        now = datetime.utcnow()
+        # 3 successful, 2 failed = 60% success rate
+        for i, status in enumerate(["success", "success", "partial_success", "failed", "failed"]):
+            record = SearchHistory(
+                instance_id=instance_id,
+                search_name=f"Test {i}",
+                strategy="missing",
+                started_at=now - timedelta(hours=i),
+                status=status,
+                items_searched=10,
+                items_found=5,
+                searches_triggered=5,
+            )
+            db_session.add(record)
+        db_session.commit()
 
-        # Get statistics
-        stats = history_service.get_statistics(days=30)
+        service = SearchHistoryService(lambda: db_session)
+        stats = service.get_statistics(days=30)
 
-        # Calculate expected success rate
-        successful = len([r for r in sample_history_records if r.was_successful])
-        expected_rate = successful / len(sample_history_records)
+        assert stats["successful_searches"] == 3
+        assert stats["failed_searches"] == 2
+        assert stats["success_rate"] == pytest.approx(0.6)
 
-        # Verify
-        assert stats["success_rate"] == pytest.approx(expected_rate)
-
-    def test_get_statistics_by_strategy(
-        self, history_service, mock_db_session, sample_history_records
-    ):
+    def test_get_statistics_by_strategy(self, db_session):
         """Test statistics grouped by strategy."""
-        # Mock query
-        mock_query = mock_db_session.query.return_value
-        mock_query.filter.return_value = mock_query
-        mock_query.all.return_value = sample_history_records
+        instance_id = _create_test_instance(db_session)
+        now = datetime.utcnow()
+        for i, strategy in enumerate(["missing", "missing", "cutoff_unmet"]):
+            record = SearchHistory(
+                instance_id=instance_id,
+                search_name=f"Test {i}",
+                strategy=strategy,
+                started_at=now - timedelta(hours=i),
+                status="success",
+                items_searched=10,
+                items_found=5,
+                searches_triggered=5,
+            )
+            db_session.add(record)
+        db_session.commit()
 
-        # Get statistics
-        stats = history_service.get_statistics(days=30)
+        service = SearchHistoryService(lambda: db_session)
+        stats = service.get_statistics(days=30)
 
-        # Verify
-        assert "missing" in stats["searches_by_strategy"]
-        assert stats["searches_by_strategy"]["missing"] == len(sample_history_records)
+        assert stats["searches_by_strategy"]["missing"] == 2
+        assert stats["searches_by_strategy"]["cutoff_unmet"] == 1
 
-    def test_get_statistics_empty_results(self, history_service, mock_db_session):
+    def test_get_statistics_empty_results(self, db_session):
         """Test statistics with no history records."""
-        # Mock empty query
-        mock_query = mock_db_session.query.return_value
-        mock_query.filter.return_value = mock_query
-        mock_query.all.return_value = []
+        service = SearchHistoryService(lambda: db_session)
+        stats = service.get_statistics(days=30)
 
-        # Get statistics
-        stats = history_service.get_statistics(days=30)
-
-        # Verify
         assert stats["total_searches"] == 0
         assert stats["success_rate"] == 0.0
+        assert stats["total_items_searched"] == 0
+        assert stats["total_items_found"] == 0
 
 
 class TestCleanup:
