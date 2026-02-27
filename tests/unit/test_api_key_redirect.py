@@ -46,7 +46,8 @@ class TestSonarrRedirectProtection:
         mock_response.status_code = 301
         mock_response.headers = {"Location": "https://evil.example.com/api/v3/system/status"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -69,7 +70,8 @@ class TestSonarrRedirectProtection:
         mock_response.status_code = 302
         mock_response.headers = {"Location": "https://sonarr.example.com/api/v3/system/status"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -89,7 +91,8 @@ class TestSonarrRedirectProtection:
         mock_response.status_code = 307
         mock_response.headers = {"Location": "https://other.example.com/"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -109,7 +112,8 @@ class TestSonarrRedirectProtection:
         mock_response.status_code = 308
         mock_response.headers = {"Location": "https://new.example.com/sonarr/"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -129,7 +133,8 @@ class TestSonarrRedirectProtection:
         mock_response.status_code = 301
         mock_response.headers = {}  # No Location header
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -153,7 +158,8 @@ class TestSonarrRedirectProtection:
         mock_response.status_code = 302
         mock_response.headers = {"Location": "https://attacker.example.com/steal-key"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 mock_request = AsyncMock(return_value=mock_response)
                 client._client = AsyncMock()
@@ -196,7 +202,8 @@ class TestRadarrRedirectProtection:
         mock_response.status_code = 301
         mock_response.headers = {"Location": "https://evil.example.com/api/v3/system/status"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -219,7 +226,8 @@ class TestRadarrRedirectProtection:
         mock_response.status_code = 302
         mock_response.headers = {"Location": "https://radarr.example.com/api/v3/system/status"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -239,7 +247,8 @@ class TestRadarrRedirectProtection:
         mock_response.status_code = 307
         mock_response.headers = {"Location": "https://other.example.com/"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -259,7 +268,8 @@ class TestRadarrRedirectProtection:
         mock_response.status_code = 308
         mock_response.headers = {"Location": "https://new.example.com/radarr/"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -279,7 +289,8 @@ class TestRadarrRedirectProtection:
         mock_response.status_code = 301
         mock_response.headers = {}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 client._client = AsyncMock()
                 client._client.request = AsyncMock(return_value=mock_response)
@@ -303,7 +314,8 @@ class TestRadarrRedirectProtection:
         mock_response.status_code = 302
         mock_response.headers = {"Location": "https://attacker.example.com/steal-key"}
 
-        with patch.object(client, "_ensure_client", new_callable=AsyncMock):
+        with patch("splintarr.services.base_client.validate_instance_url"):
+          with patch.object(client, "_ensure_client", new_callable=AsyncMock):
             with patch.object(client, "_rate_limit", new_callable=AsyncMock):
                 mock_request = AsyncMock(return_value=mock_response)
                 client._client = AsyncMock()
