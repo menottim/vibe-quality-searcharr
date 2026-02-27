@@ -16,18 +16,13 @@ from typing import Annotated, Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, field_validator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
+from vibe_quality_searcharr.api.auth import get_current_user
 from vibe_quality_searcharr.config import settings
-from vibe_quality_searcharr.core.auth import (
-    TokenError,
-    get_current_user_from_cookie,
-    get_current_user_id_from_token,
-)
 from vibe_quality_searcharr.core.security import decrypt_field, encrypt_field
 from vibe_quality_searcharr.core.ssrf_protection import SSRFError, validate_instance_url
 from vibe_quality_searcharr.database import get_db
@@ -52,59 +47,6 @@ router = APIRouter(
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
-
-
-# HTTP Bearer scheme for JWT token authentication
-bearer_scheme = HTTPBearer()
-
-
-async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
-    db: Annotated[Session, Depends(get_db)],
-) -> User:
-    """
-    Get current authenticated user from JWT token.
-
-    Args:
-        credentials: HTTP Bearer credentials containing JWT token
-        db: Database session
-
-    Returns:
-        User: Current user object
-
-    Raises:
-        HTTPException: If token is invalid, user not found, or account inactive
-    """
-    try:
-        # Extract token and get user ID
-        token = credentials.credentials
-        user_id = get_current_user_id_from_token(token)
-
-        # Get user from database
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            logger.error("user_not_found", user_id=user_id)
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-
-        if not user.is_active:
-            logger.warning("inactive_user_access_attempt", user_id=user_id)
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User account is inactive",
-            )
-
-        return user
-
-    except TokenError as e:
-        logger.warning("invalid_token", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from e
 
 
 def instance_to_response(instance: Instance) -> InstanceResponse:
@@ -590,7 +532,7 @@ class InstanceTestRequest(BaseModel):
 async def test_instance_pre_creation(
     request: Request,
     test_data: InstanceTestRequest,
-    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> InstanceTestResult:
     """
     Test connection to an instance before creating it.

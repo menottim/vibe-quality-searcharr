@@ -86,6 +86,9 @@
                         <button type="submit" id="submitBtn">Continue →</button>
                     </div>
                 </div>
+                <p style="margin-top: 1rem; text-align: center;">
+                    <small><a href="https://github.com/mminutillo/vibe-quality-searcharr#readme" target="_blank" rel="noopener">Need help?</a></small>
+                </p>
             </form>
         </article>
     </div>
@@ -166,6 +169,14 @@ async function testConnection() {
 }
 
 document.getElementById('testConnectionBtn').addEventListener('click', testConnection);
+
+// Auto-fill instance name when type changes
+document.getElementById('instance_type').addEventListener('change', function() {
+    var nameInput = document.getElementById('name');
+    if (!nameInput.value || nameInput.value === 'sonarr-1' || nameInput.value === 'radarr-1') {
+        nameInput.value = this.value ? this.value + '-1' : '';
+    }
+});
 
 // Click-to-copy for example URLs
 document.querySelectorAll('.copy-url').forEach(function(el) {

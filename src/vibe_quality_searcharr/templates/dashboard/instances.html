@@ -37,8 +37,8 @@
 
             <dt>Last Checked</dt>
             <dd>
-                {% if instance.last_health_check %}
-                {{ instance.last_health_check|timeago }}
+                {% if instance.last_connection_test %}
+                {{ instance.last_connection_test|timeago }}
                 {% else %}
                 Never
                 {% endif %}
@@ -46,9 +46,9 @@
 
             <dt>Status</dt>
             <dd>
-                {% if instance.health_status == 'healthy' %}
+                {% if instance.connection_status == 'healthy' %}
                 <span style="color: var(--ins-color);">✓ Healthy</span>
-                {% elif instance.health_status == 'unhealthy' %}
+                {% elif instance.connection_status == 'unhealthy' %}
                 <span style="color: var(--del-color);">✗ Unhealthy</span>
                 {% else %}
                 <span style="color: var(--muted-color);">? Unknown</span>
@@ -59,7 +59,7 @@
         <footer>
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                 <button class="secondary" data-action="test-instance" data-id="{{ instance.id }}">Test</button>
-                <button class="secondary" data-action="edit-instance" data-id="{{ instance.id }}">Edit</button>
+                <button class="secondary" data-action="edit-instance" data-id="{{ instance.id }}" data-name="{{ instance.name }}" data-type="{{ instance.instance_type }}" data-url="{{ instance.url }}">Edit</button>
                 <button class="secondary" style="color: var(--del-color);" data-action="delete-instance" data-id="{{ instance.id }}" data-name="{{ instance.name }}">Delete</button>
             </div>
         </footer>
@@ -122,6 +122,50 @@
         </form>
     </article>
 </dialog>
+<!-- Edit Instance Modal -->
+<dialog id="edit-instance">
+    <article>
+        <header>
+            <button aria-label="Close" class="close" data-action="close-modal"></button>
+            <h3>Edit Instance</h3>
+        </header>
+
+        <form id="editInstanceForm">
+            <input type="hidden" id="edit_id" name="id">
+
+            <label for="edit_instance_type">
+                Instance Type
+                <input type="text" id="edit_instance_type" disabled>
+                <small>Type cannot be changed after creation</small>
+            </label>
+
+            <label for="edit_name">
+                Instance Name
+                <input type="text" id="edit_name" name="name" required placeholder="e.g., Main Sonarr, 4K Radarr">
+            </label>
+
+            <label for="edit_url">
+                URL
+                <input type="url" id="edit_url" name="url" required placeholder="http://host.docker.internal:8989">
+            </label>
+
+            <label for="edit_api_key">
+                API Key
+                <input type="text" id="edit_api_key" name="api_key" placeholder="Leave blank to keep current" autocomplete="off">
+                <small>Only fill in if you want to change the API key</small>
+            </label>
+
+            <div id="editResult"></div>
+
+            <footer>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button type="button" class="secondary" data-action="close-modal">Cancel</button>
+                    <button type="submit" id="editSubmitBtn">Save Changes</button>
+                </div>
+            </footer>
+        </form>
+    </article>
+</dialog>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -147,8 +191,14 @@ async function testInstance(instanceId) {
     }
 }
 
-function editInstance(instanceId) {
-    showNotification('Edit functionality coming soon!', 'info');
+function editInstance(btn) {
+    document.getElementById('edit_id').value = btn.dataset.id;
+    document.getElementById('edit_instance_type').value = btn.dataset.type;
+    document.getElementById('edit_name').value = btn.dataset.name;
+    document.getElementById('edit_url').value = btn.dataset.url;
+    document.getElementById('edit_api_key').value = '';
+    document.getElementById('editResult').textContent = '';
+    document.getElementById('edit-instance').showModal();
 }
 
 async function deleteInstance(instanceId, name) {
@@ -183,6 +233,7 @@ function openAddModal() {
 
 function closeModal() {
     addDialog.close();
+    document.getElementById('edit-instance').close();
 }
 
 // Test connection from the add modal
@@ -271,7 +322,7 @@ document.addEventListener('click', function(e) {
     if (!target) return;
     var action = target.dataset.action;
     if (action === 'test-instance') testInstance(parseInt(target.dataset.id));
-    else if (action === 'edit-instance') editInstance(parseInt(target.dataset.id));
+    else if (action === 'edit-instance') editInstance(target);
     else if (action === 'delete-instance') deleteInstance(parseInt(target.dataset.id), target.dataset.name);
     else if (action === 'close-modal') closeModal();
 });
@@ -280,6 +331,57 @@ document.addEventListener('click', function(e) {
 document.querySelector('a[href="#add-instance"]').addEventListener('click', function(e) {
     e.preventDefault();
     openAddModal();
+});
+
+// Auto-fill instance name when type changes in Add modal
+document.getElementById('add_instance_type').addEventListener('change', function() {
+    var nameInput = document.getElementById('add_name');
+    if (nameInput.value && !nameInput.value.match(/^(sonarr|radarr)-\d+$/)) return;
+
+    var type = this.value;
+    if (!type) { nameInput.value = ''; return; }
+
+    // Count existing instances of this type to determine next number
+    var existing = document.querySelectorAll('[data-action="edit-instance"][data-type="' + type + '"]');
+    nameInput.value = type + '-' + (existing.length + 1);
+});
+
+// Edit instance form submission
+document.getElementById('editInstanceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('editSubmitBtn');
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+
+    var instanceId = document.getElementById('edit_id').value;
+    var body = {
+        name: document.getElementById('edit_name').value,
+        url: document.getElementById('edit_url').value,
+    };
+
+    var apiKey = document.getElementById('edit_api_key').value;
+    if (apiKey) body.api_key = apiKey;
+
+    try {
+        var response = await fetch('/api/instances/' + instanceId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            var data = await response.json();
+            document.getElementById('editResult').textContent = 'Update failed: ' + (data.detail || 'Unknown error');
+            btn.disabled = false;
+            btn.setAttribute('aria-busy', 'false');
+        }
+    } catch (error) {
+        document.getElementById('editResult').textContent = 'Update failed: ' + error.message;
+        btn.disabled = false;
+        btn.setAttribute('aria-busy', 'false');
+    }
 });
 </script>
 {% endblock %}
