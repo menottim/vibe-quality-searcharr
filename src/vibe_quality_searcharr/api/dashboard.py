@@ -535,6 +535,14 @@ async def dashboard_index(
         .all()
     )
 
+    # Get instances for system status
+    instances = (
+        db.query(Instance)
+        .filter(Instance.user_id == current_user.id)
+        .order_by(Instance.created_at.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         "dashboard/index.html",
         {
@@ -542,6 +550,7 @@ async def dashboard_index(
             "user": current_user,
             "stats": stats,
             "recent_searches": recent_searches,
+            "instances": instances,
             "active_page": "dashboard",
         },
     )
@@ -660,6 +669,54 @@ async def dashboard_search_queues(
             "user": current_user,
             "queues": queues,
             "instances": instances,
+            "active_page": "queues",
+        },
+    )
+
+
+@router.get(
+    "/dashboard/search-queues/{queue_id}",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def dashboard_search_queue_detail(
+    request: Request,
+    queue_id: int,
+    current_user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db),
+) -> Response:
+    """
+    Search queue detail page.
+    """
+    queue = (
+        db.query(SearchQueue)
+        .join(Instance)
+        .filter(
+            SearchQueue.id == queue_id,
+            Instance.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not queue:
+        return RedirectResponse(url="/dashboard/search-queues", status_code=status.HTTP_302_FOUND)
+
+    # Get recent history for this queue
+    history = (
+        db.query(SearchHistory)
+        .filter(SearchHistory.search_queue_id == queue_id)
+        .order_by(SearchHistory.started_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "dashboard/search_queue_detail.html",
+        {
+            "request": request,
+            "user": current_user,
+            "queue": queue,
+            "history": history,
             "active_page": "queues",
         },
     )
@@ -867,3 +924,38 @@ async def api_dashboard_activity(
         )
 
     return JSONResponse(content={"activity": activity})
+
+
+@router.get("/api/dashboard/system-status", include_in_schema=False)
+async def api_dashboard_system_status(
+    current_user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """
+    Get instance health status (JSON API).
+
+    Returns per-instance health info for the system status panel.
+    """
+    instances = (
+        db.query(Instance)
+        .filter(Instance.user_id == current_user.id)
+        .order_by(Instance.created_at.desc())
+        .all()
+    )
+
+    instance_status = []
+    for inst in instances:
+        instance_status.append(
+            {
+                "id": inst.id,
+                "name": inst.name,
+                "instance_type": inst.instance_type,
+                "url": inst.sanitized_url,
+                "connection_status": inst.connection_status,
+                "last_connection_test": (
+                    inst.last_connection_test.isoformat() if inst.last_connection_test else None
+                ),
+            }
+        )
+
+    return JSONResponse(content={"instances": instance_status})

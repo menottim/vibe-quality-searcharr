@@ -10,39 +10,30 @@
 
 <!-- Statistics Cards -->
 <div class="grid">
-    <article>
-        <hgroup>
-            <h2>{{ stats.instances.total }}</h2>
-            <p>Instances</p>
-        </hgroup>
-        <small>
-            <span style="color: var(--ins-color);">{{ stats.instances.active }} active</span>
-            {% if stats.instances.inactive > 0 %}
-            &middot; <span style="color: var(--del-color);">{{ stats.instances.inactive }} inactive</span>
-            {% endif %}
-        </small>
-    </article>
+    <a href="/dashboard/search-queues" style="text-decoration: none; color: inherit;">
+        <article>
+            <hgroup>
+                <h2 id="stat-queues-total">{{ stats.search_queues.total }}</h2>
+                <p>Search Queues</p>
+            </hgroup>
+            <small>
+                <span style="color: var(--ins-color);" id="stat-queues-active">{{ stats.search_queues.active }} active</span>
+                {% if stats.search_queues.paused > 0 %}
+                &middot; <span style="color: var(--muted-color);" id="stat-queues-paused">{{ stats.search_queues.paused }} paused</span>
+                {% endif %}
+            </small>
+        </article>
+    </a>
 
-    <article>
-        <hgroup>
-            <h2>{{ stats.search_queues.total }}</h2>
-            <p>Search Queues</p>
-        </hgroup>
-        <small>
-            <span style="color: var(--ins-color);">{{ stats.search_queues.active }} active</span>
-            {% if stats.search_queues.paused > 0 %}
-            &middot; <span style="color: var(--muted-color);">{{ stats.search_queues.paused }} paused</span>
-            {% endif %}
-        </small>
-    </article>
-
-    <article>
-        <hgroup>
-            <h2>{{ stats.searches.today }}</h2>
-            <p>Searches Today</p>
-        </hgroup>
-        <small>{{ stats.searches.this_week }} this week &middot; {{ stats.searches.success_rate }}% success rate</small>
-    </article>
+    <a href="/dashboard/search-history" style="text-decoration: none; color: inherit;">
+        <article>
+            <hgroup>
+                <h2 id="stat-searches-today">{{ stats.searches.today }}</h2>
+                <p>Searches Today</p>
+            </hgroup>
+            <small id="stat-searches-detail">{{ stats.searches.this_week }} this week &middot; {{ stats.searches.success_rate }}% success rate</small>
+        </article>
+    </a>
 </div>
 
 <!-- Recent Activity -->
@@ -104,7 +95,7 @@
     </footer>
 </article>
 
-<!-- Quick Actions -->
+<!-- Quick Actions & System Status -->
 <div class="grid">
     <article>
         <h4>Quick Actions</h4>
@@ -114,27 +105,129 @@
     </article>
 
     <article>
-        <h4>System Status</h4>
-        <p>All systems operational</p>
-        <small style="color: var(--muted-color);">Last checked: {{ stats.last_check or 'just now' }}</small>
+        <header>
+            <h4 style="margin-bottom: 0;">System Status</h4>
+            <small style="color: var(--muted-color);" id="system-status-timestamp">Last checked: just now</small>
+        </header>
+
+        <div id="system-status-content">
+            {% if instances %}
+            {% for instance in instances %}
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                {% if instance.connection_status == 'healthy' %}
+                <span style="color: var(--ins-color);" title="Healthy">●</span>
+                {% elif instance.connection_status == 'unhealthy' %}
+                <span style="color: var(--del-color);" title="Unhealthy">●</span>
+                {% else %}
+                <span style="color: var(--muted-color);" title="Unknown">●</span>
+                {% endif %}
+                <span>{{ instance.name }}</span>
+                <small style="color: var(--muted-color);">({{ instance.instance_type }})</small>
+                <small style="color: var(--muted-color); margin-left: auto;">
+                    {% if instance.last_connection_test %}
+                    {{ instance.last_connection_test|timeago }}
+                    {% else %}
+                    never checked
+                    {% endif %}
+                </small>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color: var(--muted-color);">No instances configured. <a href="/dashboard/instances">Add one</a></p>
+            {% endif %}
+        </div>
     </article>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script nonce="{{ request.state.csp_nonce }}">
-    // Auto-refresh statistics every 30 seconds
-    setInterval(async () => {
-        try {
-            const response = await fetch('/api/dashboard/stats');
-            if (response.ok) {
-                const stats = await response.json();
-                // Update stats on page (simplified version)
-                console.log('Stats updated:', stats);
-            }
-        } catch (error) {
-            console.error('Failed to refresh stats:', error);
+// Auto-refresh stats every 30 seconds
+setInterval(async () => {
+    try {
+        const response = await fetch('/api/dashboard/stats');
+        if (response.ok) {
+            const stats = await response.json();
+            const qTotal = document.getElementById('stat-queues-total');
+            const qActive = document.getElementById('stat-queues-active');
+            const sToday = document.getElementById('stat-searches-today');
+            const sDetail = document.getElementById('stat-searches-detail');
+            if (qTotal) qTotal.textContent = stats.search_queues.total;
+            if (qActive) qActive.textContent = stats.search_queues.active + ' active';
+            if (sToday) sToday.textContent = stats.searches.today;
+            if (sDetail) sDetail.textContent = stats.searches.this_week + ' this week \u00b7 ' + stats.searches.success_rate + '% success rate';
         }
-    }, 30000);
+    } catch (error) {
+        console.error('Failed to refresh stats:', error);
+    }
+}, 30000);
+
+// Auto-refresh system status every 60 seconds
+var statusLastChecked = Date.now();
+
+function updateTimestamp() {
+    var el = document.getElementById('system-status-timestamp');
+    if (!el) return;
+    var seconds = Math.floor((Date.now() - statusLastChecked) / 1000);
+    if (seconds < 5) el.textContent = 'Last checked: just now';
+    else if (seconds < 60) el.textContent = 'Last checked: ' + seconds + 's ago';
+    else el.textContent = 'Last checked: ' + Math.floor(seconds / 60) + 'm ago';
+}
+
+setInterval(updateTimestamp, 5000);
+
+function buildStatusRow(inst) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;';
+
+    var dot = document.createElement('span');
+    if (inst.connection_status === 'healthy') {
+        dot.style.color = 'var(--ins-color)';
+        dot.title = 'Healthy';
+    } else if (inst.connection_status === 'unhealthy') {
+        dot.style.color = 'var(--del-color)';
+        dot.title = 'Unhealthy';
+    } else {
+        dot.style.color = 'var(--muted-color)';
+        dot.title = 'Unknown';
+    }
+    dot.textContent = '\u25cf';
+    row.appendChild(dot);
+
+    var name = document.createElement('span');
+    name.textContent = inst.name;
+    row.appendChild(name);
+
+    var typeLabel = document.createElement('small');
+    typeLabel.style.color = 'var(--muted-color)';
+    typeLabel.textContent = '(' + inst.instance_type + ')';
+    row.appendChild(typeLabel);
+
+    var checked = document.createElement('small');
+    checked.style.cssText = 'color: var(--muted-color); margin-left: auto;';
+    checked.textContent = inst.last_connection_test ? 'checked' : 'never checked';
+    row.appendChild(checked);
+
+    return row;
+}
+
+setInterval(async () => {
+    try {
+        const response = await fetch('/api/dashboard/system-status');
+        if (response.ok) {
+            const data = await response.json();
+            statusLastChecked = Date.now();
+            var content = document.getElementById('system-status-content');
+            if (!content || !data.instances.length) return;
+
+            content.replaceChildren();
+            data.instances.forEach(function(inst) {
+                content.appendChild(buildStatusRow(inst));
+            });
+        }
+    } catch (error) {
+        console.error('Failed to refresh system status:', error);
+    }
+}, 60000);
 </script>
 {% endblock %}
