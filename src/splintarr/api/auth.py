@@ -756,6 +756,18 @@ async def login_verify_2fa(
             detail="Authentication failed",
         )
 
+    # Check account lockout before TOTP verification (fixes #14)
+    if user.is_locked():
+        logger.warning(
+            "2fa_login_rejected_account_locked",
+            user_id=user.id,
+            locked_until=str(user.account_locked_until),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is temporarily locked due to too many failed attempts",
+        )
+
     if not user.totp_secret or not user.totp_enabled:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -763,12 +775,27 @@ async def login_verify_2fa(
         )
 
     if not verify_totp_code(user.totp_secret, verify_data.code):
+        # Track failed TOTP attempt for per-account lockout (fixes #14)
+        user.increment_failed_login(
+            max_attempts=settings.max_failed_login_attempts,
+            lockout_duration_minutes=settings.account_lockout_duration_minutes,
+        )
+        db.commit()
+        logger.warning(
+            "2fa_login_invalid_totp",
+            user_id=user.id,
+            failed_attempts=user.failed_login_attempts,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid TOTP code",
         )
 
-    # 2FA passed — issue full tokens
+    # 2FA passed — reset any failed attempt counter from TOTP failures
+    user.reset_failed_login()
+    db.commit()
+
+    # Issue full tokens
     ip_address = get_client_ip(request)
     access_token = create_access_token(user.id, user.username)
     user_agent = request.headers.get("User-Agent", "unknown")
