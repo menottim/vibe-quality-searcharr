@@ -10,9 +10,9 @@ Main application entry point with:
 """
 
 import secrets
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
 
 import structlog
 from fastapi import FastAPI, HTTPException, Request, status
@@ -26,7 +26,16 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from splintarr.api import auth, dashboard, exclusions, instances, library, notifications, search_history, search_queue
+from splintarr.api import (
+    auth,
+    dashboard,
+    exclusions,
+    instances,
+    library,
+    notifications,
+    search_history,
+    search_queue,
+)
 from splintarr.config import settings
 from splintarr.core.rate_limit import rate_limit_key_func
 from splintarr.database import (
@@ -262,7 +271,6 @@ app.include_router(instances.router)
 app.include_router(search_queue.router)
 app.include_router(search_history.router)
 app.include_router(library.router)
-<<<<<<< HEAD
 app.include_router(notifications.router)
 app.include_router(exclusions.router)
 
