@@ -53,16 +53,22 @@ limiter = Limiter(key_func=get_remote_address)
 
 async def _run_sync_all_background() -> None:
     """Background task: sync library data from all active instances."""
+    logger.info("library_sync_background_started")
     try:
         service = get_sync_service()
         result = await service.sync_all_instances()
         logger.info(
             "library_sync_background_completed",
+            instance_count=result.get("instance_count", 0),
             items_synced=result.get("items_synced", 0),
             error_count=len(result.get("errors", [])),
         )
     except Exception as e:
-        logger.error("library_sync_background_failed", error=str(e))
+        logger.error(
+            "library_sync_background_failed",
+            error=str(e),
+            error_type=type(e).__name__,
+        )
 
 
 def _base_library_query(db: Session, user: User):  # type: ignore[return]
@@ -187,6 +193,14 @@ async def library_overview(
 
     stats = _get_library_stats(db, current_user)
 
+    logger.debug(
+        "library_overview_rendered",
+        user_id=current_user.id,
+        item_count=len(items),
+        instance_filter=instance_id,
+        type_filter=content_type,
+    )
+
     return templates.TemplateResponse(
         "dashboard/library.html",
         {
@@ -241,6 +255,12 @@ async def library_missing(
 
     stats = _get_library_stats(db, current_user)
 
+    logger.debug(
+        "library_missing_rendered",
+        user_id=current_user.id,
+        missing_count=len(items),
+    )
+
     return templates.TemplateResponse(
         "dashboard/library_missing.html",
         {
@@ -275,6 +295,11 @@ async def library_item_detail(
     )
 
     if not item:
+        logger.debug(
+            "library_item_not_found",
+            item_id=item_id,
+            user_id=current_user.id,
+        )
         return RedirectResponse(
             url="/dashboard/library",
             status_code=status.HTTP_302_FOUND,
@@ -293,6 +318,14 @@ async def library_item_detail(
         )
         for ep in episodes:
             seasons[ep.season_number].append(ep)
+
+    logger.debug(
+        "library_detail_rendered",
+        item_id=item_id,
+        content_type=item.content_type,
+        title=item.title,
+        season_count=len(seasons),
+    )
 
     return templates.TemplateResponse(
         "dashboard/library_detail.html",
@@ -322,6 +355,11 @@ async def api_library_sync(
     try:
         get_sync_service()
     except RuntimeError as e:
+        logger.warning(
+            "library_sync_service_unavailable",
+            user_id=current_user.id,
+            error=str(e),
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Library sync service is not available",
@@ -345,6 +383,7 @@ async def api_library_stats(
 ) -> JSONResponse:
     """Aggregate library statistics."""
     stats = _get_library_stats(db, current_user)
+    logger.debug("library_stats_retrieved", user_id=current_user.id, **stats)
     return JSONResponse(content=stats)
 
 
@@ -383,6 +422,15 @@ async def api_library_items(
         .offset(offset)
         .limit(per_page)
         .all()
+    )
+
+    logger.debug(
+        "library_items_listed",
+        user_id=current_user.id,
+        page=page,
+        per_page=per_page,
+        total=total,
+        returned=len(items),
     )
 
     return JSONResponse(
