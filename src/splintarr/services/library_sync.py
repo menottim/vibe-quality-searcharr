@@ -80,6 +80,7 @@ class LibrarySyncService:
                         "library_sync_instance_failed",
                         instance_id=instance.id,
                         instance_name=instance.name,
+                        instance_type=instance.instance_type,
                         error=str(e),
                     )
 
@@ -124,6 +125,12 @@ class LibrarySyncService:
 
     async def _sync_instance(self, instance: Instance, db: Session) -> int:
         """Sync library data from a single instance."""
+        logger.info(
+            "library_sync_instance_started",
+            instance_id=instance.id,
+            instance_name=instance.name,
+            instance_type=instance.instance_type,
+        )
         api_key = decrypt_api_key(instance.api_key)
         now = datetime.utcnow()
 
@@ -143,6 +150,8 @@ class LibrarySyncService:
         count = 0
         seen_external_ids: set[int] = set()
 
+        logger.info("library_sync_sonarr_started", instance_id=instance.id)
+
         async with SonarrClient(
             url=instance.url,
             api_key=api_key,
@@ -152,6 +161,12 @@ class LibrarySyncService:
             series_list = await client.get_series()
             if not isinstance(series_list, list):
                 series_list = []
+
+            logger.info(
+                "library_sync_sonarr_series_fetched",
+                instance_id=instance.id,
+                series_count=len(series_list),
+            )
 
             for series in series_list:
                 try:
@@ -193,11 +208,17 @@ class LibrarySyncService:
                 except Exception as e:
                     logger.warning(
                         "library_sync_series_failed",
+                        instance_id=instance.id,
                         series_id=series.get("id"),
                         error=str(e),
                     )
 
             db.commit()
+            logger.debug(
+                "library_sync_sonarr_items_committed",
+                instance_id=instance.id,
+                items=count,
+            )
 
             # Download posters (separate pass to batch commits)
             for series in series_list:
@@ -220,10 +241,17 @@ class LibrarySyncService:
                             instance.id, "series", ext_id, poster_data
                         )
                         item.poster_path = rel_path
+                        logger.debug(
+                            "library_sync_poster_saved",
+                            instance_id=instance.id,
+                            content_type="series",
+                            external_id=ext_id,
+                            size_bytes=len(poster_data),
+                        )
             db.commit()
 
         # Remove items no longer in the instance
-        self._cleanup_stale_items(
+        stale_count = self._cleanup_stale_items(
             db, instance.id, "series", seen_external_ids
         )
         db.commit()
@@ -232,6 +260,7 @@ class LibrarySyncService:
             "library_sync_sonarr_completed",
             instance_id=instance.id,
             items_synced=count,
+            stale_removed=stale_count,
         )
         return count
 
@@ -246,6 +275,8 @@ class LibrarySyncService:
         count = 0
         seen_external_ids: set[int] = set()
 
+        logger.info("library_sync_radarr_started", instance_id=instance.id)
+
         async with RadarrClient(
             url=instance.url,
             api_key=api_key,
@@ -255,6 +286,12 @@ class LibrarySyncService:
             movie_list = await client.get_movies()
             if not isinstance(movie_list, list):
                 movie_list = []
+
+            logger.info(
+                "library_sync_radarr_movies_fetched",
+                instance_id=instance.id,
+                movie_count=len(movie_list),
+            )
 
             for movie in movie_list:
                 try:
@@ -287,11 +324,17 @@ class LibrarySyncService:
                 except Exception as e:
                     logger.warning(
                         "library_sync_movie_failed",
+                        instance_id=instance.id,
                         movie_id=movie.get("id"),
                         error=str(e),
                     )
 
             db.commit()
+            logger.debug(
+                "library_sync_radarr_items_committed",
+                instance_id=instance.id,
+                items=count,
+            )
 
             # Download posters
             for movie in movie_list:
@@ -314,10 +357,17 @@ class LibrarySyncService:
                             instance.id, "movie", ext_id, poster_data
                         )
                         item.poster_path = rel_path
+                        logger.debug(
+                            "library_sync_poster_saved",
+                            instance_id=instance.id,
+                            content_type="movie",
+                            external_id=ext_id,
+                            size_bytes=len(poster_data),
+                        )
             db.commit()
 
         # Remove stale items
-        self._cleanup_stale_items(
+        stale_count = self._cleanup_stale_items(
             db, instance.id, "movie", seen_external_ids
         )
         db.commit()
@@ -326,6 +376,7 @@ class LibrarySyncService:
             "library_sync_radarr_completed",
             instance_id=instance.id,
             items_synced=count,
+            stale_removed=stale_count,
         )
         return count
 
@@ -362,7 +413,12 @@ class LibrarySyncService:
                     added_at.replace("Z", "+00:00")
                 )
             except (ValueError, TypeError):
-                pass
+                logger.debug(
+                    "library_sync_date_parse_failed",
+                    content_type=content_type,
+                    external_id=external_id,
+                    raw_value=added_at,
+                )
 
         if item:
             item.title = title
@@ -374,6 +430,12 @@ class LibrarySyncService:
             item.last_synced_at = now
             if parsed_added:
                 item.added_at = parsed_added
+            logger.debug(
+                "library_sync_item_updated",
+                content_type=content_type,
+                external_id=external_id,
+                title=title,
+            )
         else:
             item = LibraryItem(
                 instance_id=instance_id,
@@ -390,6 +452,12 @@ class LibrarySyncService:
             )
             db.add(item)
             db.flush()
+            logger.debug(
+                "library_sync_item_created",
+                content_type=content_type,
+                external_id=external_id,
+                title=title,
+            )
 
         return item
 
@@ -427,7 +495,12 @@ class LibrarySyncService:
                         ep["airDateUtc"].replace("Z", "+00:00")
                     )
                 except (ValueError, TypeError):
-                    pass
+                    logger.debug(
+                        "library_sync_episode_date_parse_failed",
+                        library_item_id=library_item_id,
+                        season=season,
+                        episode=ep_num,
+                    )
 
             if existing:
                 existing.title = ep.get("title")
@@ -453,10 +526,19 @@ class LibrarySyncService:
             .filter(LibraryEpisode.library_item_id == library_item_id)
             .all()
         )
+        deleted_count = 0
         for existing_ep in all_existing:
             key = (existing_ep.season_number, existing_ep.episode_number)
             if key not in seen_keys:
                 db.delete(existing_ep)
+                deleted_count += 1
+
+        logger.debug(
+            "library_sync_episodes_upserted",
+            library_item_id=library_item_id,
+            total_episodes=len(seen_keys),
+            stale_deleted=deleted_count,
+        )
 
     def _cleanup_stale_items(
         self,
@@ -464,8 +546,8 @@ class LibrarySyncService:
         instance_id: int,
         content_type: str,
         seen_ids: set[int],
-    ) -> None:
-        """Delete library items that are no longer in the instance."""
+    ) -> int:
+        """Delete library items no longer in the instance. Returns count removed."""
         stale = (
             db.query(LibraryItem)
             .filter(
@@ -476,12 +558,15 @@ class LibrarySyncService:
             .all()
         )
         for item in stale:
-            logger.debug(
+            logger.info(
                 "library_sync_removing_stale_item",
+                instance_id=instance_id,
+                content_type=content_type,
                 item_id=item.id,
                 title=item.title,
             )
             db.delete(item)
+        return len(stale)
 
     def _download_poster_if_needed(
         self,

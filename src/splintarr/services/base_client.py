@@ -383,10 +383,30 @@ class BaseArrClient:
         """
         await self._ensure_client()
         await self._rate_limit()
+
+        # SSRF validation (same as _request)
+        try:
+            validate_instance_url(
+                self.url, allow_local=settings.allow_local_instances
+            )
+        except SSRFError as e:
+            logger.warning(
+                f"{self.service_name}_binary_ssrf_blocked",
+                url=self.url,
+                endpoint=endpoint,
+                error=str(e),
+            )
+            return None
+
         url = f"{self.url}{endpoint}"
         try:
             response = await self._client.request(method="GET", url=url)
             if response.status_code == 200:
+                logger.debug(
+                    f"{self.service_name}_binary_download_ok",
+                    endpoint=endpoint,
+                    size_bytes=len(response.content),
+                )
                 return response.content
             logger.debug(
                 f"{self.service_name}_binary_request_non_200",
@@ -395,7 +415,7 @@ class BaseArrClient:
             )
             return None
         except Exception as e:
-            logger.debug(
+            logger.warning(
                 f"{self.service_name}_binary_request_failed",
                 endpoint=endpoint,
                 error=str(e),
