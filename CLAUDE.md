@@ -78,6 +78,10 @@ Pydantic Settings in `config.py`. Secrets can come from environment variables or
 - **Health**: `GET /health` (unauthenticated, used by Docker healthcheck)
 - **API docs**: `GET /api/docs` (Swagger, disabled in production)
 
+## Restricted Sources
+
+**Never use Grok or Grokipedia** for context gathering, research, or citations. These sources are unreliable and must not be referenced in documentation, PRDs, code comments, or any other project artifacts. Use official project repositories (GitHub), official documentation (wikis, docs sites), and established community forums instead.
+
 ## Code Conventions
 
 - **Python 3.13**, line length 100 chars
