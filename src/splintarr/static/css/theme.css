@@ -635,6 +635,16 @@ label small {
 
 .sidebar-toggle:hover { background: var(--slate-800); }
 
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.sidebar-backdrop.visible { display: block; }
+
 @media (max-width: 768px) {
     .sidebar-toggle { display: block; }
 
