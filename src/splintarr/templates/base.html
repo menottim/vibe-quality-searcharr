@@ -17,7 +17,9 @@
     {% if user and not no_sidebar %}
     <!-- Authenticated layout: sidebar + content -->
     <div class="app-layout">
-        <aside class="sidebar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebarNav">
             <div class="sidebar-brand">
                 <img src="/static/img/logo.svg" alt="Splintarr" class="sidebar-brand-icon" />
                 <span class="sidebar-brand-text">Splintarr</span>
@@ -102,6 +104,34 @@
         document.querySelectorAll('[data-action="logout"]').forEach(function(el) {
             el.addEventListener('click', function(e) { e.preventDefault(); logout(); });
         });
+
+        // Mobile sidebar toggle
+        (function() {
+            var toggle = document.getElementById('sidebarToggle');
+            var sidebar = document.getElementById('sidebarNav');
+            var backdrop = document.getElementById('sidebarBackdrop');
+            if (!toggle || !sidebar) return;
+
+            function openSidebar() {
+                sidebar.classList.add('sidebar-open');
+                if (backdrop) backdrop.classList.add('visible');
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+            function closeSidebar() {
+                sidebar.classList.remove('sidebar-open');
+                if (backdrop) backdrop.classList.remove('visible');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            toggle.addEventListener('click', function() {
+                if (sidebar.classList.contains('sidebar-open')) closeSidebar();
+                else openSidebar();
+            });
+            if (backdrop) backdrop.addEventListener('click', closeSidebar);
+            sidebar.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768 && e.target.closest('a')) closeSidebar();
+            });
+        })();
 
         function logout() {
             fetch('/api/auth/logout', {
