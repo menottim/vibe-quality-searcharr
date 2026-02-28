@@ -33,10 +33,11 @@ from sqlalchemy.orm import Session
 
 from splintarr.core.auth import get_current_user_from_cookie
 from splintarr.core.rate_limit import rate_limit_key_func
-from splintarr.database import get_db
+from splintarr.database import get_db, get_session_factory
 from splintarr.models.instance import Instance
 from splintarr.models.library import LibraryEpisode, LibraryItem
 from splintarr.models.user import User
+from splintarr.services.exclusion import ExclusionService
 from splintarr.services.library_sync import get_sync_service
 
 logger = structlog.get_logger()
@@ -132,12 +133,17 @@ def _render_library_page(
 
     stats = _get_library_stats(db, user)
 
+    # Build excluded set for badge display
+    exclusion_service = ExclusionService(get_session_factory())
+    excluded_set = _build_excluded_set(exclusion_service, user.id, instance_id)
+
     logger.debug(
         "library_page_rendered",
         template=template_name,
         user_id=user.id,
         item_count=len(items),
         missing_only=missing_only,
+        excluded_count=len(excluded_set),
     )
 
     return templates.TemplateResponse(
@@ -151,6 +157,7 @@ def _render_library_page(
             "stats": stats,
             "selected_instance_id": instance_id,
             "selected_content_type": content_type,
+            "excluded_set": excluded_set,
         },
     )
 
@@ -203,6 +210,23 @@ def _get_library_stats(db: Session, user: User) -> dict[str, Any]:
         "series_count": int(row.series or 0),
         "movie_count": int(row.movies or 0),
     }
+
+
+def _build_excluded_set(
+    exclusion_service: ExclusionService,
+    user_id: int,
+    instance_id: int | None,
+) -> set[tuple[int, str]]:
+    """Build a set of (external_id, content_type) for excluded items.
+
+    If instance_id is given, loads exclusions for that instance only.
+    Otherwise, loads exclusions across all user instances.
+    """
+    exclusions = exclusion_service.list_exclusions(
+        user_id=user_id,
+        instance_id=instance_id,
+    )
+    return {(exc.external_id, exc.content_type) for exc in exclusions}
 
 
 # ============================================================================
@@ -296,12 +320,21 @@ async def library_item_detail(
         for ep in episodes:
             seasons[ep.season_number].append(ep)
 
+    # Check if item is excluded
+    exclusion_service = ExclusionService(get_session_factory())
+    excluded_keys = exclusion_service.get_active_exclusion_keys(
+        user_id=current_user.id,
+        instance_id=item.instance_id,
+    )
+    is_excluded = (item.external_id, item.content_type) in excluded_keys
+
     logger.debug(
         "library_detail_rendered",
         item_id=item_id,
         content_type=item.content_type,
         title=item.title,
         season_count=len(seasons),
+        is_excluded=is_excluded,
     )
 
     return templates.TemplateResponse(
@@ -312,6 +345,7 @@ async def library_item_detail(
             "active_page": "library",
             "item": item,
             "seasons": dict(sorted(seasons.items())),
+            "is_excluded": is_excluded,
         },
     )
 

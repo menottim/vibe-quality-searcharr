@@ -118,5 +118,95 @@
 </article>
 {% endif %}
 
-<a href="/dashboard/library" role="button" class="secondary">Back to Library</a>
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <a href="/dashboard/library" role="button" class="secondary">Back to Library</a>
+    {% if is_excluded %}
+    <span style="color: var(--del-color); align-self: center; font-weight: 600;">&#10007; Excluded from searches</span>
+    {% else %}
+    <button class="contrast outline" data-action="open-exclude-dialog">Exclude from Searches</button>
+    {% endif %}
+</div>
+
+<!-- Exclude dialog -->
+<dialog id="exclude-dialog">
+    <article style="max-width: 480px;">
+        <header>
+            <button aria-label="Close" rel="prev" data-action="close-exclude-dialog"></button>
+            <h3>Exclude "{{ item.title }}"</h3>
+        </header>
+        <p>This will prevent automated searches from triggering for this title.</p>
+        <label for="exclude-reason">Reason (optional)</label>
+        <input type="text" id="exclude-reason" maxlength="500" placeholder="e.g. Not available in my region" />
+        <label for="exclude-duration">Duration</label>
+        <select id="exclude-duration">
+            <option value="permanent">Permanent</option>
+            <option value="7d">7 days</option>
+            <option value="30d">30 days</option>
+            <option value="90d">90 days</option>
+        </select>
+        <footer>
+            <button class="secondary" data-action="close-exclude-dialog">Cancel</button>
+            <button id="exclude-confirm-btn" data-action="confirm-exclude">Exclude</button>
+        </footer>
+    </article>
+</dialog>
 {% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+(function() {
+    var dialog = document.getElementById('exclude-dialog');
+    if (!dialog) return;
+
+    document.addEventListener('click', function(e) {
+        var target = e.target.closest('[data-action]');
+        if (!target) return;
+        if (target.dataset.action === 'open-exclude-dialog') {
+            dialog.showModal();
+        } else if (target.dataset.action === 'close-exclude-dialog') {
+            dialog.close();
+        } else if (target.dataset.action === 'confirm-exclude') {
+            excludeItem();
+        }
+    });
+
+    async function excludeItem() {
+        var btn = document.getElementById('exclude-confirm-btn');
+        btn.setAttribute('aria-busy', 'true');
+        btn.disabled = true;
+
+        var reason = document.getElementById('exclude-reason').value.trim() || null;
+        var duration = document.getElementById('exclude-duration').value;
+
+        try {
+            var response = await fetch('/api/exclusions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    instance_id: {{ item.instance_id }},
+                    external_id: {{ item.external_id }},
+                    content_type: '{{ item.content_type }}',
+                    title: {{ item.title|tojson }},
+                    library_item_id: {{ item.id }},
+                    reason: reason,
+                    duration: duration
+                })
+            });
+
+            if (response.ok) {
+                dialog.close();
+                showNotification('Item excluded from searches.', 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                var data = await response.json();
+                showNotification('Failed: ' + (data.detail || 'Unknown error'));
+            }
+        } catch (error) {
+            showNotification('Failed: ' + error.message);
+        } finally {
+            btn.setAttribute('aria-busy', 'false');
+            btn.disabled = false;
+        }
+    }
+})();
+</script>

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Exclusions - Splintarr{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>Content Exclusions</h1>
+    <p>{{ exclusions|length }} active exclusion{{ 's' if exclusions|length != 1 else '' }}</p>
+</hgroup>
+
+<!-- Filters -->
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;">
+    <select id="filter-instance" onchange="applyFilter()" style="max-width: 200px; margin-bottom: 0;">
+        <option value="">All Instances</option>
+        {% for inst in instances %}
+        <option value="{{ inst.id }}" {{ 'selected' if selected_instance_id == inst.id else '' }}>{{ inst.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% if exclusions %}
+<figure>
+    <table role="grid">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Instance</th>
+                <th>Type</th>
+                <th>Reason</th>
+                <th>Expires</th>
+                <th style="width: 5rem;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exc in exclusions %}
+            <tr data-exclusion-id="{{ exc.id }}">
+                <td>{{ exc.title }}</td>
+                <td>{{ exc.instance.name if exc.instance else 'Unknown' }}</td>
+                <td>
+                    {% if exc.content_type == 'series' %}
+                    <mark>Series</mark>
+                    {% else %}
+                    <mark>Movie</mark>
+                    {% endif %}
+                </td>
+                <td>{{ exc.reason or '-' }}</td>
+                <td>{{ exc.expiry_label }}</td>
+                <td>
+                    <button class="secondary outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin: 0;" data-action="delete-exclusion" data-id="{{ exc.id }}">Remove</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</figure>
+{% else %}
+<article>
+    <p class="empty-state">
+        No content exclusions yet. You can exclude items from automated searches on the
+        <a href="/dashboard/library">Library</a> detail pages.
+    </p>
+</article>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.state.csp_nonce }}">
+function applyFilter() {
+    var params = new URLSearchParams();
+    var inst = document.getElementById('filter-instance').value;
+    if (inst) params.set('instance_id', inst);
+    var qs = params.toString();
+    window.location.href = '/dashboard/exclusions' + (qs ? '?' + qs : '');
+}
+
+document.addEventListener('click', function(e) {
+    var target = e.target.closest('[data-action="delete-exclusion"]');
+    if (!target) return;
+    e.preventDefault();
+    var id = target.dataset.id;
+    deleteExclusion(id, target);
+});
+
+async function deleteExclusion(id, btn) {
+    if (!confirm('Remove this exclusion? The item will be included in future searches.')) return;
+    btn.setAttribute('aria-busy', 'true');
+    btn.disabled = true;
+    try {
+        var response = await fetch('/api/exclusions/' + id, { method: 'DELETE' });
+        if (response.ok) {
+            var row = btn.closest('tr');
+            if (row) row.remove();
+            showNotification('Exclusion removed.', 'success');
+        } else {
+            var data = await response.json();
+            showNotification('Failed: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        showNotification('Failed: ' + error.message);
+    } finally {
+        btn.setAttribute('aria-busy', 'false');
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}
