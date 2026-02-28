@@ -82,7 +82,7 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 | - | [v0.2.0 Bug Fixes & UX Polish](#bug-fixes-from-v020-e2e-testing) | **Done** | v0.2.1 | PRs #70, #72; issues #65-#67 closed |
 | 3 | [Health Monitoring & Auto-Recovery](#3-health-monitoring--auto-recovery) | Planned | v0.2.1 | |
 | 4 | [Clone Queue & Presets](#4-clone-queue--presets) | Planned | v0.2.1 | Simplified from Search Profiles |
-| 5 | [Real-Time Activity Feed](#5-real-time-activity-feed) | Planned | v0.2.1 | WebSocket, useful for debugging |
+| 5 | [Enhanced Activity Polling](#5-enhanced-activity-polling) | Planned | v0.2.1 | Polling first; WebSocket deferred to v0.4.0+ |
 | 6 | [Config Export & Integrity Check](#6-config-export--integrity-check) | Planned | v0.2.1 | Simplified from Backup & Restore |
 | 10 | [Adaptive Search Prioritization](#10-adaptive-search-prioritization) | Planned | v0.3.0 | Core search intelligence |
 | 11 | [Search Cooldown Intelligence](#11-search-cooldown-intelligence) | Planned | v0.3.0 | Builds on #10 |
@@ -90,6 +90,8 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 | 8 | [Prowlarr Integration](#8-prowlarr-integration) | Planned | v0.3.1 | Indexer-aware rate limiting |
 | 9 | [Season Pack Intelligence](#9-season-pack-intelligence) | Planned | v0.3.1 | Sonarr only |
 | 13 | [Search Analytics Dashboard](#13-search-analytics-dashboard) | Deferred | v0.4.0+ | |
+| 14 | [Config Import](#14-config-import) | Deferred | v0.4.0+ | Companion to Config Export |
+| 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | Deferred | v0.4.0+ | Upgrade from polling |
 
 ---
 
@@ -226,18 +228,19 @@ All three bugs identified during E2E testing are closed:
 - Selecting a preset pre-fills the form fields (user can override before creating)
 - No separate profiles table — presets are hardcoded, cloning uses the existing queue data
 
-### 5. Real-Time Activity Feed
+### 5. Enhanced Activity Polling
 
-**Priority:** Medium | **Effort:** Medium | **Status:** Planned
+**Priority:** Medium | **Effort:** Low | **Status:** Planned
 
-**Problem:** Dashboard uses AJAX polling (30s). Delay between action and result. Live progress useful for debugging.
+*Simplified from the original "Real-Time Activity Feed" feature. Full WebSocket deferred to [Feature 15](#15-websocket-real-time-activity-feed).*
+
+**Problem:** Dashboard uses AJAX polling (30s) for stats and system status, but the Recent Search Activity table is server-rendered and never updates without a page refresh. The `/api/dashboard/activity` endpoint exists but is unused.
 
 **Requirements:**
-- WebSocket at `/ws/activity` for real-time updates
-- Events: search started/completed/failed, instance health changed, queue status changed
-- Graceful fallback to polling if WebSocket fails
-- Connection indicator in dashboard header
-- Per-search live progress: items scanned / total
+- Wire up `/api/dashboard/activity` to poll every 15 seconds
+- Live-update the Recent Search Activity table via JS DOM manipulation
+- Reduce system status polling from 60s to 30s
+- Add "Clear filters" button to Library and Exclusions filter dropdowns
 
 ### 6. Config Export & Integrity Check
 
@@ -362,6 +365,18 @@ The core differentiator: making searches smarter, not just scheduled.
 **Priority:** Low | **Effort:** Medium | **Status:** Deferred
 
 Time-series charts, strategy comparison, instance comparison. Lightweight chart library bundled locally (no CDN). Useful for occasional glancing but not a daily need.
+
+### 14. Config Import
+
+**Priority:** Low | **Effort:** Medium | **Status:** Deferred
+
+Companion to Config Export (v0.2.1). Upload a previously exported JSON file to re-create instances, queues, exclusions, and notification settings. Requires conflict resolution (duplicate names, missing API keys that must be re-entered). Not needed for v0.2.1 — export is reference/documentation material for now.
+
+### 15. WebSocket Real-Time Activity Feed
+
+**Priority:** Low | **Effort:** Medium | **Status:** Deferred
+
+Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/ws/activity`. In-process event bus, connection registry, graceful fallback to polling, JWT cookie auth on WS upgrade, reconnect logic for 15-min token expiry. Deferred because enhanced polling provides 80% of the value for a single-user homelab app.
 
 ---
 
