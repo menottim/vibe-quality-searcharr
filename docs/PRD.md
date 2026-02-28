@@ -39,7 +39,7 @@ Sonarr and Radarr rely on RSS feeds for ongoing content — polling indexers eve
 
 | Tool | Approach | Splintarr Advantage |
 |------|----------|---------------------|
-| [Huntarr](https://grokipedia.com/page/Huntarr) | Batch-based, hourly API caps | Indexer-aware throttling, adaptive prioritization, season pack intelligence, library overview |
+| [Huntarr](https://github.com/plexguide/Huntarr.io) | Batch-based, hourly API caps, multi-arr support | Indexer-aware throttling, adaptive prioritization, season pack intelligence, library overview, security-focused design |
 | [missarr](https://github.com/l3uddz/missarr) | CLI, config-file | Full web UI, scheduling, analytics, no scripting required |
 | [n8n workflow](https://n8n.io/workflows/5927) | Automation platform | Self-contained Docker app, no n8n infrastructure needed |
 
