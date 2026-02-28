@@ -239,6 +239,20 @@ class Settings(BaseSettings):
         le=168,
     )
 
+    # Health Monitoring Settings
+    health_check_interval_minutes: int = Field(
+        default=5,
+        description="Minutes between automatic instance health checks",
+        ge=1,
+        le=60,
+    )
+    health_check_recovery_threshold: int = Field(
+        default=2,
+        description="Consecutive healthy checks required before resuming queues",
+        ge=1,
+        le=10,
+    )
+
     def get_secret_key(self) -> str:
         """
         Retrieve secret key from file or environment variable.
