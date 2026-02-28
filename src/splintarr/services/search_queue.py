@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from splintarr.core.security import decrypt_api_key, decrypt_field
 from splintarr.models import Instance, NotificationConfig, SearchHistory, SearchQueue
 from splintarr.services.discord import DiscordNotificationService
+from splintarr.services.exclusion import ExclusionService
 from splintarr.services.radarr import RadarrClient
 from splintarr.services.sonarr import SonarrClient
 
@@ -289,7 +290,15 @@ class SearchQueueManager:
 
         is_sonarr = instance.instance_type == "sonarr"
         item_type = "episode" if is_sonarr else "movie"
+        content_type = "series" if is_sonarr else "movie"
         action_name = "EpisodeSearch" if is_sonarr else "MoviesSearch"
+
+        # Load exclusion keys for this instance
+        exclusion_service = ExclusionService(self.db_session_factory)
+        excluded_keys = exclusion_service.get_active_exclusion_keys(
+            user_id=instance.user_id,
+            instance_id=instance.id,
+        )
 
         try:
             api_key = decrypt_api_key(instance.api_key)
@@ -329,6 +338,35 @@ class SearchQueueManager:
 
                         items_searched += 1
                         label = label_fn(record)
+
+                        # Determine the library-level external ID for exclusion check
+                        # Sonarr: seriesId from the episode record
+                        # Radarr: the movie record ID itself
+                        if is_sonarr:
+                            exclusion_ext_id = record.get("seriesId") or record.get(
+                                "series", {}
+                            ).get("id")
+                        else:
+                            exclusion_ext_id = item_id
+
+                        # Check content exclusion list before cooldown
+                        if exclusion_ext_id and (exclusion_ext_id, content_type) in excluded_keys:
+                            logger.debug(
+                                "item_excluded",
+                                item_type=item_type,
+                                item_id=item_id,
+                                external_id=exclusion_ext_id,
+                                content_type=content_type,
+                            )
+                            search_log.append(
+                                {
+                                    "item": label,
+                                    "action": "skipped",
+                                    "reason": "excluded",
+                                }
+                            )
+                            continue
+
                         cooldown_key = (
                             f"{instance.instance_type}_{instance.id}_{item_type}_{item_id}"
                         )

@@ -34,7 +34,12 @@
         </div>
         {% endif %}
         <div class="poster-info">
-            <div class="poster-title">{{ item.title }}</div>
+            <div class="poster-title">
+                {{ item.title }}
+                {% if excluded_set and (item.external_id, item.content_type) in excluded_set %}
+                <span style="color: var(--del-color); font-size: 0.7rem; font-weight: 600;" title="Excluded from searches">&#10007; excluded</span>
+                {% endif %}
+            </div>
             {% if item.year %}<div class="poster-year">{{ item.year }}</div>{% endif %}
             <div class="poster-progress">
                 <progress value="{{ item.episode_have }}" max="{{ item.episode_count }}" style="height: 4px; margin: 0;"></progress>
