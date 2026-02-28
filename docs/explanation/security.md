@@ -265,6 +265,27 @@ The short version:
 
 ---
 
+## Known Limitations and Accepted Risks
+
+The following security limitations have been reviewed, risk-assessed, and accepted for the homelab single-user deployment model. Each is tracked as a GitHub issue for visibility.
+
+### In-memory access token blacklist ([#45](https://github.com/menottim/splintarr/issues/45))
+**Risk: Low** | The access token blacklist is stored in-memory. If the application restarts, blacklisted tokens (from logout or password change) become valid again for up to 15 minutes until they expire naturally. Accepted because: short token lifetime, single-user model, and adding Redis would significantly increase complexity.
+
+### SSRF DNS rebinding TOCTOU window ([#46](https://github.com/menottim/splintarr/issues/46))
+**Risk: Medium** | SSRF protection validates the resolved IP before each request, but httpx performs its own DNS resolution. A DNS rebinding attack could exploit the microsecond gap between validation and connection. Accepted because: per-request re-validation narrows the window to microseconds, the attacker must control DNS for the instance URL, and the homelab runs on a trusted network.
+
+### No separate CSRF token ([#47](https://github.com/menottim/splintarr/issues/47))
+**Risk: Low** | The application uses `SameSite=Strict` cookies exclusively for CSRF protection, without a separate double-submit token. Accepted because: `SameSite=Strict` blocks cross-site requests in modern browsers, the app is single-user on localhost, and adding CSRF tokens would require changes to every form and AJAX call.
+
+### Unauthenticated poster image access ([#48](https://github.com/menottim/splintarr/issues/48))
+**Risk: Low** | The `/posters` static mount serves cached poster images without authentication. Paths are predictable (`/posters/{instance_id}/{type}/{id}.jpg`). Accepted because: poster images are publicly available media artwork (not sensitive data), the Docker deployment binds to localhost only, and serving through an authenticated endpoint would add latency.
+
+### CSP `style-src 'unsafe-inline'` ([#49](https://github.com/menottim/splintarr/issues/49))
+**Risk: Low** | The Content Security Policy allows inline styles, which could enable CSS injection data exfiltration. Accepted because: Pico CSS framework requires `unsafe-inline` for styles, scripts are properly nonce-protected, and CSS injection requires an existing HTML injection vector (mitigated by Jinja2 autoescaping).
+
+---
+
 ## Security Audit History
 
 | Date | Report | Findings | Status |
@@ -274,8 +295,10 @@ The short version:
 | 2026-02-24 | [Post-Fix Assessment](../other/security-assessment-post-fix.md) | Verification of all pen test fixes | Complete |
 | 2026-02-25 | [API & Docker Audit](../other/security-audit-api-docker-2026-02-25.md) | 20 vulnerabilities (3 critical) | All fixed |
 | 2026-02-25 | [Red Team Assessment](../other/red-team-adversarial-assessment-2026-02-25.md) | 15 vulnerabilities (3 critical) | All fixed |
+| 2026-02-27 | [Full Codebase Assessment](../security-assessment-2026-02-27.md) | 28 findings (3 critical, 8 high) | Fixed in PRs #41-#44 |
+| 2026-02-28 | Comprehensive Audit (web research + SAST + manual review) | 4 PRs created, 5 accepted risks documented | Complete |
 
 ---
 
 **Version:** 0.1.0
-**Last Updated:** 2026-02-25
+**Last Updated:** 2026-02-28
