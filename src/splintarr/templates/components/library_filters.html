@@ -1,5 +1,5 @@
 {# Shared instance/type filter dropdowns for library pages.
-   Required context: instances, selected_instance_id, selected_content_type, filter_base_url #}
+   Required context: instances, selected_instance_id, selected_content_type #}
 <select id="filter-instance" onchange="applyFilters()" style="max-width: 200px; margin-bottom: 0;">
     <option value="">All Instances</option>
     {% for inst in instances %}

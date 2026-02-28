@@ -308,6 +308,11 @@ class SearchQueueManager:
                         )
 
                         if self._is_in_cooldown(cooldown_key):
+                            logger.debug(
+                                "item_in_cooldown",
+                                item_type=item_type,
+                                item_id=item_id,
+                            )
                             search_log.append(
                                 {
                                     "item": label,
@@ -318,6 +323,10 @@ class SearchQueueManager:
                             continue
 
                         if not await self._check_rate_limit(instance.id):
+                            logger.warning(
+                                "rate_limit_reached",
+                                instance_id=instance.id,
+                            )
                             search_log.append(
                                 {
                                     "item": label,
@@ -333,6 +342,11 @@ class SearchQueueManager:
                             items_found += 1
                             searches_triggered += 1
                             self._set_cooldown(cooldown_key)
+                            logger.debug(
+                                "item_search_triggered",
+                                item_type=item_type,
+                                item_id=item_id,
+                            )
                             search_log.append(
                                 {
                                     "item": label,
@@ -343,6 +357,12 @@ class SearchQueueManager:
                             )
                         except Exception as e:
                             errors.append(f"{item_type.title()} {item_id}: {e}")
+                            logger.error(
+                                "item_search_failed",
+                                item_type=item_type,
+                                item_id=item_id,
+                                error=str(e),
+                            )
                             search_log.append(
                                 {
                                     "item": label,

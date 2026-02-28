@@ -132,6 +132,14 @@ def _render_library_page(
 
     stats = _get_library_stats(db, user)
 
+    logger.debug(
+        "library_page_rendered",
+        template=template_name,
+        user_id=user.id,
+        item_count=len(items),
+        missing_only=missing_only,
+    )
+
     return templates.TemplateResponse(
         template_name,
         {
