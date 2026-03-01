@@ -15,6 +15,7 @@ across configured instances.
 """
 
 import json
+from collections import defaultdict
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
@@ -58,6 +59,17 @@ def _movie_label(movie: dict[str, Any]) -> str:
     if year:
         return f"{title} ({year})"
     return title
+
+
+def _group_by_season(records: list[dict]) -> dict[tuple[int, int], list[dict]]:
+    """Group Sonarr records by (seriesId, seasonNumber) for season pack detection."""
+    groups: dict[tuple[int, int], list[dict]] = defaultdict(list)
+    for record in records:
+        series_id = record.get("seriesId")
+        season = record.get("seasonNumber")
+        if series_id is not None and season is not None:
+            groups[(series_id, season)].append(record)
+    return dict(groups)
 
 
 class SearchQueueError(Exception):
@@ -507,9 +519,90 @@ class SearchQueueManager:
                     max_items=max_items,
                 )
 
-                # Step 8: Search each remaining item
+                # Step 7.5: Season pack grouping (Sonarr only)
+                season_pack_handled_ids: set[int] = set()
+                season_pack_enabled = (
+                    getattr(queue, "season_pack_enabled", False) and is_sonarr
+                )
+
+                if season_pack_enabled:
+                    threshold = getattr(queue, "season_pack_threshold", 3) or 3
+                    truncated_records = [rec for rec, _score, _reason in truncated]
+                    season_groups = _group_by_season(truncated_records)
+
+                    for (sid, snum), group_records in season_groups.items():
+                        if len(group_records) >= threshold:
+                            # Step 8a: Issue season pack search
+                            if not await self._check_rate_limit(instance.id):
+                                logger.warning(
+                                    "rate_limit_reached",
+                                    instance_id=instance.id,
+                                )
+                                break
+
+                            try:
+                                cmd_result = await client.season_search(
+                                    series_id=sid, season_number=snum
+                                )
+                                searches_triggered += 1
+                                items_found += 1
+
+                                # Track all episode IDs in this pack as handled
+                                for rec in group_records:
+                                    ep_id = rec.get("id")
+                                    if ep_id is not None:
+                                        season_pack_handled_ids.add(ep_id)
+                                        items_searched += 1
+
+                                # Update LibraryItem search tracking for the series
+                                library_item = library_items.get(sid)
+                                if library_item:
+                                    library_item.record_search()
+
+                                logger.info(
+                                    "season_pack_search_triggered",
+                                    series_id=sid,
+                                    season_number=snum,
+                                    episode_count=len(group_records),
+                                    instance_id=instance.id,
+                                    command_id=cmd_result.get("id"),
+                                )
+
+                                # Log each episode covered by the pack search
+                                for rec in group_records:
+                                    label = label_fn(rec)
+                                    search_log.append(
+                                        {
+                                            "item": label,
+                                            "action": "SeasonSearch",
+                                            "series_id": sid,
+                                            "season_number": snum,
+                                            "item_id": rec.get("id"),
+                                            "command_id": cmd_result.get("id"),
+                                            "result": "sent",
+                                            "season_pack": True,
+                                        }
+                                    )
+                            except Exception as e:
+                                errors.append(
+                                    f"SeasonSearch series={sid} S{snum:02d}: {e}"
+                                )
+                                logger.error(
+                                    "season_pack_search_failed",
+                                    series_id=sid,
+                                    season_number=snum,
+                                    error=str(e),
+                                    instance_id=instance.id,
+                                )
+
+                # Step 8: Search each remaining item (skip season-pack-handled)
                 for record, score, reason in truncated:
                     item_id = record.get("id")
+
+                    # Skip items already handled by season pack searches
+                    if item_id in season_pack_handled_ids:
+                        continue
+
                     label = label_fn(record)
 
                     # Determine external IDs for log and library item lookup
