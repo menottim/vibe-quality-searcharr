@@ -69,10 +69,8 @@
                     </td>
                     <td><code>{{ item.strategy }}</code></td>
                     <td>
-                        {% if item.status == 'completed' %}
+                        {% if item.status in ('success', 'partial_success') %}
                         <span style="color: var(--ins-color);">&#10003; Completed</span>
-                        {% elif item.status == 'running' %}
-                        <span style="color: var(--primary);">&#10227; Running</span>
                         {% elif item.status == 'failed' %}
                         <span style="color: var(--del-color);">&#10007; Failed</span>
                         {% else %}
@@ -170,6 +168,8 @@ function applyHistoryFilters() {
     if (inst) params.set('instance_id', inst);
     if (strategy) params.set('strategy', strategy);
     if (status) params.set('status', status);
+    var perPage = new URLSearchParams(window.location.search).get('per_page');
+    if (perPage) params.set('per_page', perPage);
     var qs = params.toString();
     window.location.href = '/dashboard/search-history' + (qs ? '?' + qs : '');
 }
