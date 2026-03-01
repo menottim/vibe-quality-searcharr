@@ -1076,7 +1076,7 @@ async def api_indexer_health(
     """
     Get Prowlarr indexer health status (JSON API).
 
-    Returns indexer names, protocols, query/grab usage, and disabled status.
+    Returns indexer names, query limits/usage, and disabled status.
     If Prowlarr is not configured or inactive, returns configured=False.
     """
     logger.debug("dashboard_indexer_health_requested", user_id=current_user.id)
@@ -1147,11 +1147,9 @@ async def api_indexer_health(
         indexer_list.append(
             {
                 "name": idx["name"],
-                "protocol": idx.get("protocol", "unknown"),
                 "query_limit": idx.get("query_limit"),
                 "queries_used": idx_stats.get("queries", 0),
-                "grab_limit": idx.get("grab_limit"),
-                "grabs_used": idx_stats.get("grabs", 0),
+                "limits_unit": idx.get("limits_unit"),
                 "is_disabled": idx_id in disabled_ids,
             }
         )

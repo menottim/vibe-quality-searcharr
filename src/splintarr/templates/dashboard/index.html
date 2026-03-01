@@ -62,15 +62,14 @@
                 <thead>
                     <tr>
                         <th>Indexer</th>
-                        <th>Protocol</th>
-                        <th>Queries</th>
-                        <th>Grabs</th>
+                        <th>Query Limit</th>
+                        <th>Queries Used</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="indexer-health-body">
                     <tr>
-                        <td colspan="5" style="text-align: center; color: var(--muted-color);">Loading...</td>
+                        <td colspan="4" style="text-align: center; color: var(--muted-color);">Loading...</td>
                     </tr>
                 </tbody>
             </table>
@@ -418,6 +417,56 @@ setInterval(refreshActivity, 15000);
 refreshActivity();
 
 // Indexer Health — poll every 60s
+var indexerHealthExpanded = false;
+var INDEXER_TRUNCATE_LIMIT = 5;
+
+function buildIndexerRow(idx) {
+    var row = document.createElement('tr');
+
+    // Name
+    var nameCell = document.createElement('td');
+    nameCell.textContent = idx.name;
+    row.appendChild(nameCell);
+
+    // Query Limit (e.g. "100/day", "50/hour", or "No limit")
+    var limitCell = document.createElement('td');
+    if (idx.query_limit) {
+        var unit = idx.limits_unit || 'day';
+        limitCell.textContent = idx.query_limit + '/' + unit;
+    } else {
+        limitCell.style.color = 'var(--muted-color)';
+        limitCell.textContent = 'No limit';
+    }
+    row.appendChild(limitCell);
+
+    // Queries Used (e.g. "42 of 100" or just "7")
+    var usedCell = document.createElement('td');
+    if (idx.query_limit) {
+        usedCell.textContent = idx.queries_used + ' of ' + idx.query_limit;
+        if (idx.queries_used >= idx.query_limit * 0.9) {
+            usedCell.style.color = 'var(--del-color)';
+        }
+    } else {
+        usedCell.textContent = String(idx.queries_used);
+    }
+    row.appendChild(usedCell);
+
+    // Status
+    var statusCell = document.createElement('td');
+    var statusSpan = document.createElement('span');
+    if (idx.is_disabled) {
+        statusSpan.style.color = 'var(--del-color)';
+        statusSpan.textContent = 'Disabled';
+    } else {
+        statusSpan.style.color = 'var(--ins-color)';
+        statusSpan.textContent = 'Active';
+    }
+    statusCell.appendChild(statusSpan);
+    row.appendChild(statusCell);
+
+    return row;
+}
+
 async function refreshIndexerHealth() {
     try {
         var response = await fetch('/api/dashboard/indexer-health');
@@ -440,7 +489,7 @@ async function refreshIndexerHealth() {
         if (data.error) {
             var errRow = document.createElement('tr');
             var errCell = document.createElement('td');
-            errCell.colSpan = 5;
+            errCell.colSpan = 4;
             errCell.style.textAlign = 'center';
             errCell.style.color = 'var(--del-color)';
             errCell.textContent = data.error;
@@ -452,7 +501,7 @@ async function refreshIndexerHealth() {
         if (!data.indexers || data.indexers.length === 0) {
             var emptyRow = document.createElement('tr');
             var emptyCell = document.createElement('td');
-            emptyCell.colSpan = 5;
+            emptyCell.colSpan = 4;
             emptyCell.style.textAlign = 'center';
             emptyCell.style.color = 'var(--muted-color)';
             emptyCell.textContent = 'No enabled indexers found';
@@ -461,54 +510,39 @@ async function refreshIndexerHealth() {
             return;
         }
 
-        data.indexers.forEach(function(idx) {
-            var row = document.createElement('tr');
+        var indexers = data.indexers;
+        var needsTruncation = indexers.length > INDEXER_TRUNCATE_LIMIT;
+        var visibleCount = (needsTruncation && !indexerHealthExpanded)
+            ? INDEXER_TRUNCATE_LIMIT
+            : indexers.length;
 
-            // Name
-            var nameCell = document.createElement('td');
-            nameCell.textContent = idx.name;
-            row.appendChild(nameCell);
+        for (var i = 0; i < visibleCount; i++) {
+            tbody.appendChild(buildIndexerRow(indexers[i]));
+        }
 
-            // Protocol
-            var protoCell = document.createElement('td');
-            var protoCode = document.createElement('code');
-            protoCode.textContent = idx.protocol;
-            protoCell.appendChild(protoCode);
-            row.appendChild(protoCell);
-
-            // Queries (used / limit)
-            var queryCell = document.createElement('td');
-            if (idx.query_limit) {
-                queryCell.textContent = idx.queries_used + ' / ' + idx.query_limit;
+        // Add "Show all / Show fewer" toggle row when truncated
+        if (needsTruncation) {
+            var toggleRow = document.createElement('tr');
+            var toggleCell = document.createElement('td');
+            toggleCell.colSpan = 4;
+            toggleCell.style.textAlign = 'center';
+            var toggleLink = document.createElement('a');
+            toggleLink.href = '#';
+            toggleLink.style.cursor = 'pointer';
+            if (indexerHealthExpanded) {
+                toggleLink.textContent = 'Show fewer';
             } else {
-                queryCell.textContent = String(idx.queries_used);
+                toggleLink.textContent = 'Show all ' + indexers.length + ' indexers';
             }
-            row.appendChild(queryCell);
-
-            // Grabs (used / limit)
-            var grabCell = document.createElement('td');
-            if (idx.grab_limit) {
-                grabCell.textContent = idx.grabs_used + ' / ' + idx.grab_limit;
-            } else {
-                grabCell.textContent = String(idx.grabs_used);
-            }
-            row.appendChild(grabCell);
-
-            // Status
-            var statusCell = document.createElement('td');
-            var statusSpan = document.createElement('span');
-            if (idx.is_disabled) {
-                statusSpan.style.color = 'var(--del-color)';
-                statusSpan.textContent = 'Disabled';
-            } else {
-                statusSpan.style.color = 'var(--ins-color)';
-                statusSpan.textContent = 'Active';
-            }
-            statusCell.appendChild(statusSpan);
-            row.appendChild(statusCell);
-
-            tbody.appendChild(row);
-        });
+            toggleLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                indexerHealthExpanded = !indexerHealthExpanded;
+                refreshIndexerHealth();
+            });
+            toggleCell.appendChild(toggleLink);
+            toggleRow.appendChild(toggleCell);
+            tbody.appendChild(toggleRow);
+        }
     } catch (e) {
         // silent fail — widget keeps last known state
     }
