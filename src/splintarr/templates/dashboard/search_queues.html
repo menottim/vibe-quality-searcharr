@@ -76,6 +76,7 @@
                 {% elif queue.status in ['pending', 'completed'] %}
                 <button class="secondary" data-action="pause-queue" data-id="{{ queue.id }}">Pause</button>
                 {% endif %}
+                <button class="secondary" data-action="clone-queue" data-id="{{ queue.id }}">Clone</button>
                 <button class="secondary" data-action="view-queue" data-id="{{ queue.id }}">View</button>
                 <button class="secondary" style="color: var(--del-color);" data-action="delete-queue" data-id="{{ queue.id }}" data-name="{{ queue.name }}">Delete</button>
             </div>
@@ -100,6 +101,16 @@
         </header>
 
         <form id="createQueueForm">
+            <label>
+                Start from preset <small>(optional)</small>
+                <select id="presetSelect" onchange="applyPreset(this.value)">
+                    <option value="">-- Custom --</option>
+                    <option value="aggressive-missing">Aggressive Missing (hourly)</option>
+                    <option value="weekly-cutoff">Weekly Cutoff Unmet</option>
+                    <option value="new-releases">New Releases (every 4h)</option>
+                </select>
+            </label>
+
             <label for="instance_id">
                 Instance
                 <select id="instance_id" name="instance_id" required>
@@ -171,6 +182,7 @@ document.addEventListener('click', function(e) {
     var action = target.dataset.action;
     if (action === 'resume-queue') resumeQueue(parseInt(target.dataset.id));
     else if (action === 'pause-queue') pauseQueue(parseInt(target.dataset.id));
+    else if (action === 'clone-queue') cloneQueue(parseInt(target.dataset.id));
     else if (action === 'view-queue') viewQueue(parseInt(target.dataset.id));
     else if (action === 'delete-queue') deleteQueue(parseInt(target.dataset.id), target.dataset.name);
     else if (action === 'close-create-modal') closeCreateModal();
@@ -344,6 +356,57 @@ async function deleteQueue(queueId, name) {
     } catch (error) {
         showNotification('Delete failed: ' + error.message);
     }
+}
+
+async function cloneQueue(queueId) {
+    var result = await Splintarr.apiCall('/api/search-queues/' + queueId);
+    if (!result.success) {
+        Splintarr.showNotification('Failed to load queue: ' + result.error);
+        return;
+    }
+
+    var queue = result.data;
+    document.getElementById('presetSelect').value = '';
+    document.getElementById('instance_id').value = queue.instance_id;
+    document.getElementById('strategy').value = queue.strategy;
+
+    var recurringCheckbox = document.getElementById('recurring');
+    recurringCheckbox.checked = queue.recurring;
+    toggleRecurring();
+
+    if (queue.interval_hours) {
+        document.getElementById('interval_hours').value = queue.interval_hours;
+    }
+
+    document.getElementById('name').value = queue.name + ' (copy)';
+    nameManuallyEdited = true;
+
+    document.getElementById('create-queue').showModal();
+}
+
+var PRESETS = {
+    'aggressive-missing': { strategy: 'missing', recurring: true, interval_hours: 1, nameSuffix: 'Aggressive Missing' },
+    'weekly-cutoff': { strategy: 'cutoff_unmet', recurring: true, interval_hours: 168, nameSuffix: 'Weekly Cutoff Unmet' },
+    'new-releases': { strategy: 'recent', recurring: true, interval_hours: 4, nameSuffix: 'New Releases' }
+};
+
+function applyPreset(presetKey) {
+    if (!presetKey) return;
+    var preset = PRESETS[presetKey];
+    if (!preset) return;
+
+    document.getElementById('strategy').value = preset.strategy;
+
+    var recurringCheckbox = document.getElementById('recurring');
+    recurringCheckbox.checked = preset.recurring;
+    toggleRecurring();
+
+    if (preset.interval_hours) {
+        document.getElementById('interval_hours').value = preset.interval_hours;
+    }
+
+    nameManuallyEdited = false;
+    updateSuggestedName();
 }
 
 function closeCreateModal() {
