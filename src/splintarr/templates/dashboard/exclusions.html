@@ -16,6 +16,10 @@
         <option value="{{ inst.id }}" {{ 'selected' if selected_instance_id == inst.id else '' }}>{{ inst.name }}</option>
         {% endfor %}
     </select>
+
+    {% if request.query_string %}
+    <a href="{{ request.path }}" style="font-size: 0.875rem;">Clear filters</a>
+    {% endif %}
 </div>
 
 {% if exclusions %}
