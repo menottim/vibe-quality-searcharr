@@ -23,11 +23,10 @@ import structlog
 from fastapi import APIRouter, Cookie, Depends, Form, Query, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from slowapi import Limiter
 from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
-
-from slowapi import Limiter
 
 from splintarr.api.auth import set_auth_cookies
 from splintarr.config import settings
@@ -1081,9 +1080,13 @@ async def api_indexer_health(
     """
     logger.debug("dashboard_indexer_health_requested", user_id=current_user.id)
 
-    config = db.query(ProwlarrConfig).filter(
-        ProwlarrConfig.user_id == current_user.id,
-    ).first()
+    config = (
+        db.query(ProwlarrConfig)
+        .filter(
+            ProwlarrConfig.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not config or not config.is_active:
         logger.debug(
@@ -1140,15 +1143,17 @@ async def api_indexer_health(
         idx_id = idx["id"]
         idx_stats = stats.get(idx_id, {})
 
-        indexer_list.append({
-            "name": idx["name"],
-            "protocol": idx.get("protocol", "unknown"),
-            "query_limit": idx.get("query_limit"),
-            "queries_used": idx_stats.get("queries", 0),
-            "grab_limit": idx.get("grab_limit"),
-            "grabs_used": idx_stats.get("grabs", 0),
-            "is_disabled": idx_id in disabled_ids,
-        })
+        indexer_list.append(
+            {
+                "name": idx["name"],
+                "protocol": idx.get("protocol", "unknown"),
+                "query_limit": idx.get("query_limit"),
+                "queries_used": idx_stats.get("queries", 0),
+                "grab_limit": idx.get("grab_limit"),
+                "grabs_used": idx_stats.get("grabs", 0),
+                "is_disabled": idx_id in disabled_ids,
+            }
+        )
 
     logger.debug(
         "dashboard_indexer_health_completed",

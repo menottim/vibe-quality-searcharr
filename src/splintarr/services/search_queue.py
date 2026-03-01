@@ -172,9 +172,7 @@ class SearchQueueManager:
                 instance_url=instance.url,
             )
             if rate_result["max_items"] is not None:
-                effective_max = min(
-                    queue.max_items_per_run or 50, rate_result["max_items"]
-                )
+                effective_max = min(queue.max_items_per_run or 50, rate_result["max_items"])
                 if effective_max == 0:
                     logger.warning(
                         "search_queue_prowlarr_budget_exhausted",
@@ -574,9 +572,7 @@ class SearchQueueManager:
 
                 # Step 7.5: Season pack grouping (Sonarr only)
                 season_pack_handled_ids: set[int] = set()
-                season_pack_enabled = (
-                    getattr(queue, "season_pack_enabled", False) and is_sonarr
-                )
+                season_pack_enabled = getattr(queue, "season_pack_enabled", False) and is_sonarr
 
                 if season_pack_enabled:
                     threshold = getattr(queue, "season_pack_threshold", 3) or 3
@@ -637,9 +633,7 @@ class SearchQueueManager:
                                         }
                                     )
                             except Exception as e:
-                                errors.append(
-                                    f"SeasonSearch series={sid} S{snum:02d}: {e}"
-                                )
+                                errors.append(f"SeasonSearch series={sid} S{snum:02d}: {e}")
                                 logger.error(
                                     "season_pack_search_failed",
                                     series_id=sid,

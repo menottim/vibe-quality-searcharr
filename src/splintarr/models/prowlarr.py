@@ -108,7 +108,4 @@ class ProwlarrConfig(Base):
 
     def __repr__(self) -> str:
         """String representation of ProwlarrConfig."""
-        return (
-            f"<ProwlarrConfig(id={self.id}, user_id={self.user_id}, "
-            f"is_active={self.is_active})>"
-        )
+        return f"<ProwlarrConfig(id={self.id}, user_id={self.user_id}, is_active={self.is_active})>"
