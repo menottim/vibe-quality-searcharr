@@ -5,7 +5,7 @@ This module implements the core search automation scheduler using APScheduler:
 - Background job management for search queues
 - Multiple search strategies (round-robin, priority, aging, recent)
 - Rate limit enforcement and cooldown tracking
-- Job persistence across restarts
+- In-memory job storage (re-scheduled from DB on startup)
 - Graceful lifecycle management (start/stop/pause/resume)
 - Error handling and retry logic
 
@@ -20,12 +20,11 @@ from typing import Any
 import structlog
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.executors.asyncio import AsyncIOExecutor
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.orm import Session
 
 from splintarr.config import settings
-from splintarr.database import get_engine
 from splintarr.models import SearchQueue
 from splintarr.services.health_check import HealthCheckService
 from splintarr.services.search_queue import SearchQueueManager
@@ -46,7 +45,7 @@ class SearchScheduler:
     - Executes searches using appropriate strategy
     - Enforces rate limits and cooldown periods
     - Tracks execution history and statistics
-    - Persists job state to database for crash recovery
+    - Uses in-memory job storage (active queues re-scheduled from DB on startup)
     """
 
     def __init__(self, db_session_factory: Callable[[], Session]):
@@ -71,15 +70,10 @@ class SearchScheduler:
         Returns:
             AsyncIOScheduler: Configured scheduler instance
         """
-        # Job store for persistence (use same database engine as app)
-        # IMPORTANT: Use get_engine() to get our configured engine with SQLCipher support
-        # Do NOT pass url= as it would create a separate engine without encryption
-        jobstores = {
-            "default": SQLAlchemyJobStore(
-                engine=get_engine(),
-                tablename="apscheduler_jobs",
-            )
-        }
+        # In-memory job store — avoids serialization issues with SQLCipher's
+        # creator() closure. Jobs are re-scheduled from the database on startup
+        # via _load_existing_queues(), so persistence is not needed.
+        jobstores = {"default": MemoryJobStore()}
 
         # Executor configuration
         executors = {

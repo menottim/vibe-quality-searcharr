@@ -285,9 +285,11 @@ class TestSchedulerStatus:
 
         status = scheduler.get_status()
 
-        assert status["jobs_count"] == 1
-        assert len(status["jobs"]) == 1
-        assert status["jobs"][0]["id"] == "search_queue_1"
+        # +1 for the instance_health_check job registered on startup
+        assert status["jobs_count"] == 2
+        assert len(status["jobs"]) == 2
+        job_ids = [j["id"] for j in status["jobs"]]
+        assert "search_queue_1" in job_ids
 
 
 class TestLoadExistingQueues:
@@ -327,9 +329,9 @@ class TestLoadExistingQueues:
 
         await scheduler.start()
 
-        # Verify both jobs were scheduled
+        # Verify both jobs were scheduled (+1 for instance_health_check)
         status = scheduler.get_status()
-        assert status["jobs_count"] == 2
+        assert status["jobs_count"] == 3
 
     @pytest.mark.asyncio
     async def test_skip_inactive_queues(self, scheduler, mock_db_session):
@@ -346,11 +348,14 @@ class TestLoadExistingQueues:
             status="pending",
         )
 
-        # Mock query to return inactive queue
+        # Mock query: all() returns the inactive queue (mock doesn't actually filter),
+        # and first() returns it too so schedule_queue sees is_active=False and skips it
         mock_db_session.query.return_value.filter.return_value.all.return_value = [queue]
+        mock_db_session.query.return_value.filter.return_value.first.return_value = queue
 
         await scheduler.start()
 
-        # Verify no jobs were scheduled
+        # Verify no queue jobs were scheduled (only the health check job)
         status = scheduler.get_status()
-        assert status["jobs_count"] == 0
+        assert status["jobs_count"] == 1
+        assert status["jobs"][0]["id"] == "instance_health_check"
