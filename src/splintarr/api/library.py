@@ -393,7 +393,9 @@ async def api_library_sync(
 
 
 @router.get("/api/library/sync-status", include_in_schema=False)
+@limiter.limit("60/minute")
 async def api_library_sync_status(
+    request: Request,
     current_user: User = Depends(get_current_user_from_cookie),
 ) -> JSONResponse:
     """Check whether a library sync is currently running."""
