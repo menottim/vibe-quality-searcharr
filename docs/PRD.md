@@ -80,10 +80,10 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 | 2 | [Content Exclusion Lists](#2-content-exclusion-lists) | **Done** | v0.2.0 | PR #63 |
 | 7 | [Discord Notifications](#7-discord-notifications) | **Done** | v0.2.0 | PR #62 |
 | - | [v0.2.0 Bug Fixes & UX Polish](#bug-fixes-from-v020-e2e-testing) | **Done** | v0.2.1 | PRs #70, #72; issues #65-#67 closed |
-| 3 | [Health Monitoring & Auto-Recovery](#3-health-monitoring--auto-recovery) | Planned | v0.2.1 | |
-| 4 | [Clone Queue & Presets](#4-clone-queue--presets) | Planned | v0.2.1 | Simplified from Search Profiles |
-| 5 | [Enhanced Activity Polling](#5-enhanced-activity-polling) | Planned | v0.2.1 | Polling first; WebSocket deferred to v0.4.0+ |
-| 6 | [Config Export & Integrity Check](#6-config-export--integrity-check) | Planned | v0.2.1 | Simplified from Backup & Restore |
+| 3 | [Health Monitoring & Auto-Recovery](#3-health-monitoring--auto-recovery) | **Done** | v0.2.1 | PR #74 |
+| 4 | [Clone Queue & Presets](#4-clone-queue--presets) | **Done** | v0.2.1 | PR #75 |
+| 5 | [Enhanced Activity Polling](#5-enhanced-activity-polling) | **Done** | v0.2.1 | PR #77; WebSocket deferred to v0.4.0+ |
+| 6 | [Config Export & Integrity Check](#6-config-export--integrity-check) | **Done** | v0.2.1 | PR #76 |
 | 10 | [Adaptive Search Prioritization](#10-adaptive-search-prioritization) | Planned | v0.3.0 | Core search intelligence |
 | 11 | [Search Cooldown Intelligence](#11-search-cooldown-intelligence) | Planned | v0.3.0 | Builds on #10 |
 | 12 | [Search Result Feedback Loop](#12-search-result-feedback-loop) | Planned | v0.3.0 | Closes the learning loop |
@@ -126,6 +126,30 @@ Three bugs from E2E testing resolved: setup wizard login timestamp (#67 fixed), 
 **Status: Done** (PR #69, 2026-02-28)
 
 New triple-ring logo and gold/maroon color scheme. All documentation screenshots updated (PR #73).
+
+### 3. Health Monitoring & Auto-Recovery
+
+**Status: Done** (PR #74, 2026-02-28) — see [detailed spec](#3-health-monitoring--auto-recovery)
+
+Periodic health checks every 5 minutes (configurable). Auto-pause queues when instance unreachable. Auto-resume after 2 consecutive healthy checks (anti-flapping). Discord notifications on status transitions. Dashboard shows response time, error details, failure count.
+
+### 4. Clone Queue & Presets
+
+**Status: Done** (PR #75, 2026-02-28) — see [detailed spec](#4-clone-queue--presets)
+
+Clone button on queue cards pre-fills Create modal with source queue settings. Three built-in presets (Aggressive Missing, Weekly Cutoff Unmet, New Releases) as client-side JS dropdown.
+
+### 5. Enhanced Activity Polling
+
+**Status: Done** (PR #77, 2026-02-28) — see [detailed spec](#5-enhanced-activity-polling)
+
+Dashboard activity table live-updates every 15s via `/api/dashboard/activity`. System status polling reduced to 30s. Clear filters link on Library and Exclusions pages.
+
+### 6. Config Export & Integrity Check
+
+**Status: Done** (PR #76, 2026-02-28) — see [detailed spec](#6-config-export--integrity-check)
+
+Config export as JSON download (instances, queues, exclusions, notification config — secrets redacted). Database integrity check via PRAGMA. Settings page refactored to accordion layout. UX polish: toast notifications replace browser alerts, loading state on save buttons.
 
 ---
 
@@ -178,7 +202,7 @@ Two high-value, low-effort features that address the most immediate user needs.
 
 ---
 
-## v0.2.1 — Ship Next
+## v0.2.1 — Shipped
 
 Operational improvements, debugging tools, and UX polish from v0.2.0 E2E testing.
 
@@ -201,7 +225,7 @@ All three bugs identified during E2E testing are closed:
 
 ### 3. Health Monitoring & Auto-Recovery
 
-**Priority:** High | **Effort:** Medium | **Status:** Planned
+**Priority:** High | **Effort:** Medium | **Status: Done** (PR #74, 2026-02-28)
 
 **Problem:** When a Sonarr/Radarr instance goes down, queues fail silently until the user notices. The current 5-failure auto-deactivation burns through the failure budget and doesn't auto-recover.
 
@@ -212,11 +236,11 @@ All three bugs identified during E2E testing are closed:
 - Auto-resume queues when instance recovers, with a backoff period
 - Dashboard health indicator: green/yellow/red per instance
 
-**Data model:** New `health_checks` table (instance_id, checked_at, success, response_time_ms, error_message). Add `health_check_interval_minutes` to `instances`.
+**Data model:** Lean columns on Instance (consecutive_failures, consecutive_successes, last_healthy_at, response_time_ms) instead of a dedicated history table. Config: `HEALTH_CHECK_INTERVAL_MINUTES` (default 5), `HEALTH_CHECK_RECOVERY_THRESHOLD` (default 2).
 
 ### 4. Clone Queue & Presets
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned
+**Priority:** Medium | **Effort:** Low | **Status: Done** (PR #75, 2026-02-28)
 
 *Simplified from the original "Search Profiles & Templates" feature. A full profiles system is overengineered for 1-5 instances.*
 
@@ -230,7 +254,7 @@ All three bugs identified during E2E testing are closed:
 
 ### 5. Enhanced Activity Polling
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned
+**Priority:** Medium | **Effort:** Low | **Status: Done** (PR #77, 2026-02-28)
 
 *Simplified from the original "Real-Time Activity Feed" feature. Full WebSocket deferred to [Feature 15](#15-websocket-real-time-activity-feed).*
 
@@ -244,7 +268,7 @@ All three bugs identified during E2E testing are closed:
 
 ### 6. Config Export & Integrity Check
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned
+**Priority:** Medium | **Effort:** Low | **Status: Done** (PR #76, 2026-02-28)
 
 *Simplified from the original "Backup & Restore" feature. User handles Docker volume backups externally.*
 
@@ -431,3 +455,4 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | 2026-02-28 | Gold/maroon rebrand (PR #69), screenshots updated (PR #73) |
 | 2026-02-28 | v0.2.0 bug fixes resolved: #65-#67 all closed (PRs #70, #72) |
 | 2026-02-28 | PRD updated to reflect all shipped work; `PRD-v0.2.md` archived (deleted from repo) |
+| 2026-02-28 | v0.2.1 shipped: Health Monitoring (#74), Clone/Presets (#75), Config Export (#76), Activity Polling (#77) |
