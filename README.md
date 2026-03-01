@@ -172,7 +172,7 @@ poetry run bandit -r src/
 
 This is primarily a demonstration and educational project. Contributions are welcome:
 
-- **Security Issues** -- Open a public GitHub issue. Since this is not production software, responsible disclosure delays are not necessary.
+- **Security Issues** -- See [SECURITY.md](SECURITY.md) for how to report vulnerabilities privately via GitHub Security Advisories.
 - **Bugs and Improvements** -- Open a pull request with your changes.
 - **Code Review** -- All contributions welcome, especially from security professionals.
 
