@@ -52,7 +52,6 @@
         <h3>Recent Search Activity</h3>
     </header>
 
-    {% if recent_searches %}
     <figure>
         <table role="grid">
             <thead>
@@ -64,7 +63,8 @@
                     <th>Time</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="activity-tbody">
+                {% if recent_searches %}
                 {% for search in recent_searches %}
                 <tr>
                     <td><a href="/dashboard/instances">{{ search.instance.name }}</a></td>
@@ -91,14 +91,16 @@
                     </td>
                 </tr>
                 {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--muted-color);">
+                        No search history yet. <a href="/dashboard/search-queues">Create a search queue</a> to get started!
+                    </td>
+                </tr>
+                {% endif %}
             </tbody>
         </table>
     </figure>
-    {% else %}
-    <p style="text-align: center; color: var(--muted-color); padding: 2rem;">
-        No search history yet. <a href="/dashboard/search-queues">Create a search queue</a> to get started!
-    </p>
-    {% endif %}
 
     <footer style="text-align: right;">
         <a href="/dashboard/search-history">View all history →</a>
@@ -273,5 +275,97 @@ setInterval(async () => {
         console.error('Failed to refresh system status:', error);
     }
 }, 30000);
+
+// Activity feed — poll every 15s
+async function refreshActivity() {
+    try {
+        var response = await fetch('/api/dashboard/activity?limit=10');
+        if (!response.ok) return;
+        var data = await response.json();
+        updateActivityTable(data.activity);
+    } catch (e) {
+        // silent fail — table keeps last known state
+    }
+}
+
+function updateActivityTable(activities) {
+    var tbody = document.getElementById('activity-tbody');
+    if (!tbody || !activities) return;
+
+    tbody.replaceChildren();
+
+    if (activities.length === 0) {
+        var emptyRow = document.createElement('tr');
+        var emptyCell = document.createElement('td');
+        emptyCell.colSpan = 5;
+        emptyCell.style.textAlign = 'center';
+        emptyCell.style.color = 'var(--muted-color)';
+        emptyCell.textContent = 'No recent activity';
+        emptyRow.appendChild(emptyCell);
+        tbody.appendChild(emptyRow);
+        return;
+    }
+
+    activities.forEach(function(item) {
+        var row = document.createElement('tr');
+
+        // Instance
+        var instCell = document.createElement('td');
+        var instLink = document.createElement('a');
+        instLink.href = '/dashboard/instances';
+        instLink.textContent = item.instance_name || '\u2014';
+        instCell.appendChild(instLink);
+        row.appendChild(instCell);
+
+        // Strategy
+        var stratCell = document.createElement('td');
+        var stratCode = document.createElement('code');
+        stratCode.textContent = item.strategy;
+        stratCell.appendChild(stratCode);
+        row.appendChild(stratCell);
+
+        // Status
+        var statusCell = document.createElement('td');
+        var statusSpan = document.createElement('span');
+        if (item.status === 'success') {
+            statusSpan.style.color = 'var(--ins-color)';
+            statusSpan.textContent = '\u2713 Completed';
+        } else if (item.status === 'partial_success') {
+            statusSpan.style.color = 'var(--ins-color)';
+            statusSpan.textContent = '\u2713 Partial';
+        } else if (item.status === 'failed') {
+            statusSpan.style.color = 'var(--del-color)';
+            statusSpan.textContent = '\u2717 Failed';
+        } else {
+            statusSpan.style.color = 'var(--muted-color)';
+            statusSpan.textContent = item.status;
+        }
+        statusCell.appendChild(statusSpan);
+        row.appendChild(statusCell);
+
+        // Items
+        var itemsCell = document.createElement('td');
+        var text = (item.items_searched || 0) + ' searched';
+        if (item.items_found) {
+            text += ' \u00b7 ' + item.items_found + ' found';
+        }
+        itemsCell.textContent = text;
+        row.appendChild(itemsCell);
+
+        // Time
+        var timeCell = document.createElement('td');
+        var timeSmall = document.createElement('small');
+        if (item.started_at) {
+            timeSmall.textContent = Splintarr.formatTimeAgo(item.started_at);
+        }
+        timeCell.appendChild(timeSmall);
+        row.appendChild(timeCell);
+
+        tbody.appendChild(row);
+    });
+}
+
+setInterval(refreshActivity, 15000);
+refreshActivity();
 </script>
 {% endblock %}
