@@ -40,6 +40,7 @@ from splintarr.core.security import encrypt_field, hash_password
 from splintarr.core.ssrf_protection import SSRFError, validate_instance_url
 from splintarr.database import get_db
 from splintarr.models.instance import Instance
+from splintarr.models.library import LibraryItem
 from splintarr.models.search_history import SearchHistory
 from splintarr.models.search_queue import SearchQueue
 from splintarr.models.user import User
@@ -930,6 +931,26 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
 
     success_rate = (successful_searches / searches_this_week * 100) if searches_this_week > 0 else 0
 
+    # Grab rate from library search intelligence
+    user_instance_ids = db.query(Instance.id).filter(Instance.user_id == user.id)
+    total_search_attempts = (
+        db.query(func.sum(LibraryItem.search_attempts))
+        .filter(LibraryItem.instance_id.in_(user_instance_ids))
+        .scalar()
+        or 0
+    )
+    total_grabs = (
+        db.query(func.sum(LibraryItem.grabs_confirmed))
+        .filter(LibraryItem.instance_id.in_(user_instance_ids))
+        .scalar()
+        or 0
+    )
+    grab_rate = (
+        round(total_grabs / total_search_attempts * 100, 1)
+        if total_search_attempts > 0
+        else 0.0
+    )
+
     return {
         "instances": {
             "total": total_instances,
@@ -945,6 +966,7 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
             "today": searches_today,
             "this_week": searches_this_week,
             "success_rate": round(success_rate, 1),
+            "grab_rate": grab_rate,
         },
     }
 
