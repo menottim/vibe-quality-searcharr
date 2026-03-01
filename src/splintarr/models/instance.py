@@ -6,6 +6,7 @@ to Sonarr and Radarr instances with encrypted API keys.
 """
 
 from datetime import datetime
+from typing import Literal
 from urllib.parse import urlparse, urlunparse
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
@@ -13,6 +14,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from splintarr.database import Base
+
+# Instance types
+InstanceType = Literal["sonarr", "radarr"]
 
 
 class Instance(Base):

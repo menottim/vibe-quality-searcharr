@@ -161,7 +161,7 @@ def _validate_password(v: str) -> str:
     if not re.search(r"[0-9]", v):
         raise ValueError("Password must contain at least one digit")
 
-    if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/\'`~;]', v):
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;/`~]', v):
         raise ValueError("Password must contain at least one special character")
 
     if v.lower() in common_passwords:
