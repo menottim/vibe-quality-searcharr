@@ -516,9 +516,9 @@ async def setup_instance_create(
             instance_type=instance_type,
         )
 
-        # Redirect to completion page
+        # Redirect to notifications setup
         return RedirectResponse(
-            url="/setup/complete",
+            url="/setup/notifications",
             status_code=status.HTTP_302_FOUND,
         )
 
@@ -553,7 +553,45 @@ async def setup_instance_skip(
     """
     logger.info("setup_instance_skipped", user_id=current_user.id)
     return RedirectResponse(
-        url="/setup/complete",
+        url="/setup/notifications",
+        status_code=status.HTTP_302_FOUND,
+    )
+
+
+@router.get("/setup/notifications", response_class=HTMLResponse, include_in_schema=False)
+async def setup_notifications_page(
+    request: Request,
+    current_user: User = Depends(get_current_user_from_cookie),
+) -> Response:
+    """
+    Setup wizard - notifications configuration page.
+    """
+    logger.debug("setup_notifications_page_rendered", user_id=current_user.id)
+    return templates.TemplateResponse(
+        "setup/notifications.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "user": current_user,
+            "no_sidebar": True,
+        },
+    )
+
+
+@router.get("/setup/notifications/skip", response_class=HTMLResponse, include_in_schema=False)
+async def setup_notifications_skip(
+    request: Request,
+    current_user: User = Depends(get_current_user_from_cookie),
+) -> Response:
+    """
+    Skip notifications configuration during setup.
+
+    Allows user to complete setup without configuring Discord notifications.
+    They can configure notifications later from the Settings page.
+    """
+    logger.info("setup_notifications_skipped", user_id=current_user.id)
+    return RedirectResponse(
+        url="/setup/prowlarr",
         status_code=status.HTTP_302_FOUND,
     )
 
