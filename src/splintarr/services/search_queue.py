@@ -361,7 +361,8 @@ class SearchQueueManager:
             instance_type=instance.instance_type,
         )
 
-        items_searched = 0
+        items_evaluated = 0  # total records from API (before filtering)
+        items_searched = 0  # items that passed filtering and were searched
         items_found = 0
         searches_triggered = 0
         errors: list[str] = []
@@ -402,10 +403,11 @@ class SearchQueueManager:
                     client, fetch_method, sort_key=sort_key, sort_dir=sort_dir
                 )
 
+                items_evaluated = len(all_records)
                 logger.info(
                     "records_fetched",
                     strategy=strategy_name,
-                    total_records=len(all_records),
+                    total_records=items_evaluated,
                     instance_id=instance.id,
                 )
 
@@ -577,6 +579,7 @@ class SearchQueueManager:
 
             return {
                 "status": result_status,
+                "items_evaluated": items_evaluated,
                 "items_searched": items_searched,
                 "items_found": items_found,
                 "searches_triggered": searches_triggered,
