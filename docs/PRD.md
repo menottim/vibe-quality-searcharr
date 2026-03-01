@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-01 (v0.5.0)
+**Last updated:** 2026-03-01 (v0.5.1)
 
 ---
 
@@ -465,3 +465,4 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | 2026-03-01 | v0.4.0 shipped: Prowlarr Integration (#89) + Season Pack Intelligence (#89) |
 | 2026-03-01 | v0.4.1 shipped: Bug fixes (scheduler, DB locking) + UX polish (PR #90) |
 | 2026-03-01 | v0.5.0 shipped: UX overhaul — setup wizard expansion, guided onboarding, search filters (PR #94) |
+| 2026-03-01 | v0.5.1 shipped: Fix setup progress bars (6 steps), Docker version display (PR #97) |
