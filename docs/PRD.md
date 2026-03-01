@@ -84,9 +84,9 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 | 4 | [Clone Queue & Presets](#4-clone-queue--presets) | **Done** | v0.2.1 | PR #75 |
 | 5 | [Enhanced Activity Polling](#5-enhanced-activity-polling) | **Done** | v0.2.1 | PR #77; WebSocket deferred to v0.4.0+ |
 | 6 | [Config Export & Integrity Check](#6-config-export--integrity-check) | **Done** | v0.2.1 | PR #76 |
-| 10 | [Adaptive Search Prioritization](#10-adaptive-search-prioritization) | Planned | v0.3.0 | Core search intelligence |
-| 11 | [Search Cooldown Intelligence](#11-search-cooldown-intelligence) | Planned | v0.3.0 | Builds on #10 |
-| 12 | [Search Result Feedback Loop](#12-search-result-feedback-loop) | Planned | v0.3.0 | Closes the learning loop |
+| 10 | [Adaptive Search Prioritization](#10-adaptive-search-prioritization) | **Done** | v0.3.0 | PR #78 |
+| 11 | [Search Cooldown Intelligence](#11-search-cooldown-intelligence) | **Done** | v0.3.0 | PR #79 |
+| 12 | [Search Result Feedback Loop](#12-search-result-feedback-loop) | **Done** | v0.3.0 | PR #80 |
 | 8 | [Prowlarr Integration](#8-prowlarr-integration) | Planned | v0.3.1 | Indexer-aware rate limiting |
 | 9 | [Season Pack Intelligence](#9-season-pack-intelligence) | Planned | v0.3.1 | Sonarr only |
 | 13 | [Search Analytics Dashboard](#13-search-analytics-dashboard) | Deferred | v0.4.0+ | |
@@ -150,6 +150,24 @@ Dashboard activity table live-updates every 15s via `/api/dashboard/activity`. S
 **Status: Done** (PR #76, 2026-02-28) — see [detailed spec](#6-config-export--integrity-check)
 
 Config export as JSON download (instances, queues, exclusions, notification config — secrets redacted). Database integrity check via PRAGMA. Settings page refactored to accordion layout. UX polish: toast notifications replace browser alerts, loading state on save buttons.
+
+### 10. Adaptive Search Prioritization
+
+**Status: Done** (PR #78, 2026-03-01) — see [detailed spec](#10-adaptive-search-prioritization)
+
+Scoring engine with recency/attempts/staleness factors and strategy-aware weights. Items scored 0-100 before searching, sorted by priority. Score and top factor visible in search logs. Per-queue max_items_per_run (default 50) ensures only highest-priority items are searched.
+
+### 11. Search Cooldown Intelligence
+
+**Status: Done** (PR #79, 2026-03-01) — see [detailed spec](#11-search-cooldown-intelligence)
+
+Replaced 24h in-memory cooldown with persistent DB-backed tiered cooldowns (6h to 7d based on item age). Exponential backoff on repeated failures (capped at 14 days). Per-queue configurable: adaptive (default) or flat mode.
+
+### 12. Search Result Feedback Loop
+
+**Status: Done** (PR #80, 2026-03-01) — see [detailed spec](#12-search-result-feedback-loop)
+
+After search runs, schedules a one-shot job (default 15 min) to poll command statuses and detect grabs. Updates LibraryItem.grabs_confirmed. Dashboard shows grab rate metric. Feedback data feeds into scoring and cooldown calculations.
 
 ---
 
@@ -282,13 +300,13 @@ All three bugs identified during E2E testing are closed:
 
 ---
 
-## v0.3.0 — Search Intelligence: Core Algorithm
+## v0.3.0 — Shipped
 
 The core differentiator: making searches smarter, not just scheduled.
 
 ### 10. Adaptive Search Prioritization
 
-**Priority:** High | **Effort:** Medium | **Status:** Planned
+**Priority:** High | **Effort:** Medium | **Status: Done** (PR #78, 2026-03-01)
 
 **Problem:** Fixed ordering wastes API calls on unfindable content. Recently aired content waits behind years-old missing episodes. [Known gap](https://github.com/Sonarr/Sonarr/issues/3067).
 
@@ -309,7 +327,7 @@ The core differentiator: making searches smarter, not just scheduled.
 
 ### 11. Search Cooldown Intelligence
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned | **Depends on:** #10
+**Priority:** Medium | **Effort:** Low | **Status: Done** (PR #79, 2026-03-01) | **Depends on:** #10
 
 **Problem:** 24-hour flat cooldown is a blunt instrument. Fresh content needs more frequent searching; old content needs less.
 
@@ -326,7 +344,7 @@ The core differentiator: making searches smarter, not just scheduled.
 
 ### 12. Search Result Feedback Loop
 
-**Priority:** Medium | **Effort:** Medium | **Status:** Planned
+**Priority:** Medium | **Effort:** Medium | **Status: Done** (PR #80, 2026-03-01)
 
 **Problem:** Splintarr records "search sent" but not whether anything was grabbed. True success rates unknown.
 
@@ -456,3 +474,4 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | 2026-02-28 | v0.2.0 bug fixes resolved: #65-#67 all closed (PRs #70, #72) |
 | 2026-02-28 | PRD updated to reflect all shipped work; `PRD-v0.2.md` archived (deleted from repo) |
 | 2026-02-28 | v0.2.1 shipped: Health Monitoring (#74), Clone/Presets (#75), Config Export (#76), Activity Polling (#77) |
+| 2026-03-01 | v0.3.0 shipped: Scoring (#78), Tiered Cooldowns (#79), Feedback Loop (#80), Intelligence UI (#81) |
