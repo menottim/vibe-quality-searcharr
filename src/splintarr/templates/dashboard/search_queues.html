@@ -103,7 +103,7 @@
         <form id="createQueueForm">
             <label>
                 Start from preset <small>(optional)</small>
-                <select id="presetSelect" onchange="applyPreset(this.value)">
+                <select id="presetSelect">
                     <option value="">-- Custom --</option>
                     <option value="aggressive-missing">Aggressive Missing (hourly)</option>
                     <option value="weekly-cutoff">Weekly Cutoff Unmet</option>
@@ -408,6 +408,10 @@ function applyPreset(presetKey) {
     nameManuallyEdited = false;
     updateSuggestedName();
 }
+
+document.getElementById('presetSelect').addEventListener('change', function() {
+    applyPreset(this.value);
+});
 
 function closeCreateModal() {
     document.getElementById('create-queue').close();

@@ -782,7 +782,7 @@ async def clone_search_queue(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("clone_search_queue_failed", error=str(e), queue_id=queue_id)
+        logger.error("clone_search_queue_failed", error=str(e), queue_id=queue_id, user_id=current_user.id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to clone search queue",
