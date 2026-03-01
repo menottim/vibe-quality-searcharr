@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-01 (v0.4.1)
+**Last updated:** 2026-03-01 (v0.5.0)
 
 ---
 
@@ -140,6 +140,13 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 
 - **Bug Fixes** (PR #90) — MemoryJobStore replaces SQLAlchemyJobStore (fixes scheduler serialization failure), PRAGMA busy_timeout=5000 (fixes "database is locked" cascade during library sync)
 - **UX Polish** (PR #90) — Library sync loading overlay with polling, default preset to Weekly Cutoff Unmet, adaptive cooldown help text, auto-save before test for Discord/Prowlarr, Docker URL hints, search terminology (eligible/searched/grabbed), indexer health widget clarity + truncation
+
+### v0.5.0
+
+- **Setup Wizard Expansion** (PR #94) — Notifications and Prowlarr optional steps (6-step wizard with skip), configuration summary on complete page
+- **Guided Onboarding** (PR #94) — Onboarding state helper, workflow tracker component on empty-state pages (Library, Queues, History, Exclusions), contextual dashboard Quick Actions
+- **Search History Filters** (PR #94) — Inline filter bar (instance, strategy, status), fixed status rendering bug (`'completed'` -> `'success'`/`'partial_success'`), terminology fix
+- **Login Hint** (PR #94) — Password reset CLI command hint on login page
 
 ---
 
@@ -457,3 +464,4 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | 2026-03-01 | v0.3.1 shipped: Codebase simplification across all layers (PRs #82-86) |
 | 2026-03-01 | v0.4.0 shipped: Prowlarr Integration (#89) + Season Pack Intelligence (#89) |
 | 2026-03-01 | v0.4.1 shipped: Bug fixes (scheduler, DB locking) + UX polish (PR #90) |
+| 2026-03-01 | v0.5.0 shipped: UX overhaul — setup wizard expansion, guided onboarding, search filters (PR #94) |

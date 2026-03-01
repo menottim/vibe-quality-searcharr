@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "splintarr"
-version = "0.4.1"
+version = "0.5.0"
 description = "Intelligent backlog search automation for Sonarr and Radarr"
 authors = ["menottim <menottim@users.noreply.github.com>"]
 readme = "README.md"
