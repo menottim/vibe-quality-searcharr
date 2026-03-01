@@ -158,6 +158,7 @@ class TestProwlarrWithLimits:
         mock_client.get_indexer_stats = AsyncMock(
             return_value={1: _make_stats(1, queries=60)},
         )
+        mock_client.get_indexer_status = AsyncMock(return_value=[])
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
@@ -241,6 +242,7 @@ class TestNoMatchingApp:
             ]
         )
         mock_client.get_indexer_stats = AsyncMock(return_value={})
+        mock_client.get_indexer_status = AsyncMock(return_value=[])
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
@@ -294,6 +296,7 @@ class TestMultipleIndexersUsesMinimum:
                 3: _make_stats(3, queries=50),   # remaining = 150
             },
         )
+        mock_client.get_indexer_status = AsyncMock(return_value=[])
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
@@ -349,6 +352,11 @@ class TestDisabledIndexerSkipped:
                 2: _make_stats(2, queries=30),  # remaining=70
             },
         )
+        mock_client.get_indexer_status = AsyncMock(
+            return_value=[
+                {"indexer_id": 1, "disabled_till": "2026-03-01T12:00:00Z"},
+            ]
+        )
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
@@ -400,6 +408,7 @@ class TestNoLimitsConfiguredFallsBack:
                 2: _make_stats(2, queries=200),
             },
         )
+        mock_client.get_indexer_status = AsyncMock(return_value=[])
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 

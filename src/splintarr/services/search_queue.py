@@ -67,7 +67,7 @@ def _group_by_season(records: list[dict]) -> dict[tuple[int, int], list[dict]]:
     for record in records:
         series_id = record.get("seriesId")
         season = record.get("seasonNumber")
-        if series_id is not None and season is not None:
+        if series_id is not None and season is not None and season > 0:
             groups[(series_id, season)].append(record)
     return dict(groups)
 
@@ -181,6 +181,29 @@ class SearchQueueManager:
                         prowlarr_budget=rate_result["max_items"],
                         queue_max=queue.max_items_per_run,
                     )
+
+                    # Early return: no budget remaining, skip strategy execution
+                    skipped_result = {
+                        "status": "skipped",
+                        "items_searched": 0,
+                        "items_found": 0,
+                        "searches_triggered": 0,
+                        "errors": [],
+                        "search_log": [],
+                    }
+
+                    queue.mark_completed(items_found=0, items_searched=0)
+                    history.mark_completed(
+                        status="skipped",
+                        items_searched=0,
+                        items_found=0,
+                        searches_triggered=0,
+                        errors_encountered=0,
+                        search_metadata=None,
+                    )
+                    db.commit()
+
+                    return skipped_result
                 else:
                     logger.info(
                         "search_queue_rate_limit_applied",

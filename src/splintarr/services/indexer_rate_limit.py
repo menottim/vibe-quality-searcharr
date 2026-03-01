@@ -147,10 +147,19 @@ class IndexerRateLimitService:
             api_key=api_key,
             verify_ssl=config.verify_ssl,
         ) as client:
-            # Step 3: Fetch indexer data, applications, and stats
+            # Step 3: Fetch indexer data, applications, stats, and statuses
             indexers = await client.get_indexers()
             applications = await client.get_applications()
-            stats = await client.get_indexer_stats()
+            daily_stats = await client.get_indexer_stats(hours=24)
+            hourly_stats = await client.get_indexer_stats(hours=1)
+
+            # BUG-3 fix: get_indexers() doesn't populate disabled_till;
+            # fetch circuit-breaker status separately and build a lookup.
+            indexer_statuses = await client.get_indexer_status()
+
+        disabled_ids: set[int] = {
+            s["indexer_id"] for s in indexer_statuses if s.get("disabled_till")
+        }
 
         # Step 4: Match instance URL to a Prowlarr application
         if not instance_url:
@@ -172,7 +181,7 @@ class IndexerRateLimitService:
             return fallback
 
         # Step 5: Find connected indexers via tag intersection
-        connected = self._get_connected_indexers(indexers, matched_app)
+        connected = self._get_connected_indexers(indexers, matched_app, disabled_ids)
 
         logger.debug(
             "indexer_rate_limit_connected_indexers",
@@ -190,7 +199,13 @@ class IndexerRateLimitService:
                 continue
 
             indexer_id = indexer["id"]
-            indexer_stats = stats.get(indexer_id, {})
+            # BUG-2 fix: use hourly stats for hour-limited indexers,
+            # daily stats for day-limited (or unspecified) indexers.
+            limits_unit = indexer.get("limits_unit")
+            if limits_unit == "hour":
+                indexer_stats = hourly_stats.get(indexer_id, {})
+            else:
+                indexer_stats = daily_stats.get(indexer_id, {})
             queries_used = indexer_stats.get("queries", 0)
             remaining = max(0, query_limit - queries_used)
 
@@ -271,6 +286,7 @@ class IndexerRateLimitService:
     def _get_connected_indexers(
         indexers: list[dict[str, Any]],
         app: dict[str, Any],
+        disabled_ids: set[int] | None = None,
     ) -> list[dict[str, Any]]:
         """
         Filter indexers connected to a Prowlarr application via tag intersection.
@@ -279,21 +295,25 @@ class IndexerRateLimitService:
         (Prowlarr default behaviour). If the application has tags, only indexers
         sharing at least one tag are included.
 
-        Disabled indexers (where ``disabled_till`` is set) are always excluded.
+        Disabled indexers (identified via ``disabled_ids`` from the indexer
+        status endpoint) are always excluded.
 
         Args:
             indexers: List of indexer dicts from ProwlarrClient.get_indexers().
             app: Application dict from ProwlarrClient.get_applications().
+            disabled_ids: Set of indexer IDs that are currently disabled
+                (from ``get_indexer_status()``).
 
         Returns:
             Filtered list of connected, non-disabled indexers.
         """
         app_tags = set(app.get("tags", []))
+        _disabled_ids = disabled_ids or set()
         connected: list[dict[str, Any]] = []
 
         for indexer in indexers:
-            # Step 6: Skip disabled indexers
-            if indexer.get("disabled_till") is not None:
+            # Step 6: Skip disabled indexers (from indexer status endpoint)
+            if indexer["id"] in _disabled_ids:
                 continue
 
             # No tags on app means all indexers are connected

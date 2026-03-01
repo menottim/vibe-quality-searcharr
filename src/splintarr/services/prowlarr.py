@@ -19,6 +19,7 @@ Prowlarr uses API v1 (not v3 like Sonarr/Radarr). Rate limit fields
 ``fields`` array rather than being top-level properties.
 """
 
+import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -124,6 +125,54 @@ class ProwlarrClient(BaseArrClient):
     _error_auth = ProwlarrAuthenticationError
     _error_api = ProwlarrAPIError
     _error_rate = ProwlarrRateLimitError
+
+    async def test_connection(self) -> dict[str, Any]:
+        """
+        Test connection to Prowlarr.
+
+        Overrides BaseArrClient.test_connection() because Prowlarr uses
+        ``/api/v1`` instead of ``/api/v3``.
+
+        Returns:
+            dict: Connection test result with keys:
+                - success: bool
+                - version: str | None
+                - response_time_ms: int | None
+                - error: str | None
+        """
+        try:
+            start_time = time.time()
+            result = await self._request("GET", "/api/v1/system/status")
+            response_time_ms = int((time.time() - start_time) * 1000)
+
+            version = result.get("version", "unknown")
+
+            logger.info(
+                "prowlarr_connection_test_success",
+                url=self.url,
+                version=version,
+                response_time_ms=response_time_ms,
+            )
+
+            return {
+                "success": True,
+                "version": version,
+                "response_time_ms": response_time_ms,
+                "error": None,
+            }
+
+        except Exception as e:
+            logger.error(
+                "prowlarr_connection_test_failed",
+                url=self.url,
+                error=str(e),
+            )
+            return {
+                "success": False,
+                "version": None,
+                "response_time_ms": None,
+                "error": str(e),
+            }
 
     async def get_indexers(self) -> list[dict[str, Any]]:
         """

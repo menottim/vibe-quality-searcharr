@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from splintarr.config import settings
@@ -71,8 +72,8 @@ class ProwlarrConfigRequest(BaseModel):
     def validate_api_key(cls, v: str) -> str:
         """Validate API key has minimum length."""
         v = v.strip()
-        if len(v) < 10:
-            raise ValueError("API key must be at least 10 characters")
+        if len(v) < 20:
+            raise ValueError("API key must be at least 20 characters")
         return v
 
 
@@ -100,7 +101,8 @@ def _mask_api_key(encrypted_api_key: str) -> str:
         if len(decrypted) > 4:
             return "••••" + decrypted[-4:]
         return "••••"
-    except Exception:
+    except Exception as e:
+        logger.warning("prowlarr_api_key_mask_failed", error=str(e))
         return "••••key"
 
 
@@ -191,7 +193,20 @@ async def save_prowlarr_config(
             user_id=current_user.id,
         )
 
-    db.commit()
+    try:
+        db.commit()
+        db.refresh(config)
+    except IntegrityError as e:
+        db.rollback()
+        logger.error(
+            "prowlarr_config_save_failed",
+            user_id=current_user.id,
+            error=str(e),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save Prowlarr configuration.",
+        ) from e
 
     return JSONResponse(
         content={
@@ -220,6 +235,8 @@ async def test_prowlarr_connection(
     Uses ProwlarrClient.test_connection() to verify connectivity.
     Returns success/failure based on Prowlarr's response.
     """
+    logger.debug("prowlarr_connection_test_requested", user_id=current_user.id)
+
     config = db.query(ProwlarrConfig).filter(ProwlarrConfig.user_id == current_user.id).first()
 
     if not config:
@@ -268,12 +285,18 @@ async def test_prowlarr_connection(
             }
         )
 
+    logger.warning(
+        "prowlarr_connection_test_failed_response",
+        user_id=current_user.id,
+        error=result.get("error"),
+    )
+
     return JSONResponse(
         status_code=status.HTTP_502_BAD_GATEWAY,
         content={
             "status": "failed",
             "message": "Failed to connect to Prowlarr.",
-            "error": result.get("error"),
+            "error": "Connection failed. Check URL and API key.",
         },
     )
 
@@ -290,6 +313,8 @@ async def delete_prowlarr_config(
 
     Removes the Prowlarr connection entirely.
     """
+    logger.debug("prowlarr_config_delete_requested", user_id=current_user.id)
+
     config = db.query(ProwlarrConfig).filter(ProwlarrConfig.user_id == current_user.id).first()
 
     if not config:
