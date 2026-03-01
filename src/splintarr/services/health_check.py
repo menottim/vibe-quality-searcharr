@@ -217,8 +217,16 @@ class HealthCheckService:
 
         results: list[dict] = []
         for instance in instances:
-            result = await self.check_instance(instance)
-            results.append(result)
+            try:
+                result = await self.check_instance(instance)
+                results.append(result)
+            except Exception as e:
+                logger.error(
+                    "instance_health_check_failed",
+                    instance_id=instance.id,
+                    instance_name=instance.name,
+                    error=str(e),
+                )
 
         healthy_count = sum(1 for r in results if r["success"])
         unhealthy_count = len(results) - healthy_count
