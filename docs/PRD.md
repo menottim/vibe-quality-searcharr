@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-01
+**Last updated:** 2026-03-01 (v0.3.1)
 
 ---
 
@@ -121,6 +121,15 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 - **Search Cooldown Intelligence** (PR #79) — DB-backed tiered cooldowns (6h to 7d by item age), exponential backoff (capped at 14 days), per-queue adaptive/flat mode. [Spec →](#11-search-cooldown-intelligence)
 - **Search Result Feedback Loop** (PR #80) — Post-search command polling (15 min delay), grab detection, LibraryItem.grabs_confirmed tracking, dashboard grab rate. [Spec →](#12-search-result-feedback-loop)
 - **Search Intelligence UI** (PR #81) — Score + reason in search logs, search stats on library detail, cooldown/batch config in queue modal, grab rate metric.
+
+### v0.3.1
+
+- **Codebase Simplification** (PRs #82-86) — Comprehensive code quality pass across all layers:
+  - Services (PR #82): Extracted `_apply_history_filters`, fixed `== True` to `.is_(True)`, simplified boolean returns
+  - API (PR #83): Extracted `_user_to_response` (4x dup), `_history_to_response` (3x dup), `_validate_instance_access` helpers
+  - Core (PR #84): Deduplicated JWT blacklisting, decode/verify, blacklist check; removed unused `TwoFactorError` and empty placeholder files
+  - Models + Schemas (PR #85): Shared validators for password, instance, search name; removed redundant `TwoFactorVerify` validator; extracted `_finalize()` in SearchHistory; fixed missing common_passwords check in PasswordChange
+  - Config (PR #86): Consolidated secret getters/validators, removed redundant field validators, extracted file handler helper
 
 ---
 
@@ -435,3 +444,4 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | 2026-02-28 | PRD updated to reflect all shipped work; `PRD-v0.2.md` archived (deleted from repo) |
 | 2026-02-28 | v0.2.1 shipped: Health Monitoring (#74), Clone/Presets (#75), Config Export (#76), Activity Polling (#77) |
 | 2026-03-01 | v0.3.0 shipped: Scoring (#78), Tiered Cooldowns (#79), Feedback Loop (#80), Intelligence UI (#81) |
+| 2026-03-01 | v0.3.1 shipped: Codebase simplification across all layers (PRs #82-86) |
