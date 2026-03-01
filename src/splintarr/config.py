@@ -239,6 +239,14 @@ class Settings(BaseSettings):
         le=168,
     )
 
+    # Search Feedback Loop
+    feedback_check_delay_minutes: int = Field(
+        default=15,
+        description="Minutes to wait before checking search command results for grabs",
+        ge=5,
+        le=60,
+    )
+
     # Health Monitoring Settings
     health_check_interval_minutes: int = Field(
         default=5,
