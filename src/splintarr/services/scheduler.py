@@ -24,8 +24,10 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.orm import Session
 
+from splintarr.config import settings
 from splintarr.database import get_engine
 from splintarr.models import SearchQueue
+from splintarr.services.health_check import HealthCheckService
 from splintarr.services.search_queue import SearchQueueManager
 
 logger = structlog.get_logger()
@@ -164,6 +166,20 @@ class SearchScheduler:
             # Start scheduler
             self.scheduler.start()
             self._running = True
+
+            # Register health check job
+            self.scheduler.add_job(
+                self._execute_health_check,
+                trigger="interval",
+                minutes=settings.health_check_interval_minutes,
+                id="instance_health_check",
+                replace_existing=True,
+                next_run_time=datetime.utcnow(),
+            )
+            logger.info(
+                "health_check_job_registered",
+                interval_minutes=settings.health_check_interval_minutes,
+            )
 
             # Load existing queues and schedule jobs
             await self._load_existing_queues()
@@ -428,6 +444,51 @@ class SearchScheduler:
 
             finally:
                 db.close()
+
+    async def _execute_health_check(self) -> None:
+        """Execute periodic health check for all instances."""
+        db = self.db_session_factory()
+        try:
+            service = HealthCheckService(db)
+            results = await service.check_all_instances()
+
+            # Send Discord notifications for status transitions
+            for result in results:
+                if result["status_changed"]:
+                    await self._notify_health_change(db, result)
+        except Exception as e:
+            logger.error("health_check_execution_failed", error=str(e))
+        finally:
+            db.close()
+
+    async def _notify_health_change(self, db: Session, result: dict) -> None:
+        """Send Discord notification for health status change."""
+        try:
+            from splintarr.core.security import decrypt_field
+            from splintarr.models.notification import NotificationConfig
+            from splintarr.services.discord import DiscordNotificationService
+
+            config = (
+                db.query(NotificationConfig)
+                .filter(
+                    NotificationConfig.is_active == True,  # noqa: E712
+                )
+                .first()
+            )
+
+            if not config or not config.is_event_enabled("instance_health"):
+                return
+
+            webhook_url = decrypt_field(config.webhook_url)
+            discord = DiscordNotificationService(webhook_url)
+
+            await discord.send_instance_health(
+                instance_name=result["instance_name"],
+                status=result["new_status"],
+                error=result.get("error"),
+            )
+        except Exception as e:
+            logger.warning("health_check_notification_failed", error=str(e))
 
     def get_status(self) -> dict[str, Any]:
         """
