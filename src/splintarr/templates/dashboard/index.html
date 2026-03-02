@@ -33,14 +33,7 @@
                 <h2 id="stat-searches-today">{{ stats.searches.today }}</h2>
                 <p>Searches Today</p>
             </hgroup>
-            <div style="margin-top: auto;">
-                <small id="stat-searches-detail">{{ stats.searches.this_week }} this week &middot; {{ stats.searches.success_rate }}% success rate</small>
-                {% if stats.searches.grab_rate and stats.searches.grab_rate > 0 %}
-                <br><small id="stat-grab-rate" style="color: var(--muted-color);">{{ stats.searches.grab_rate }}% grab rate</small>
-                {% else %}
-                <br><small id="stat-grab-rate" style="color: var(--muted-color);"></small>
-                {% endif %}
-            </div>
+            <small style="margin-top: auto;" id="stat-searches-detail">{{ stats.searches.this_week }} this week &middot; {{ stats.searches.success_rate }}% success rate{% if stats.searches.grab_rate and stats.searches.grab_rate > 0 %} &middot; <span id="stat-grab-rate" style="color: var(--muted-color);">{{ stats.searches.grab_rate }}% grab rate</span>{% endif %}</small>
         </article>
     </a>
 
@@ -312,14 +305,12 @@ setInterval(async () => {
             if (qTotal) qTotal.textContent = stats.search_queues.total;
             if (qActive) qActive.textContent = stats.search_queues.active + ' active';
             if (sToday) sToday.textContent = stats.searches.today;
-            if (sDetail) sDetail.textContent = stats.searches.this_week + ' this week \u00b7 ' + stats.searches.success_rate + '% success rate';
-            var grDetail = document.getElementById('stat-grab-rate');
-            if (grDetail) {
+            if (sDetail) {
+                var searchText = stats.searches.this_week + ' this week \u00b7 ' + stats.searches.success_rate + '% success rate';
                 if (stats.searches.grab_rate !== undefined && stats.searches.grab_rate > 0) {
-                    grDetail.textContent = stats.searches.grab_rate + '% grab rate';
-                } else {
-                    grDetail.textContent = '';
+                    searchText += ' \u00b7 ' + stats.searches.grab_rate + '% grab rate';
                 }
+                sDetail.textContent = searchText;
             }
         }
     } catch (error) {
