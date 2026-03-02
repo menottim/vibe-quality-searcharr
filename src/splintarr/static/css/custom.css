@@ -60,12 +60,14 @@ table th {
 table td { color: var(--color); }
 
 /* Softer tooltips — override uppercase/spacing inherited from th.
-   Pico CSS: ::before = tooltip text, ::after = arrow */
-[data-tooltip]::before {
-    text-transform: none;
-    letter-spacing: normal;
-    font-weight: 400;
-    font-size: 0.75rem;
+   Pico CSS: ::before = tooltip text, ::after = arrow.
+   !important needed to beat Pico's cascade + inherited text-transform. */
+[data-tooltip]::before,
+[data-tooltip]::after {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-weight: 400 !important;
+    font-size: 0.75rem !important;
 }
 table code { font-size: 0.75em; }
 
