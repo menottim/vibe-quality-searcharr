@@ -50,6 +50,31 @@ templates = Jinja2Templates(directory="src/splintarr/templates")
 limiter = Limiter(key_func=rate_limit_key_func)
 
 
+def _timeago(dt: datetime) -> str:
+    """Format datetime as time ago (e.g., '2 hours ago')."""
+    if not dt:
+        return ""
+    seconds = (datetime.utcnow() - dt).total_seconds()
+    if seconds < 60:
+        return "just now"
+    if seconds < 3600:
+        minutes = int(seconds / 60)
+        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+    if seconds < 86400:
+        hours = int(seconds / 3600)
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    if seconds < 604800:
+        days = int(seconds / 86400)
+        return f"{days} day{'s' if days != 1 else ''} ago"
+    return dt.strftime("%Y-%m-%d")
+
+
+templates.env.filters["datetime"] = lambda value: (
+    value.strftime("%Y-%m-%d %H:%M:%S") if value else ""
+)
+templates.env.filters["timeago"] = lambda value: _timeago(value) if value else ""
+
+
 # ============================================================================
 # HELPERS
 # ============================================================================
