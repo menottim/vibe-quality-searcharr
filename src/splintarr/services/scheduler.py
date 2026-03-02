@@ -548,15 +548,18 @@ def get_scheduler_status() -> dict[str, Any]:
         dict: Scheduler status with 'status' ('running'|'paused'|'stopped')
               and 'jobs_count' (int).
     """
-    result: dict[str, Any] = {"status": "stopped", "jobs_count": 0}
-    if _scheduler_instance:
-        info = _scheduler_instance.get_status()
-        if info["running"] and info["paused"]:
-            result["status"] = "paused"
-        elif info["running"]:
-            result["status"] = "running"
-        result["jobs_count"] = info["jobs_count"]
-    return result
+    if not _scheduler_instance:
+        return {"status": "stopped", "jobs_count": 0}
+
+    info = _scheduler_instance.get_status()
+    if info["paused"]:
+        status = "paused"
+    elif info["running"]:
+        status = "running"
+    else:
+        status = "stopped"
+
+    return {"status": status, "jobs_count": info["jobs_count"]}
 
 
 def get_scheduler(db_session_factory: Callable[[], Session]) -> SearchScheduler:
