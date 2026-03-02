@@ -14,6 +14,7 @@ All dashboard pages require authentication except the setup wizard.
 The setup wizard is only accessible when no users exist.
 """
 
+import json
 import re
 from datetime import datetime, timedelta
 from typing import Annotated, Any
@@ -816,6 +817,61 @@ async def dashboard_search_queues(
     )
 
 
+def _get_queue_alltime_stats(db: Session, queue_id: int) -> dict[str, dict[str, int]]:
+    """Aggregate all-time stats for a search queue, grouped by strategy.
+
+    Note: Caller must verify ownership of queue_id before invoking.
+
+    Returns dict keyed by strategy (e.g. 'missing', 'cutoff_unmet') with:
+      executions, total_found, total_searched, total_grabbed
+    """
+    rows = (
+        db.query(
+            SearchHistory.strategy,
+            SearchHistory.items_found,
+            SearchHistory.searches_triggered,
+            SearchHistory.search_metadata,
+        )
+        .filter(
+            SearchHistory.search_queue_id == queue_id,
+            SearchHistory.status.in_(["success", "partial_success"]),
+        )
+        .all()
+    )
+
+    stats: dict[str, dict[str, int]] = {}
+    for row in rows:
+        if row.strategy not in stats:
+            stats[row.strategy] = {
+                "executions": 0,
+                "total_found": 0,
+                "total_searched": 0,
+                "total_grabbed": 0,
+            }
+        bucket = stats[row.strategy]
+        bucket["executions"] += 1
+        bucket["total_found"] += row.items_found or 0
+        bucket["total_searched"] += row.searches_triggered or 0
+
+        # Count grabs from search_metadata JSON
+        if row.search_metadata:
+            try:
+                entries = json.loads(row.search_metadata)
+                if isinstance(entries, list):
+                    for entry in entries:
+                        if isinstance(entry, dict) and entry.get("result") == "grabbed":
+                            bucket["total_grabbed"] += 1
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(
+                    "queue_stats_metadata_parse_failed",
+                    queue_id=queue_id,
+                    strategy=row.strategy,
+                    error=str(e),
+                )
+
+    return stats
+
+
 @router.get(
     "/dashboard/search-queues/{queue_id}",
     response_class=HTMLResponse,
@@ -852,6 +908,9 @@ async def dashboard_search_queue_detail(
         .all()
     )
 
+    # All-time stats per strategy
+    all_time_stats = _get_queue_alltime_stats(db, queue_id)
+
     return templates.TemplateResponse(
         "dashboard/search_queue_detail.html",
         {
@@ -859,6 +918,7 @@ async def dashboard_search_queue_detail(
             "user": current_user,
             "queue": queue,
             "history": history,
+            "all_time_stats": all_time_stats,
             "active_page": "queues",
         },
     )
