@@ -545,7 +545,7 @@ class LibrarySyncService:
                 continue
             # File missing on disk — clear stale DB reference and re-download
             if item.poster_path:
-                logger.debug(
+                logger.info(
                     "library_sync_poster_file_missing",
                     instance_id=instance_id,
                     content_type=content_type,
