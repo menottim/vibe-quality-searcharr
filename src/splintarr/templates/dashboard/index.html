@@ -64,9 +64,9 @@
             <thead>
                 <tr>
                     <th>Instance</th>
-                    <th>Strategy</th>
-                    <th>Status</th>
-                    <th>Items</th>
+                    <th data-tooltip="Search strategy used (missing, cutoff, recent, etc.)">Strategy</th>
+                    <th data-tooltip="Whether the search completed, failed, or was skipped">Status</th>
+                    <th data-tooltip="Searched: sent to indexer. Eligible: matched queue filters.">Items</th>
                     <th>Time</th>
                 </tr>
             </thead>
@@ -96,9 +96,9 @@
                     </td>
                     <td>
                         {% if search.searches_triggered %}
-                        <span title="Searched: items sent to Sonarr/Radarr for search. Eligible: items matching queue filters that were candidates for searching.">{{ search.searches_triggered }} searched{% if search.items_found %} of {{ search.items_found }} eligible{% endif %}</span>
+                        <span data-tooltip="Searched: items sent to indexer. Eligible: matched queue filters.">{{ search.searches_triggered }} searched{% if search.items_found %} of {{ search.items_found }} eligible{% endif %}</span>
                         {% else %}
-                        <span title="Eligible: items matching queue filters that were candidates for searching.">{{ search.items_found or 0 }} eligible</span>
+                        <span data-tooltip="Eligible: items matching queue filters that were candidates for searching.">{{ search.items_found or 0 }} eligible</span>
                         {% endif %}
                     </td>
                     <td>
@@ -133,8 +133,8 @@
                 <thead>
                     <tr>
                         <th>Indexer</th>
-                        <th>Query Limit</th>
-                        <th>Queries Used</th>
+                        <th data-tooltip="Maximum queries allowed per day by the indexer">Query Limit</th>
+                        <th data-tooltip="Number of queries consumed today">Queries Used</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -426,10 +426,10 @@ function updateActivityTable(activities) {
             if (item.items_found) {
                 text += ' of ' + item.items_found + ' eligible';
             }
-            itemsSpan.title = 'Searched: items sent to Sonarr/Radarr for search. Eligible: items matching queue filters that were candidates for searching.';
+            itemsSpan.setAttribute('data-tooltip', 'Searched: sent to indexer. Eligible: matched queue filters.');
         } else {
             text = (item.items_found || 0) + ' eligible';
-            itemsSpan.title = 'Eligible: items matching queue filters that were candidates for searching.';
+            itemsSpan.setAttribute('data-tooltip', 'Eligible: items matching queue filters that were candidates for searching.');
         }
         itemsSpan.textContent = text;
         itemsCell.appendChild(itemsSpan);

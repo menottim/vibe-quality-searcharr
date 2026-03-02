@@ -49,11 +49,11 @@
                 <tr>
                     <th>Instance</th>
                     <th>Queue</th>
-                    <th>Strategy</th>
-                    <th>Status</th>
-                    <th>Items</th>
+                    <th data-tooltip="Search strategy used (missing, cutoff, recent, etc.)">Strategy</th>
+                    <th data-tooltip="Whether the search completed, failed, or was skipped">Status</th>
+                    <th data-tooltip="Searched: sent to indexer. Eligible: matched queue filters.">Items</th>
                     <th>Started</th>
-                    <th>Duration</th>
+                    <th data-tooltip="How long the search execution took">Duration</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,9 +79,9 @@
                     </td>
                     <td>
                         {% if item.searches_triggered %}
-                        <span title="Searched: items sent to Sonarr/Radarr for search. Eligible: items matching queue filters that were candidates for searching.">{{ item.searches_triggered }} searched{% if item.items_found %}<br><small>of {{ item.items_found }} eligible</small>{% endif %}</span>
+                        <span data-tooltip="Searched: sent to indexer. Eligible: matched queue filters.">{{ item.searches_triggered }} searched{% if item.items_found %}<br><small>of {{ item.items_found }} eligible</small>{% endif %}</span>
                         {% else %}
-                        <span title="Eligible: items matching queue filters that were candidates for searching.">{{ item.items_found or 0 }} eligible</span>
+                        <span data-tooltip="Eligible: items matching queue filters that were candidates for searching.">{{ item.items_found or 0 }} eligible</span>
                         {% endif %}
                     </td>
                     <td>
