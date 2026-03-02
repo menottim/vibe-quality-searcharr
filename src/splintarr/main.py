@@ -384,11 +384,8 @@ async def http_exception_handler(
         is_browser = "text/html" in accept and "application/json" not in accept
         is_page_request = not request.url.path.startswith("/api/")
         if is_browser or is_page_request:
-            from urllib.parse import quote
-
-            next_url = quote(str(request.url.path), safe="")
             return RedirectResponse(
-                url=f"/login?next={next_url}",
+                url="/login",
                 status_code=status.HTTP_302_FOUND,
             )
 
