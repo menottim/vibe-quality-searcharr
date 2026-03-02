@@ -101,7 +101,7 @@ function checkPasswordStrength() {
     const strengthDiv = document.getElementById('passwordStrength');
 
     if (password.length === 0) {
-        strengthDiv.innerHTML = '';
+        strengthDiv.replaceChildren();
         return;
     }
 
@@ -140,11 +140,13 @@ function checkPasswordStrength() {
         strengthClass = 'strength-strong';
     }
 
-    if (feedback.length > 0) {
-        strengthDiv.innerHTML = `<small class="${strengthClass}">Password strength: ${strengthText} (Missing: ${feedback.join(', ')})</small>`;
-    } else {
-        strengthDiv.innerHTML = `<small class="${strengthClass}">Password strength: ${strengthText}</small>`;
-    }
+    strengthDiv.replaceChildren();
+    var small = document.createElement('small');
+    small.className = strengthClass;
+    small.textContent = feedback.length > 0
+        ? 'Password strength: ' + strengthText + ' (Missing: ' + feedback.join(', ') + ')'
+        : 'Password strength: ' + strengthText;
+    strengthDiv.appendChild(small);
 }
 
 function checkPasswordMatch() {
@@ -153,15 +155,20 @@ function checkPasswordMatch() {
     const matchDiv = document.getElementById('passwordMatch');
 
     if (confirmPassword.length === 0) {
-        matchDiv.innerHTML = '';
+        matchDiv.replaceChildren();
         return;
     }
 
+    matchDiv.replaceChildren();
+    var small = document.createElement('small');
     if (password === confirmPassword) {
-        matchDiv.innerHTML = '<small style="color: var(--brand-success);">✓ Passwords match</small>';
+        small.style.color = 'var(--brand-success)';
+        small.textContent = '\u2713 Passwords match';
     } else {
-        matchDiv.innerHTML = '<small style="color: var(--brand-danger);">✗ Passwords do not match</small>';
+        small.style.color = 'var(--brand-danger)';
+        small.textContent = '\u2717 Passwords do not match';
     }
+    matchDiv.appendChild(small);
 }
 </script>
 {% endblock %}
