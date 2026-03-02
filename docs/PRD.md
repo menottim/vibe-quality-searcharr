@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-01 (v0.5.1)
+**Last updated:** 2026-03-02 (v1.0.0-alpha)
 
 ---
 
@@ -74,6 +74,8 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 
 ## Feature Status
 
+All features below shipped in **v1.0.0-alpha** (Sonarr only; Radarr support deferred to post-alpha). Tested on Docker Desktop for Windows.
+
 | # | Feature | Status | Release | Notes |
 |---|---------|--------|---------|-------|
 | 1 | [Library Overview](#1-library-overview) | **Done** | v0.1.0 | PRs #37-40 |
@@ -82,16 +84,19 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 | - | [v0.2.0 Bug Fixes & UX Polish](#bug-fixes-from-v020-e2e-testing) | **Done** | v0.2.1 | PRs #70, #72; issues #65-#67 closed |
 | 3 | [Health Monitoring & Auto-Recovery](#3-health-monitoring--auto-recovery) | **Done** | v0.2.1 | PR #74 |
 | 4 | [Clone Queue & Presets](#4-clone-queue--presets) | **Done** | v0.2.1 | PR #75 |
-| 5 | [Enhanced Activity Polling](#5-enhanced-activity-polling) | **Done** | v0.2.1 | PR #77; WebSocket deferred to v0.4.0+ |
+| 5 | [Enhanced Activity Polling](#5-enhanced-activity-polling) | **Done** | v0.2.1 | PR #77; WebSocket deferred to post-alpha |
 | 6 | [Config Export & Integrity Check](#6-config-export--integrity-check) | **Done** | v0.2.1 | PR #76 |
 | 10 | [Adaptive Search Prioritization](#10-adaptive-search-prioritization) | **Done** | v0.3.0 | PR #78 |
 | 11 | [Search Cooldown Intelligence](#11-search-cooldown-intelligence) | **Done** | v0.3.0 | PR #79 |
 | 12 | [Search Result Feedback Loop](#12-search-result-feedback-loop) | **Done** | v0.3.0 | PR #80 |
 | 8 | [Prowlarr Integration](#8-prowlarr-integration) | **Done** | v0.4.0 | PR #89; Indexer-aware rate limiting |
 | 9 | [Season Pack Intelligence](#9-season-pack-intelligence) | **Done** | v0.4.0 | PR #89; Sonarr only |
-| 13 | [Search Analytics Dashboard](#13-search-analytics-dashboard) | Deferred | v0.5.0+ | |
-| 14 | [Config Import](#14-config-import) | Deferred | v0.5.0+ | Companion to Config Export |
-| 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | Deferred | v0.5.0+ | Upgrade from polling |
+| - | [v0.5.0 UX Overhaul](#v050) | **Done** | v0.5.0 | PR #94; Setup wizard, onboarding, filters |
+| - | [v0.5.1 Bug Fixes](#v051) | **Done** | v0.5.1 | PR #97; Progress bars, Docker version |
+| 13 | [Search Analytics Dashboard](#13-search-analytics-dashboard) | Deferred | Post-alpha | |
+| 14 | [Config Import](#14-config-import) | Deferred | Post-alpha | Companion to Config Export |
+| 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | Deferred | Post-alpha | Upgrade from polling |
+| - | Radarr Support | Deferred | Post-alpha | Backend code exists, UI gated; Sonarr-only in alpha |
 
 ---
 
@@ -147,6 +152,14 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 - **Guided Onboarding** (PR #94) — Onboarding state helper, workflow tracker component on empty-state pages (Library, Queues, History, Exclusions), contextual dashboard Quick Actions
 - **Search History Filters** (PR #94) — Inline filter bar (instance, strategy, status), fixed status rendering bug (`'completed'` -> `'success'`/`'partial_success'`), terminology fix
 - **Login Hint** (PR #94) — Password reset CLI command hint on login page
+
+### v0.5.1
+
+- **Bug Fixes** (PR #97) — Setup progress bars updated to 6 steps, Docker version display fix
+
+### v1.0.0-alpha
+
+- **Alpha Release Prep** — Version bump, README updated to alpha status, RELEASE_NOTES.md created, PRD updated. All features through v0.5.1 shipped as first alpha. Radarr support deferred to post-alpha (backend code exists, UI gated). Tested on Docker Desktop for Windows.
 
 ---
 
@@ -379,7 +392,7 @@ The core differentiator: making searches smarter, not just scheduled.
 
 ---
 
-## v0.5.0+ — Deferred
+## Post-Alpha — Deferred
 
 ### 13. Search Analytics Dashboard
 
@@ -405,8 +418,10 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 
 | # | Question | Context |
 |---|----------|---------|
-| 1 | Prowlarr API stability | Less documented than Sonarr/Radarr. Need to verify indexer rate limit fields are available. |
-| 2 | Season pack threshold | Default 3+ missing. Configurable per queue or global? |
+| 1 | ~~Prowlarr API stability~~ | Resolved: Prowlarr integration shipped in v0.4.0; API stable enough for indexer/app/stats endpoints |
+| 2 | ~~Season pack threshold~~ | Resolved: Configurable per queue (default 3+), shipped in v0.4.0 |
+| 3 | Radarr alpha timeline | Backend code exists but UI is gated. When to enable for testing? |
+| 4 | Linux/macOS verification | Alpha tested on Docker Desktop for Windows only. Community testing needed. |
 
 ---
 
@@ -442,6 +457,10 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | Batch limits | Per-queue max_items_per_run (default 50) | 2026-03-01 |
 | Fetch strategy | Fetch all wanted items from API, accept read cost for accurate scoring | 2026-03-01 |
 | Feedback loop delay | 15 min default, configurable 5-60 min | 2026-03-01 |
+| Prowlarr API stability | Stable enough; indexer/app/stats endpoints work reliably | 2026-03-01 |
+| Season pack threshold | Per-queue configurable, default 3+ | 2026-03-01 |
+| Alpha scope | Sonarr only; Radarr deferred to post-alpha | 2026-03-02 |
+| Alpha test platform | Docker Desktop for Windows; Linux/macOS unverified | 2026-03-02 |
 
 ---
 
@@ -466,3 +485,4 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | 2026-03-01 | v0.4.1 shipped: Bug fixes (scheduler, DB locking) + UX polish (PR #90) |
 | 2026-03-01 | v0.5.0 shipped: UX overhaul — setup wizard expansion, guided onboarding, search filters (PR #94) |
 | 2026-03-01 | v0.5.1 shipped: Fix setup progress bars (6 steps), Docker version display (PR #97) |
+| 2026-03-02 | v1.0.0-alpha: Alpha release. All features through v0.5.1 plus alpha hardening (DB locking fix, per-episode tracking, sync progress, logging overhaul, UX polish, security audit). Radarr deferred to post-alpha. Tested on Docker Desktop for Windows. |

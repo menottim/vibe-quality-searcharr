@@ -4,11 +4,11 @@
 
 <h1 align="center">Splintarr</h1>
 
-<p align="center"><strong><a href="https://github.com/menottim/splintarr/releases/tag/v0.5.1">Version 0.5.1</a></strong> | Automated backlog search for Sonarr and Radarr, designed for homelab use.</p>
+<p align="center"><strong><a href="https://github.com/menottim/splintarr/releases/tag/v1.0.0-alpha">Version 1.0.0-alpha</a></strong> | Automated backlog search for Sonarr, designed for homelab use.</p>
 
-> **Status: Active Development -- Not Ready for Use**
+> **Status: Alpha Release -- Ready for Testing**
 >
-> This project is under active development and is **not a stable or working release**. Many core features are incomplete, untested, or broken. There is significant work remaining before this is ready for others to test. **Do not use this expecting a functional application.**
+> This is the first alpha release of Splintarr, ready for testing by homelab enthusiasts. It has been hand-tested on Docker Desktop for Windows. It should work on Linux and macOS Docker environments but has not been independently verified. **Radarr support is planned for a future release; this alpha supports Sonarr only.**
 
 ---
 
@@ -40,21 +40,25 @@ During this vibe-coding exercise, I made every effort to implement security best
 
 ## Overview
 
-Splintarr automates systematic backlog searching for missing and upgradeable media in your Sonarr and Radarr instances. It runs as a Docker container on your home network and intelligently schedules searches over time, respecting API rate limits while maximizing coverage.
+Splintarr automates systematic backlog searching for missing and upgradeable media in your Sonarr instances (Radarr support coming in a future release). It runs as a Docker container on your home network and intelligently schedules searches over time, respecting API rate limits while maximizing coverage.
 
 ### Who This Is For
 
-This tool is designed for **homelab enthusiasts** running personal Sonarr and Radarr instances who want to automate search optimization in their home environment.
+This tool is designed for **homelab enthusiasts** running personal Sonarr instances who want to automate search optimization in their home environment.
 
 ### Key Features
 
-- **Intelligent Search Scheduling** -- Multiple strategies including round-robin, priority-based, and aging-based
-- **Search History Tracking** -- Avoids searching the same item twice unnecessarily
-- **Rate Limit Aware** -- Respects indexer API limits to prevent bans
-- **Multi-Instance Support** -- Manage multiple Sonarr and Radarr instances from one interface
-- **Local Authentication** -- Secure password storage with Argon2id hashing
-- **Configuration Drift Detection** -- Alerts when Sonarr or Radarr configuration changes
-- **Encrypted Database** -- AES-256 encryption via SQLCipher
+- **Intelligent Search Scheduling** -- Multiple strategies (missing, cutoff unmet, recent) with customizable intervals
+- **Search Intelligence** -- Adaptive prioritization, per-episode cooldowns, and search result feedback
+- **Season Pack Detection** -- Automatically searches for season packs with individual episode fallback
+- **Prowlarr Integration** -- Indexer-aware rate limiting to prevent bans
+- **Library Overview** -- Visual poster grid with episode-level completion tracking
+- **Content Exclusion Lists** -- Exclude specific titles from automated searches
+- **Discord Notifications** -- Alerts for search activity, instance health, and queue events
+- **Multi-Instance Support** -- Manage multiple Sonarr instances from one interface
+- **Local Authentication** -- Secure password storage with Argon2id hashing and optional TOTP 2FA
+- **Encrypted Database** -- AES-256 encryption via SQLCipher with Fernet-encrypted API keys
+- **Config Export** -- Export your configuration for backup (import coming in a future release)
 
 ---
 
@@ -73,11 +77,10 @@ See the **[Docker Deployment Guide](docs/how-to-guides/deploy-with-docker.md)** 
 ```bash
 git clone https://github.com/menottim/splintarr.git
 cd splintarr
-./scripts/generate-secrets.sh
-docker-compose up -d
+./scripts/setup.sh --auto-start
 ```
 
-Then open **http://localhost:7337/setup** to complete the setup wizard.
+Then open **http://localhost:7337** to complete the setup wizard.
 
 After installation, see the **[Getting Started Tutorial](docs/tutorials/getting-started.md)** for a walkthrough of the setup wizard, dashboard, and creating your first search queue.
 
@@ -113,7 +116,7 @@ Documentation is organized following the [Diataxis](https://diataxis.fr/) framew
 
 ### Release Information
 
-- **[Release Notes v0.1.0-alpha](RELEASE_NOTES.md)** -- What is in this alpha release
+- **[Release Notes v1.0.0-alpha](RELEASE_NOTES.md)** -- What's in this alpha release
 - **[Changelog](CHANGELOG.md)** -- Complete version history
 
 ### Screenshots
@@ -135,7 +138,7 @@ Splintarr is built with:
 - **FastAPI** -- Async web framework serving the UI and REST API
 - **SQLAlchemy + SQLCipher** -- ORM with encrypted database storage
 - **APScheduler** -- Background job scheduling for search queues
-- **httpx** -- Async HTTP client for communicating with Sonarr and Radarr APIs
+- **httpx** -- Async HTTP client for communicating with Sonarr APIs (Radarr planned)
 - **Argon2id** -- Password hashing
 - **Pydantic** -- Input validation and configuration management
 
