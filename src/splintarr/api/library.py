@@ -482,13 +482,15 @@ async def api_library_sync_status(
 
     This endpoint is resilient to DB lock errors during active sync.
     Auth is best-effort: if the DB is locked while sync is running,
-    we still return the sync status since the user is already on
-    an authenticated page.
+    we return a minimal response (syncing status only) to avoid
+    leaking operational details to unauthenticated users.
     """
+    authenticated = False
     try:
         db = next(get_db())
         try:
             user = get_current_user_from_cookie(request=request, db=db)
+            authenticated = True
             logger.debug("library_sync_status_checked", user_id=user.id, syncing=_sync_in_progress)
         except Exception:
             if not _sync_in_progress:
@@ -503,7 +505,10 @@ async def api_library_sync_status(
             ) from None
         logger.debug("library_sync_status_db_unavailable", syncing=_sync_in_progress)
 
-    return JSONResponse(content=_sync_state)
+    if authenticated:
+        return JSONResponse(content=_sync_state)
+    # Unauthenticated during sync — return minimal info only
+    return JSONResponse(content={"syncing": _sync_state["syncing"]})
 
 
 @router.get("/api/library/stats", include_in_schema=False)
