@@ -652,7 +652,7 @@ async def dashboard_index(
         .join(Instance)
         .filter(Instance.user_id == current_user.id)
         .order_by(SearchHistory.started_at.desc())
-        .limit(10)
+        .limit(5)
         .all()
     )
 
@@ -1146,7 +1146,7 @@ async def api_dashboard_stats(
 
 @router.get("/api/dashboard/activity", include_in_schema=False)
 async def api_dashboard_activity(
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(5, ge=1, le=100),
     current_user: User = Depends(get_current_user_from_cookie),
     db: Session = Depends(get_db),
 ) -> JSONResponse:

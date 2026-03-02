@@ -340,7 +340,7 @@ setInterval(async () => {
 // Activity feed — poll every 15s
 async function refreshActivity() {
     try {
-        var response = await fetch('/api/dashboard/activity?limit=10');
+        var response = await fetch('/api/dashboard/activity?limit=5');
         if (!response.ok) return;
         var data = await response.json();
         updateActivityTable(data.activity);
