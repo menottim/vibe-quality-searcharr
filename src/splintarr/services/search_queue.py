@@ -105,12 +105,15 @@ class SearchQueueManager:
 
         logger.info("search_queue_manager_initialized")
 
-    async def execute_queue(self, queue_id: int) -> dict[str, Any]:
+    async def execute_queue(
+        self, queue_id: int, override_cooldowns: bool = False
+    ) -> dict[str, Any]:
         """
         Execute a search queue.
 
         Args:
             queue_id: ID of the search queue to execute
+            override_cooldowns: If True, skip cooldown checks for this run
 
         Returns:
             dict: Execution results with keys:
@@ -219,7 +222,8 @@ class SearchQueueManager:
             try:
                 # Execute based on strategy
                 result = await self._execute_strategy(
-                    queue, instance, db, effective_max_items=effective_max
+                    queue, instance, db, effective_max_items=effective_max,
+                    override_cooldowns=override_cooldowns,
                 )
 
                 # Update queue and history with results
@@ -328,6 +332,7 @@ class SearchQueueManager:
         instance: Instance,
         db: Session,
         effective_max_items: int | None = None,
+        override_cooldowns: bool = False,
     ) -> dict[str, Any]:
         """
         Execute search based on queue strategy.
@@ -337,25 +342,30 @@ class SearchQueueManager:
             instance: Instance to search on
             db: Database session
             effective_max_items: Override for max items per run (from Prowlarr budget)
+            override_cooldowns: If True, skip cooldown checks for this run
 
         Returns:
             dict: Execution results
         """
         if queue.strategy == "missing":
             return await self._execute_missing_strategy(
-                queue, instance, db, effective_max_items=effective_max_items
+                queue, instance, db, effective_max_items=effective_max_items,
+                override_cooldowns=override_cooldowns,
             )
         elif queue.strategy == "cutoff_unmet":
             return await self._execute_cutoff_strategy(
-                queue, instance, db, effective_max_items=effective_max_items
+                queue, instance, db, effective_max_items=effective_max_items,
+                override_cooldowns=override_cooldowns,
             )
         elif queue.strategy == "recent":
             return await self._execute_recent_strategy(
-                queue, instance, db, effective_max_items=effective_max_items
+                queue, instance, db, effective_max_items=effective_max_items,
+                override_cooldowns=override_cooldowns,
             )
         elif queue.strategy == "custom":
             return await self._execute_custom_strategy(
-                queue, instance, db, effective_max_items=effective_max_items
+                queue, instance, db, effective_max_items=effective_max_items,
+                override_cooldowns=override_cooldowns,
             )
         else:
             raise SearchQueueError(f"Unknown strategy: {queue.strategy}")
@@ -438,6 +448,7 @@ class SearchQueueManager:
         sort_key: str | None = None,
         sort_dir: str | None = None,
         effective_max_items: int | None = None,
+        override_cooldowns: bool = False,
     ) -> dict[str, Any]:
         """Shared search loop for all strategies.
 
@@ -448,6 +459,7 @@ class SearchQueueManager:
         4. Sort by score descending
         5. Filter: remove excluded items
         6. Filter: remove items in cooldown (using DB-backed cooldown)
+           - Skipped when override_cooldowns is True
         7. Truncate to effective_max_items (Prowlarr-aware) or queue.max_items_per_run
         8. Search each remaining item, updating LibraryItem.search_attempts
 
@@ -461,6 +473,7 @@ class SearchQueueManager:
             sort_dir: Optional sort direction passed to the fetch method
             effective_max_items: Override for max items per run (from Prowlarr budget).
                 If None, falls back to queue.max_items_per_run.
+            override_cooldowns: If True, skip cooldown checks for this run.
         """
         logger.info(
             "executing_strategy",
@@ -579,9 +592,11 @@ class SearchQueueManager:
                         )
                         continue
 
-                    # Step 6: Filter cooldown items
+                    # Step 6: Filter cooldown items (skip when overridden)
                     library_item = library_items.get(ext_id)
-                    if is_in_cooldown(library_item, record, cooldown_mode, cooldown_hours):
+                    if not override_cooldowns and is_in_cooldown(
+                        library_item, record, cooldown_mode, cooldown_hours
+                    ):
                         label = label_fn(record)
                         logger.debug(
                             "item_in_cooldown",
@@ -836,6 +851,7 @@ class SearchQueueManager:
         instance: Instance,
         db: Session,
         effective_max_items: int | None = None,
+        override_cooldowns: bool = False,
     ) -> dict[str, Any]:
         """Execute missing items strategy -- searches all missing episodes/movies."""
         return await self._search_paginated_records(
@@ -845,6 +861,7 @@ class SearchQueueManager:
             fetch_method="get_wanted_missing",
             strategy_name="missing",
             effective_max_items=effective_max_items,
+            override_cooldowns=override_cooldowns,
         )
 
     async def _execute_cutoff_strategy(
@@ -853,6 +870,7 @@ class SearchQueueManager:
         instance: Instance,
         db: Session,
         effective_max_items: int | None = None,
+        override_cooldowns: bool = False,
     ) -> dict[str, Any]:
         """Execute cutoff unmet strategy -- searches items below quality cutoff."""
         return await self._search_paginated_records(
@@ -862,6 +880,7 @@ class SearchQueueManager:
             fetch_method="get_wanted_cutoff",
             strategy_name="cutoff",
             effective_max_items=effective_max_items,
+            override_cooldowns=override_cooldowns,
         )
 
     async def _execute_recent_strategy(
@@ -870,6 +889,7 @@ class SearchQueueManager:
         instance: Instance,
         db: Session,
         effective_max_items: int | None = None,
+        override_cooldowns: bool = False,
     ) -> dict[str, Any]:
         """Execute recent additions strategy -- newest missing items first."""
         if instance.instance_type == "sonarr":
@@ -886,6 +906,7 @@ class SearchQueueManager:
             sort_key=sort_key,
             sort_dir=sort_dir,
             effective_max_items=effective_max_items,
+            override_cooldowns=override_cooldowns,
         )
 
     async def _execute_custom_strategy(
@@ -894,6 +915,7 @@ class SearchQueueManager:
         instance: Instance,
         db: Session,
         effective_max_items: int | None = None,
+        override_cooldowns: bool = False,
     ) -> dict[str, Any]:
         """
         Execute custom strategy with user-defined filters.
@@ -903,6 +925,7 @@ class SearchQueueManager:
             instance: Instance to search on
             db: Database session
             effective_max_items: Override for max items per run (from Prowlarr budget)
+            override_cooldowns: If True, skip cooldown checks for this run
 
         Returns:
             dict: Execution results
@@ -922,7 +945,8 @@ class SearchQueueManager:
         logger.warning("custom_strategy_using_missing_fallback", filters=filters)
 
         return await self._execute_missing_strategy(
-            queue, instance, db, effective_max_items=effective_max_items
+            queue, instance, db, effective_max_items=effective_max_items,
+            override_cooldowns=override_cooldowns,
         )
 
     async def _check_rate_limit(self, instance_id: int, tokens_per_second: float = 5.0) -> bool:

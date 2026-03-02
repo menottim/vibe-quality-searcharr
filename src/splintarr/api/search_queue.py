@@ -11,7 +11,7 @@ This module provides REST API endpoints for managing search queues:
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from slowapi import Limiter
 from sqlalchemy.orm import Session
 
@@ -389,17 +389,22 @@ async def delete_search_queue(
         )
 
 
-async def _run_search_queue_background(queue_id: int) -> None:
+async def _run_search_queue_background(
+    queue_id: int, override_cooldowns: bool = False
+) -> None:
     """Background task to execute a search queue."""
     try:
         queue_manager = SearchQueueManager(get_session_factory())
-        result = await queue_manager.execute_queue(queue_id)
+        result = await queue_manager.execute_queue(
+            queue_id, override_cooldowns=override_cooldowns
+        )
         logger.info(
             "search_queue_background_completed",
             queue_id=queue_id,
             status=result.get("status"),
             items_searched=result.get("items_searched", 0),
             items_found=result.get("items_found", 0),
+            override_cooldowns=override_cooldowns,
         )
     except Exception as e:
         logger.error("search_queue_background_failed", queue_id=queue_id, error=str(e))
@@ -416,6 +421,7 @@ async def start_search_queue(
     request: Request,
     queue_id: int,
     background_tasks: BackgroundTasks,
+    override_cooldowns: bool = Query(default=False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -424,6 +430,9 @@ async def start_search_queue(
 
     Triggers execution as a background task and returns immediately.
     The queue status can be polled via GET /{queue_id}/status.
+
+    Args:
+        override_cooldowns: If True, skip cooldown checks for this run.
     """
     try:
         queue = _get_user_queue(db, queue_id, current_user.id)
@@ -437,12 +446,15 @@ async def start_search_queue(
         queue.mark_in_progress()
         db.commit()
 
-        background_tasks.add_task(_run_search_queue_background, queue_id)
+        background_tasks.add_task(
+            _run_search_queue_background, queue_id, override_cooldowns
+        )
 
         logger.info(
             "search_queue_started_manually",
             queue_id=queue_id,
             user_id=current_user.id,
+            override_cooldowns=override_cooldowns,
         )
 
         return MessageResponse(message="Search queue started")

@@ -71,6 +71,9 @@
 
         <footer>
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                {% if queue.is_active and queue.status != 'in_progress' %}
+                <button data-action="run-now" data-id="{{ queue.id }}" data-name="{{ queue.name }}">Run Now</button>
+                {% endif %}
                 {% if not queue.is_active %}
                 <button data-action="resume-queue" data-id="{{ queue.id }}">Resume</button>
                 {% elif queue.status in ['pending', 'completed'] %}
@@ -282,6 +285,25 @@
         </form>
     </article>
 </dialog>
+<!-- Run Now Dialog -->
+<dialog id="run-now-dialog">
+    <article style="max-width: 400px; margin: auto;">
+        <header>
+            <button aria-label="Close" rel="prev" data-action="close-run-dialog"></button>
+            <h3>Run Queue Now</h3>
+        </header>
+        <p>Start an immediate search run for this queue?</p>
+        <label>
+            <input type="checkbox" id="run-override-cooldowns" role="switch">
+            Override cooldowns
+            <small style="display: block; color: var(--muted-color);">Search all eligible items, including those in cooldown</small>
+        </label>
+        <footer>
+            <button class="secondary" data-action="close-run-dialog">Cancel</button>
+            <button id="run-now-confirm" data-action="confirm-run-now">Run Now</button>
+        </footer>
+    </article>
+</dialog>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -329,6 +351,9 @@ document.addEventListener('click', function(e) {
     else if (action === 'clone-queue') cloneQueue(parseInt(target.dataset.id));
     else if (action === 'view-queue') viewQueue(parseInt(target.dataset.id));
     else if (action === 'delete-queue') deleteQueue(parseInt(target.dataset.id), target.dataset.name);
+    else if (action === 'run-now') openRunNowDialog(parseInt(target.dataset.id), target.dataset.name);
+    else if (action === 'close-run-dialog') document.getElementById('run-now-dialog').close();
+    else if (action === 'confirm-run-now') confirmRunNow();
     else if (action === 'close-create-modal') closeCreateModal();
     else if (action === 'close-edit-dialog') document.getElementById('edit-queue').close();
 });
@@ -599,6 +624,46 @@ function applyPreset(presetKey) {
 document.getElementById('presetSelect').addEventListener('change', function() {
     applyPreset(this.value);
 });
+
+// Run Now dialog
+var _runNowQueueId = null;
+
+function openRunNowDialog(queueId, queueName) {
+    _runNowQueueId = queueId;
+    document.getElementById('run-override-cooldowns').checked = false;
+    document.getElementById('run-now-dialog').showModal();
+}
+
+async function confirmRunNow() {
+    if (!_runNowQueueId) return;
+
+    var btn = document.getElementById('run-now-confirm');
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+
+    var overrideCooldowns = document.getElementById('run-override-cooldowns').checked;
+    var url = '/api/search-queues/' + _runNowQueueId + '/start';
+    if (overrideCooldowns) {
+        url += '?override_cooldowns=true';
+    }
+
+    try {
+        var response = await fetch(url, { method: 'POST' });
+        if (response.ok) {
+            document.getElementById('run-now-dialog').close();
+            Splintarr.showNotification('Queue started!', 'success');
+            setTimeout(function() { location.reload(); }, 1500);
+        } else {
+            var data = await response.json();
+            Splintarr.showNotification('Failed to start queue: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        Splintarr.showNotification('Failed to start queue: ' + error.message);
+    }
+
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+}
 
 function closeCreateModal() {
     document.getElementById('create-queue').close();
