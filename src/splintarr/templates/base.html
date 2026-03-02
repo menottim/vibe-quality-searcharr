@@ -92,7 +92,13 @@
             <!-- Footer -->
             <footer>
                 <small>
-                    Splintarr v{{ request.state.app_version }} &middot;
+                    Splintarr
+                    {% if request.state.app_version != 'dev' %}
+                    <a href="https://github.com/menottim/splintarr/releases/tag/v{{ request.state.app_version }}" target="_blank">v{{ request.state.app_version }}</a>
+                    {% else %}
+                    v{{ request.state.app_version }}
+                    {% endif %}
+                    &middot;
                     <a href="https://github.com/menottim/splintarr" target="_blank">GitHub</a>
                 </small>
             </footer>

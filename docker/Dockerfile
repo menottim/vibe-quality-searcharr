@@ -69,6 +69,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser alembic/ ./alembic/
 COPY --chown=appuser:appuser alembic.ini ./
+COPY --chown=appuser:appuser pyproject.toml ./
 
 # Create data directory
 RUN mkdir -p /data && chown appuser:appuser /data
