@@ -88,6 +88,36 @@
     {% endif %}
 </article>
 
+<!-- All-Time Stats -->
+{% if all_time_stats %}
+<article>
+    <header><h3>All-Time Stats</h3></header>
+    <div class="grid">
+        {% for strategy, stats in all_time_stats.items() %}
+        <div>
+            <h4 style="margin-bottom: 0.5rem;">
+                {% if strategy == 'missing' %}Missing Episodes
+                {% elif strategy == 'cutoff_unmet' %}Cutoff Unmet
+                {% elif strategy == 'recent' %}Recent
+                {% else %}{{ strategy|title }}
+                {% endif %}
+            </h4>
+            <dl>
+                <dt data-tooltip="Total items matching queue filters across all executions">Found</dt>
+                <dd>{{ stats.total_found }}</dd>
+                <dt data-tooltip="Total items sent to Sonarr/Radarr for search">Searched</dt>
+                <dd>{{ stats.total_searched }}</dd>
+                <dt data-tooltip="Total items where a download was grabbed">Grabbed</dt>
+                <dd>{{ stats.total_grabbed }}</dd>
+                <dt>Executions</dt>
+                <dd>{{ stats.executions }}</dd>
+            </dl>
+        </div>
+        {% endfor %}
+    </div>
+</article>
+{% endif %}
+
 <!-- Actions -->
 <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
     {% if not queue.is_active %}

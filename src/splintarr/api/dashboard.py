@@ -14,6 +14,7 @@ All dashboard pages require authentication except the setup wizard.
 The setup wizard is only accessible when no users exist.
 """
 
+import json
 import re
 from datetime import datetime, timedelta
 from typing import Annotated, Any
@@ -816,6 +817,63 @@ async def dashboard_search_queues(
     )
 
 
+def _get_queue_alltime_stats(db: Session, queue_id: int) -> dict[str, dict[str, int]]:
+    """Aggregate all-time stats for a search queue, grouped by strategy.
+
+    Returns dict keyed by strategy (e.g. 'missing', 'cutoff_unmet') with:
+      executions, total_found, total_searched, total_grabbed
+    """
+    # SQL aggregation for counts
+    strategy_rows = (
+        db.query(
+            SearchHistory.strategy,
+            func.count(SearchHistory.id).label("executions"),
+            func.coalesce(func.sum(SearchHistory.items_found), 0).label("total_found"),
+            func.coalesce(func.sum(SearchHistory.searches_triggered), 0).label(
+                "total_searched"
+            ),
+        )
+        .filter(
+            SearchHistory.search_queue_id == queue_id,
+            SearchHistory.status.in_(["success", "partial_success"]),
+        )
+        .group_by(SearchHistory.strategy)
+        .all()
+    )
+
+    stats: dict[str, dict[str, int]] = {}
+    for row in strategy_rows:
+        stats[row.strategy] = {
+            "executions": row.executions,
+            "total_found": int(row.total_found),
+            "total_searched": int(row.total_searched),
+            "total_grabbed": 0,
+        }
+
+    # Count grabs from search_metadata JSON
+    metadata_rows = (
+        db.query(SearchHistory.strategy, SearchHistory.search_metadata)
+        .filter(
+            SearchHistory.search_queue_id == queue_id,
+            SearchHistory.search_metadata.isnot(None),
+        )
+        .all()
+    )
+    for row in metadata_rows:
+        if row.strategy not in stats:
+            continue
+        try:
+            entries = json.loads(row.search_metadata)
+            if isinstance(entries, list):
+                for entry in entries:
+                    if isinstance(entry, dict) and entry.get("result") == "grabbed":
+                        stats[row.strategy]["total_grabbed"] += 1
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    return stats
+
+
 @router.get(
     "/dashboard/search-queues/{queue_id}",
     response_class=HTMLResponse,
@@ -852,6 +910,9 @@ async def dashboard_search_queue_detail(
         .all()
     )
 
+    # All-time stats per strategy
+    all_time_stats = _get_queue_alltime_stats(db, queue_id)
+
     return templates.TemplateResponse(
         "dashboard/search_queue_detail.html",
         {
@@ -859,6 +920,7 @@ async def dashboard_search_queue_detail(
             "user": current_user,
             "queue": queue,
             "history": history,
+            "all_time_stats": all_time_stats,
             "active_page": "queues",
         },
     )
