@@ -74,15 +74,9 @@ def _get_integration_status(
 ) -> dict[str, Any]:
     """Get Discord and Prowlarr integration status for the system status panel."""
     discord_config = (
-        db.query(NotificationConfig)
-        .filter(NotificationConfig.user_id == user_id)
-        .first()
+        db.query(NotificationConfig).filter(NotificationConfig.user_id == user_id).first()
     )
-    prowlarr_config = (
-        db.query(ProwlarrConfig)
-        .filter(ProwlarrConfig.user_id == user_id)
-        .first()
-    )
+    prowlarr_config = db.query(ProwlarrConfig).filter(ProwlarrConfig.user_id == user_id).first()
 
     discord: dict[str, Any] = {
         "configured": discord_config is not None,
@@ -1152,20 +1146,18 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
 
     success_rate = (successful_searches / searches_this_week * 100) if searches_this_week > 0 else 0
 
-    # Grab rate from library search intelligence
+    # Grab rate from library search intelligence: 1 query with two aggregates
     user_instance_ids = db.query(Instance.id).filter(Instance.user_id == user.id)
-    total_search_attempts = (
-        db.query(func.sum(LibraryItem.search_attempts))
+    grab_stats = (
+        db.query(
+            func.coalesce(func.sum(LibraryItem.search_attempts), 0).label("attempts"),
+            func.coalesce(func.sum(LibraryItem.grabs_confirmed), 0).label("grabs"),
+        )
         .filter(LibraryItem.instance_id.in_(user_instance_ids))
-        .scalar()
-        or 0
+        .one()
     )
-    total_grabs = (
-        db.query(func.sum(LibraryItem.grabs_confirmed))
-        .filter(LibraryItem.instance_id.in_(user_instance_ids))
-        .scalar()
-        or 0
-    )
+    total_search_attempts = int(grab_stats.attempts)
+    total_grabs = int(grab_stats.grabs)
     grab_rate = (
         round(total_grabs / total_search_attempts * 100, 1) if total_search_attempts > 0 else 0.0
     )

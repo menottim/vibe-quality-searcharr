@@ -204,40 +204,24 @@
             <!-- Integrations -->
             <div id="system-status-integrations" style="margin-top: 0.75rem;">
                 <small style="color: var(--muted-color); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em;">Integrations</small>
+                {% for name, href, info in [
+                    ('Discord', '/dashboard/settings#notifications', integrations.discord),
+                    ('Prowlarr', '/dashboard/settings#prowlarr', integrations.prowlarr),
+                ] %}
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    {% if integrations.discord.configured %}
-                        {% if integrations.discord.active %}
-                        <span style="color: var(--ins-color);" title="Active">●</span>
-                        {% else %}
-                        <span style="color: var(--muted-color);" title="Inactive">●</span>
-                        {% endif %}
+                    {% if info.configured and info.active %}
+                    <span style="color: var(--ins-color);" title="Active">●</span>
                     {% else %}
-                    <span style="color: var(--muted-color);" title="Not configured">●</span>
+                    <span style="color: var(--muted-color);" title="{{ 'Inactive' if info.configured else 'Not configured' }}">●</span>
                     {% endif %}
-                    <a href="/dashboard/settings#notifications" style="text-decoration: none;">Discord</a>
+                    <a href="{{ href }}" style="text-decoration: none;">{{ name }}</a>
                     <small style="color: var(--muted-color); margin-left: auto;">
-                        {% if not integrations.discord.configured %}not configured
-                        {% elif integrations.discord.active %}active
+                        {% if not info.configured %}not configured
+                        {% elif info.active %}active
                         {% else %}inactive{% endif %}
                     </small>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    {% if integrations.prowlarr.configured %}
-                        {% if integrations.prowlarr.active %}
-                        <span style="color: var(--ins-color);" title="Active">●</span>
-                        {% else %}
-                        <span style="color: var(--muted-color);" title="Inactive">●</span>
-                        {% endif %}
-                    {% else %}
-                    <span style="color: var(--muted-color);" title="Not configured">●</span>
-                    {% endif %}
-                    <a href="/dashboard/settings#prowlarr" style="text-decoration: none;">Prowlarr</a>
-                    <small style="color: var(--muted-color); margin-left: auto;">
-                        {% if not integrations.prowlarr.configured %}not configured
-                        {% elif integrations.prowlarr.active %}active
-                        {% else %}inactive{% endif %}
-                    </small>
-                </div>
+                {% endfor %}
             </div>
 
             <!-- Internal Services -->
