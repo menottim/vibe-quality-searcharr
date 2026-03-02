@@ -820,56 +820,54 @@ async def dashboard_search_queues(
 def _get_queue_alltime_stats(db: Session, queue_id: int) -> dict[str, dict[str, int]]:
     """Aggregate all-time stats for a search queue, grouped by strategy.
 
+    Note: Caller must verify ownership of queue_id before invoking.
+
     Returns dict keyed by strategy (e.g. 'missing', 'cutoff_unmet') with:
       executions, total_found, total_searched, total_grabbed
     """
-    # SQL aggregation for counts
-    strategy_rows = (
+    rows = (
         db.query(
             SearchHistory.strategy,
-            func.count(SearchHistory.id).label("executions"),
-            func.coalesce(func.sum(SearchHistory.items_found), 0).label("total_found"),
-            func.coalesce(func.sum(SearchHistory.searches_triggered), 0).label(
-                "total_searched"
-            ),
+            SearchHistory.items_found,
+            SearchHistory.searches_triggered,
+            SearchHistory.search_metadata,
         )
         .filter(
             SearchHistory.search_queue_id == queue_id,
             SearchHistory.status.in_(["success", "partial_success"]),
         )
-        .group_by(SearchHistory.strategy)
         .all()
     )
 
     stats: dict[str, dict[str, int]] = {}
-    for row in strategy_rows:
-        stats[row.strategy] = {
-            "executions": row.executions,
-            "total_found": int(row.total_found),
-            "total_searched": int(row.total_searched),
-            "total_grabbed": 0,
-        }
-
-    # Count grabs from search_metadata JSON
-    metadata_rows = (
-        db.query(SearchHistory.strategy, SearchHistory.search_metadata)
-        .filter(
-            SearchHistory.search_queue_id == queue_id,
-            SearchHistory.search_metadata.isnot(None),
-        )
-        .all()
-    )
-    for row in metadata_rows:
+    for row in rows:
         if row.strategy not in stats:
-            continue
-        try:
-            entries = json.loads(row.search_metadata)
-            if isinstance(entries, list):
-                for entry in entries:
-                    if isinstance(entry, dict) and entry.get("result") == "grabbed":
-                        stats[row.strategy]["total_grabbed"] += 1
-        except (json.JSONDecodeError, TypeError):
-            pass
+            stats[row.strategy] = {
+                "executions": 0,
+                "total_found": 0,
+                "total_searched": 0,
+                "total_grabbed": 0,
+            }
+        bucket = stats[row.strategy]
+        bucket["executions"] += 1
+        bucket["total_found"] += row.items_found or 0
+        bucket["total_searched"] += row.searches_triggered or 0
+
+        # Count grabs from search_metadata JSON
+        if row.search_metadata:
+            try:
+                entries = json.loads(row.search_metadata)
+                if isinstance(entries, list):
+                    for entry in entries:
+                        if isinstance(entry, dict) and entry.get("result") == "grabbed":
+                            bucket["total_grabbed"] += 1
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(
+                    "queue_stats_metadata_parse_failed",
+                    queue_id=queue_id,
+                    strategy=row.strategy,
+                    error=str(e),
+                )
 
     return stats
 
