@@ -48,6 +48,14 @@
     </a>
 </div>
 
+<!-- Search Running Indicator (shown via WebSocket) -->
+<div class="search-running-banner" id="searchRunningBanner">
+    <span style="font-size: 1.1rem;">&#10227;</span>
+    <span id="searchRunningText">Searching...</span>
+    <progress id="searchRunningProgress"></progress>
+    <small id="searchRunningCount" style="white-space: nowrap;"></small>
+</div>
+
 <!-- Recent Activity -->
 <article>
     <header>
@@ -787,6 +795,42 @@ Splintarr.ws.on('activity.updated', function(data) {
 Splintarr.ws.on('indexer_health.updated', function() {
     refreshIndexerHealth();  // Always fetch fresh data from API
 });
+
+// Search running indicator
+(function() {
+    var banner = document.getElementById('searchRunningBanner');
+    var text = document.getElementById('searchRunningText');
+    var bar = document.getElementById('searchRunningProgress');
+    var countEl = document.getElementById('searchRunningCount');
+
+    Splintarr.ws.on('search.started', function(data) {
+        text.textContent = (data.queue_name || 'Queue') + ' \u2014 ' + (data.strategy || '');
+        bar.removeAttribute('value');
+        bar.removeAttribute('max');
+        countEl.textContent = '';
+        banner.classList.add('active');
+    });
+
+    Splintarr.ws.on('search.item_result', function(data) {
+        if (!banner.classList.contains('active')) {
+            text.textContent = 'Searching...';
+            banner.classList.add('active');
+        }
+        if (data.total_items) {
+            bar.setAttribute('max', data.total_items);
+            bar.setAttribute('value', data.item_index || 0);
+            countEl.textContent = (data.item_index || 0) + '/' + data.total_items;
+        }
+    });
+
+    Splintarr.ws.on('search.completed', function(data) {
+        banner.classList.remove('active');
+    });
+
+    Splintarr.ws.on('search.failed', function(data) {
+        banner.classList.remove('active');
+    });
+})();
 
 // WS lifecycle
 Splintarr.ws.onConnected = function() {

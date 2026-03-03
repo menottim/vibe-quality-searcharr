@@ -130,6 +130,28 @@
     <a href="/dashboard/search-queues" role="button" class="secondary" style="margin-left: auto;">Back to Queues</a>
 </div>
 
+<!-- Live Progress (shown during search execution via WebSocket) -->
+<article class="live-progress" id="liveProgress">
+    <header><h3 style="color: var(--primary);">&#10227; Search In Progress</h3></header>
+    <div class="progress-header">
+        <progress id="liveProgressBar"></progress>
+        <span class="progress-count" id="liveProgressCount">Preparing...</span>
+    </div>
+    <div id="liveCurrentItem" style="margin-bottom: 0.75rem; font-size: 0.875rem; color: var(--muted-color);"></div>
+    <div class="results-table">
+        <table role="grid">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th data-tooltip="Search priority score">Score</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody id="liveResultsBody"></tbody>
+        </table>
+    </div>
+</article>
+
 <!-- Execution History -->
 <article>
     <header><h3>Execution History</h3></header>
@@ -255,33 +277,100 @@
 
 {% block extra_scripts %}
 <script nonce="{{ request.state.csp_nonce }}">
-// WebSocket search progress (supplements existing polling)
+// WebSocket search progress — live progress panel
 (function() {
     if (!Splintarr.ws) return;
 
     var currentQueueId = {{ queue.id }};
+    var panel = document.getElementById('liveProgress');
+    var bar = document.getElementById('liveProgressBar');
+    var count = document.getElementById('liveProgressCount');
+    var currentItem = document.getElementById('liveCurrentItem');
+    var resultsBody = document.getElementById('liveResultsBody');
 
-    Splintarr.ws.on('search.started', function(data) {
-        if (data.queue_id != currentQueueId) return;
-        // Update UI to show execution started
+    function showRunning() {
+        panel.classList.add('active');
         var runBtn = document.querySelector('[data-action="run-now"]');
         if (runBtn) {
             runBtn.setAttribute('aria-busy', 'true');
             runBtn.disabled = true;
             runBtn.textContent = 'Running...';
         }
+    }
+
+    Splintarr.ws.on('search.started', function(data) {
+        if (data.queue_id != currentQueueId) return;
+        showRunning();
+        bar.removeAttribute('value');
+        bar.removeAttribute('max');
+        count.textContent = 'Starting ' + (data.strategy || '') + ' search...';
+        currentItem.textContent = '';
+        while (resultsBody.firstChild) resultsBody.removeChild(resultsBody.firstChild);
+    });
+
+    Splintarr.ws.on('search.item_result', function(data) {
+        if (data.queue_id != currentQueueId) return;
+        if (!panel.classList.contains('active')) showRunning();
+
+        // Update progress bar
+        if (data.total_items) {
+            bar.setAttribute('max', data.total_items);
+            bar.setAttribute('value', data.item_index || 0);
+            count.textContent = (data.item_index || 0) + ' / ' + data.total_items + ' items';
+        }
+
+        // Update current item
+        currentItem.textContent = 'Searching: ' + (data.item_name || '');
+
+        // Append result row
+        var tr = document.createElement('tr');
+
+        var tdItem = document.createElement('td');
+        tdItem.textContent = data.item_name || '';
+        tr.appendChild(tdItem);
+
+        var tdScore = document.createElement('td');
+        if (data.score != null) {
+            tdScore.textContent = data.score;
+            if (data.score_reason) tdScore.setAttribute('title', data.score_reason);
+        } else {
+            tdScore.textContent = '-';
+            tdScore.style.color = 'var(--muted-color)';
+        }
+        tr.appendChild(tdScore);
+
+        var tdResult = document.createElement('td');
+        if (data.result === 'found') {
+            tdResult.style.color = 'var(--ins-color)';
+            tdResult.textContent = '\u2713 sent';
+        } else if (data.result === 'failed') {
+            tdResult.style.color = 'var(--del-color)';
+            tdResult.textContent = '\u2717 error';
+        } else {
+            tdResult.style.color = 'var(--muted-color)';
+            tdResult.textContent = '\u2014 ' + (data.result || 'unknown');
+        }
+        tr.appendChild(tdResult);
+
+        resultsBody.appendChild(tr);
     });
 
     Splintarr.ws.on('search.completed', function(data) {
         if (data.queue_id != currentQueueId) return;
-        // Refresh the page to show results
-        window.location.reload();
+        var maxVal = parseInt(bar.getAttribute('max'), 10) || data.items_searched || 0;
+        if (maxVal > 0) {
+            bar.setAttribute('max', maxVal);
+            bar.setAttribute('value', maxVal);
+        }
+        count.textContent = 'Complete \u2014 ' + (data.items_searched || 0) + ' searched, ' + (data.items_found || 0) + ' found';
+        currentItem.textContent = '';
+        setTimeout(function() { window.location.reload(); }, 1500);
     });
 
     Splintarr.ws.on('search.failed', function(data) {
         if (data.queue_id != currentQueueId) return;
         Splintarr.showNotification('Search failed: ' + (data.error || 'Unknown error'), 'error');
-        window.location.reload();
+        setTimeout(function() { window.location.reload(); }, 1500);
     });
 })();
 
@@ -360,11 +449,11 @@ async function confirmRunNow() {
                 runBtn.disabled = true;
                 runBtn.textContent = 'Running...';
             }
-            pollQueueStatus(_runNowQueueId);
+            if (!Splintarr.ws || !Splintarr.ws.connected) pollQueueStatus(_runNowQueueId);
         } else if (response.status === 409) {
             document.getElementById('run-now-dialog').close();
             showNotification('Search is already running');
-            pollQueueStatus(_runNowQueueId);
+            if (!Splintarr.ws || !Splintarr.ws.connected) pollQueueStatus(_runNowQueueId);
         } else {
             showNotification('Failed to start: ' + (data.detail || 'Unknown error'));
         }
@@ -392,11 +481,16 @@ function pollQueueStatus(queueId) {
     }, 3000);
 }
 
-// Auto-poll if page loads while queue is in_progress
+// Auto-show live progress if page loads while queue is in_progress
 (function() {
     var btn = document.querySelector('[data-action="run-now"]');
     if (btn && btn.disabled) {
-        pollQueueStatus({{ queue.id }});
+        var panel = document.getElementById('liveProgress');
+        if (panel) {
+            panel.classList.add('active');
+            document.getElementById('liveProgressCount').textContent = 'Search in progress...';
+        }
+        if (!Splintarr.ws || !Splintarr.ws.connected) pollQueueStatus({{ queue.id }});
     }
 })();
 
