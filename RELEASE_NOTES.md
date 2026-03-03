@@ -1,29 +1,36 @@
-# Splintarr v1.0.2-alpha Release Notes
+# Splintarr v1.1.0-alpha Release Notes
 
-**Release Date:** 2026-03-02
+**Release Date:** 2026-03-03
 **Status:** Alpha -- Ready for Testing
 
-## What's New in v1.0.2-alpha
+## What's New in v1.1.0-alpha
 
-Code quality, security hardening, and UI polish.
+Real-time WebSocket updates and a synthetic demo mode for new installs. This is the first release in the **v1.1.0 Visibility** series.
 
-### Code Simplification (PR #109)
+### WebSocket Real-Time Activity Feed (PR #111)
 
-- Consolidated two separate grab-rate DB queries into a single query with two aggregates
-- Simplified `get_scheduler_status()` with early return pattern
-- Replaced duplicated Discord/Prowlarr integration template rows with a Jinja2 `{% for %}` loop
+- **Single WebSocket connection** at `/ws/live` replaces all dashboard polling
+- In-process event bus broadcasts search progress, item results, stats, system status, indexer health, and library sync events
+- JWT cookie authentication on WebSocket upgrade with automatic reconnect (exponential backoff: 1s/2s/4s, then 60s reset)
+- **Graceful fallback to polling** after 3 failed reconnect attempts
+- WebSocket cleanup on page unload prevents stale connections
+- Auto-connects on all `/dashboard/*` pages
 
-### Security Hardening (PR #110)
+### Synthetic Demo Data Simulation (PR #112)
 
-- **Removed dead `?next=` redirect parameter** from both the server-side 401 handler (`main.py`) and the client-side fetch interceptor (`base.html`). The parameter was never consumed by the login page, creating a latent open redirect risk if anyone wired it up without validation.
-- **Replaced `innerHTML` with DOM construction** in the setup wizard password strength meter (`setup/admin.html`). All dynamic DOM updates now consistently use `textContent` across the entire codebase.
+- **Demo mode** fills the dashboard with synthetic data before users connect real instances
+- Background simulation loop emits 13 WebSocket events per ~2-minute cycle through the real event bus
+- Five synthetic data generators matching exact API response shapes: dashboard stats, activity, system status, library stats, indexer health
+- **Auto-disables** instantly when user creates both an instance AND a search queue
+- Gold **Demo Mode** banner visible on all authenticated pages with dismiss button and links to Instances/Queues pages
+- All synthetic payloads include `"demo": true` for consumer differentiation
 
-### UI Fixes
+### Additional Improvements
 
-- Dashboard stat card detail text now bottom-aligns across all cards (flex column with `margin-top: auto`)
-- Grab rate moved inline with search stats (eliminates height difference between cards)
+- Added rate limiting (`30/minute`) to `api_dashboard_stats` and `api_dashboard_activity` endpoints
+- Added DEBUG logging to all dashboard API handlers (both real and demo paths)
 
-## Upgrading from v1.0.1-alpha
+## Upgrading from v1.0.2-alpha
 
 Pull the latest image and restart:
 

@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-03 (v1.1.0–v1.3.0 roadmap)
+**Last updated:** 2026-03-03 (v1.1.0-alpha: WebSocket + Demo Mode shipped)
 
 ---
 
@@ -95,7 +95,8 @@ All features below shipped in **v1.0.0-alpha** (Sonarr only; Radarr support defe
 | - | [v0.5.1 Bug Fixes](#v051) | **Done** | v0.5.1 | PR #97; Progress bars, Docker version |
 | 13 | [Search Analytics Dashboard](#13-search-analytics-dashboard) | Deferred | Post-alpha | |
 | 14 | [Config Import](#14-config-import) | Deferred | Post-alpha | Companion to Config Export |
-| 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | Deferred | Post-alpha | Upgrade from polling |
+| 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | **Done** | v1.1.0-alpha | PR #111 |
+| - | [Synthetic Demo Mode](#synthetic-demo-mode) | **Done** | v1.1.0-alpha | PR #112 |
 | - | Radarr Support | Deferred | Post-alpha | Backend code exists, UI gated; Sonarr-only in alpha |
 
 ---
@@ -173,6 +174,11 @@ All features below shipped in **v1.0.0-alpha** (Sonarr only; Radarr support defe
 - **Code Simplification** (PR #109) — Consolidated grab-rate DB queries, simplified scheduler status function, deduplicated integration template rows with Jinja2 loop.
 - **Security Hardening** (PR #110) — Removed dead `?next=` redirect parameter from both server-side 401 handler and client-side fetch interceptor (latent open redirect risk). Replaced `innerHTML` with DOM construction in setup password meter.
 - **UI Fixes** — Dashboard stat card detail text bottom-aligned across cards, grab rate moved inline with search stats.
+
+### v1.1.0-alpha
+
+- **WebSocket Real-Time Activity Feed** (PR #111) — Single WebSocket connection at `/ws/live` replaces all dashboard polling. In-process event bus, JWT cookie auth on upgrade, auto-reconnect with exponential backoff, graceful fallback to polling. Events: search progress, item results, stats, system status, indexer health, library sync. [Spec →](#15-websocket-real-time-activity-feed)
+- **Synthetic Demo Mode** (PR #112) — Dashboard shows synthetic data before users connect real instances. Five data generators, background simulation loop emitting 13 WS events per ~2-minute cycle. Auto-disables when user has both instance + queue. Gold "Demo Mode" banner on all authenticated pages. [Spec →](#synthetic-demo-mode)
 
 ---
 
@@ -413,9 +419,15 @@ The core differentiator: making searches smarter, not just scheduled.
 
 ### 15. WebSocket Real-Time Activity Feed
 
-**Priority:** High | **Effort:** Medium | **Status:** Planned (v1.1.0)
+**Priority:** High | **Effort:** Medium | **Status: Done** (PR #111, 2026-03-03)
 
-Replace ALL dashboard polling with a single WebSocket connection at `/ws/activity`. In-process event bus (no Redis), JWT cookie auth on upgrade, auto-reconnect with exponential backoff, graceful fallback to polling. Events: search progress, item results, stats, system status, indexer health, library sync.
+Replace ALL dashboard polling with a single WebSocket connection at `/ws/live`. In-process event bus (no Redis), JWT cookie auth on upgrade, auto-reconnect with exponential backoff (1s/2s/4s, then 60s reset), graceful fallback to polling after 3 failed reconnects. Events: search progress, item results, stats, system status, indexer health, library sync. Auto-connects on all `/dashboard/*` pages, cleanup on page unload.
+
+### Synthetic Demo Mode
+
+**Priority:** Medium | **Effort:** Low-Medium | **Status: Done** (PR #112, 2026-03-03)
+
+Synthetic data simulation so the dashboard looks alive before users connect real instances. Five data generators matching exact API response shapes. Background simulation loop emits 13 WS events per ~2-minute cycle through the real event bus. Auto-disables when user has both an instance and a queue. Gold "Demo Mode" banner on all authenticated pages.
 
 ### 16. Search Progress & Live Queue View
 
@@ -591,3 +603,4 @@ Companion to Config Export (v0.2.1). Upload JSON to restore instances, queues, e
 | 2026-03-02 | v1.0.1-alpha: Dashboard system status redesign (3 sections), dashboard polish (cutoff unmet, activity limit, queue stats), UI fixes (tooltips, footer version), infrastructure (persistent posters, sync progress fix). |
 | 2026-03-02 | v1.0.2-alpha: Code simplification (PR #109), security hardening — removed dead redirect param + innerHTML (PR #110), UI fixes (stat card alignment, inline grab rate). |
 | 2026-03-03 | v1.1.0–v1.3.0 roadmap: 12 features across 3 releases. Research-backed proposal based on Sonarr ecosystem analysis, competitor review (Scoutarr), and community pain points. Features #15-26 added. API spike confirmed quality data availability for Feature #22. |
+| 2026-03-03 | v1.1.0-alpha: WebSocket Real-Time Activity Feed (PR #111) shipped — Feature #15 done. Synthetic Demo Mode (PR #112) shipped — new feature not in original roadmap. |
