@@ -120,30 +120,6 @@ class AutoRefresh {
     }
 }
 
-// Initialize auto-refresh for dashboard stats
-if (window.location.pathname === '/dashboard') {
-    const statsRefresh = new AutoRefresh(async () => {
-        const result = await apiCall('/api/dashboard/stats');
-        if (result.success) {
-            // Update UI with new stats (would require more complex DOM manipulation)
-        }
-    }, 30000);
-
-    // Start auto-refresh when page loads
-    document.addEventListener('DOMContentLoaded', () => {
-        statsRefresh.start();
-    });
-
-    // Stop auto-refresh when page is hidden (battery optimization)
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            statsRefresh.stop();
-        } else {
-            statsRefresh.start();
-        }
-    });
-}
-
 // Form validation helpers
 function validatePassword(password) {
     const errors = [];
@@ -192,8 +168,92 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+// WebSocket real-time connection
+var SplintarrWS = (function() {
+    var socket = null;
+    var handlers = {};
+    var reconnectAttempts = 0;
+    var MAX_RECONNECT = 3;
+    var reconnectTimer = null;
+    var fallbackActive = false;
+    var _onConnected = null;
+    var _onFallback = null;
+
+    function connect() {
+        if (socket && socket.readyState <= 1) return;
+        var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        socket = new WebSocket(protocol + '//' + location.host + '/ws/live');
+
+        socket.onopen = function() {
+            reconnectAttempts = 0;
+            fallbackActive = false;
+            if (_onConnected) _onConnected();
+        };
+
+        socket.onmessage = function(event) {
+            var msg;
+            try { msg = JSON.parse(event.data); } catch (e) { return; }
+            if (msg.type === 'auth.expired') {
+                fetch('/api/auth/refresh', { method: 'POST' }).then(function() {
+                    connect();
+                }).catch(function() {
+                    fallbackActive = true;
+                    if (_onFallback) _onFallback();
+                });
+                return;
+            }
+            var fns = handlers[msg.type] || [];
+            for (var i = 0; i < fns.length; i++) {
+                try { fns[i](msg.data, msg.timestamp); } catch (e) { /* handler error */ }
+            }
+        };
+
+        socket.onclose = function() {
+            socket = null;
+            reconnectAttempts++;
+            if (reconnectAttempts <= MAX_RECONNECT) {
+                var delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 30000);
+                reconnectTimer = setTimeout(connect, delay);
+            } else {
+                fallbackActive = true;
+                if (_onFallback) _onFallback();
+                reconnectTimer = setTimeout(function() {
+                    reconnectAttempts = 0;
+                    connect();
+                }, 60000);
+            }
+        };
+
+        socket.onerror = function() {
+            // onclose will fire after onerror
+        };
+    }
+
+    function on(type, fn) {
+        if (!handlers[type]) handlers[type] = [];
+        handlers[type].push(fn);
+    }
+
+    function close() {
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        if (socket) socket.close();
+        socket = null;
+    }
+
+    return {
+        connect: connect,
+        on: on,
+        close: close,
+        get connected() { return socket !== null && socket.readyState === 1; },
+        get usingFallback() { return fallbackActive; },
+        set onConnected(fn) { _onConnected = fn; },
+        set onFallback(fn) { _onFallback = fn; },
+    };
+})();
+
 // Export functions for use in templates
 window.Splintarr = {
+    ws: SplintarrWS,
     apiCall,
     showNotification,
     formatDateTime,

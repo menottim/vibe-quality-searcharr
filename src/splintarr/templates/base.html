@@ -164,6 +164,16 @@
                 headers: { 'Content-Type': 'application/json' }
             }).then(() => { window.location.href = '/login'; });
         }
+
+        // Clean up WebSocket on page unload
+        window.addEventListener('beforeunload', function() {
+            if (window.Splintarr && Splintarr.ws) Splintarr.ws.close();
+        });
+
+        // Auto-connect WebSocket on authenticated pages
+        if (window.Splintarr && Splintarr.ws && window.location.pathname.startsWith('/dashboard')) {
+            Splintarr.ws.connect();
+        }
     </script>
 
     {% block extra_scripts %}{% endblock %}
