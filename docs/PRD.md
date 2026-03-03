@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-02 (v1.0.1-alpha)
+**Last updated:** 2026-03-02 (v1.0.2-alpha)
 
 ---
 
@@ -167,6 +167,12 @@ All features below shipped in **v1.0.0-alpha** (Sonarr only; Radarr support defe
 - **Dashboard Polish** — Cutoff unmet count in library stats card, recent search activity limited to 5 items, queue all-time stats per strategy on detail page.
 - **UI Fixes** — Indexer health table tooltip clipping, tooltip text styling, hover tooltips on non-obvious table headers, Docker version display in footer.
 - **Infrastructure** — Persistent poster images across container rebuilds, library sync progress fix, poster-missing log level bump.
+
+### v1.0.2-alpha
+
+- **Code Simplification** (PR #109) — Consolidated grab-rate DB queries, simplified scheduler status function, deduplicated integration template rows with Jinja2 loop.
+- **Security Hardening** (PR #110) — Removed dead `?next=` redirect parameter from both server-side 401 handler and client-side fetch interceptor (latent open redirect risk). Replaced `innerHTML` with DOM construction in setup password meter.
+- **UI Fixes** — Dashboard stat card detail text bottom-aligned across cards, grab rate moved inline with search stats.
 
 ---
 
@@ -494,3 +500,4 @@ Upgrade the v0.2.1 enhanced polling (15s interval) to true WebSocket push at `/w
 | 2026-03-01 | v0.5.1 shipped: Fix setup progress bars (6 steps), Docker version display (PR #97) |
 | 2026-03-02 | v1.0.0-alpha: Alpha release. All features through v0.5.1 plus alpha hardening (DB locking fix, per-episode tracking, sync progress, logging overhaul, UX polish, security audit). Radarr deferred to post-alpha. Tested on Docker Desktop for Windows. |
 | 2026-03-02 | v1.0.1-alpha: Dashboard system status redesign (3 sections), dashboard polish (cutoff unmet, activity limit, queue stats), UI fixes (tooltips, footer version), infrastructure (persistent posters, sync progress fix). |
+| 2026-03-02 | v1.0.2-alpha: Code simplification (PR #109), security hardening — removed dead redirect param + innerHTML (PR #110), UI fixes (stat card alignment, inline grab rate). |

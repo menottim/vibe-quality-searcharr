@@ -1,44 +1,29 @@
-# Splintarr v1.0.1-alpha Release Notes
+# Splintarr v1.0.2-alpha Release Notes
 
 **Release Date:** 2026-03-02
 **Status:** Alpha -- Ready for Testing
 
-## What's New in v1.0.1-alpha
+## What's New in v1.0.2-alpha
 
-This is a polish and fixes release building on the v1.0.0-alpha foundation. No new major features, but significant dashboard improvements and bug fixes.
+Code quality, security hardening, and UI polish.
 
-### Dashboard System Status Redesign (PR #108)
+### Code Simplification (PR #109)
 
-The System Status card on the dashboard has been reorganized from a flat instance list into three labeled sections:
+- Consolidated two separate grab-rate DB queries into a single query with two aggregates
+- Simplified `get_scheduler_status()` with early return pattern
+- Replaced duplicated Discord/Prowlarr integration template rows with a Jinja2 `{% for %}` loop
 
-- **Instances** — Sonarr/Radarr connection health (existing)
-- **Integrations** — Discord and Prowlarr configuration status (new)
-- **Internal Services** — Database health and scheduler status (new)
+### Security Hardening (PR #110)
 
-Both the server-rendered initial state and the 30-second polling JS render all three sections. The `/api/dashboard/system-status` endpoint now returns structured data for all sections and is rate-limited at 30 requests/minute.
+- **Removed dead `?next=` redirect parameter** from both the server-side 401 handler (`main.py`) and the client-side fetch interceptor (`base.html`). The parameter was never consumed by the login page, creating a latent open redirect risk if anyone wired it up without validation.
+- **Replaced `innerHTML` with DOM construction** in the setup wizard password strength meter (`setup/admin.html`). All dynamic DOM updates now consistently use `textContent` across the entire codebase.
 
-### Dashboard Polish
+### UI Fixes
 
-- **Cutoff unmet count** shown in library stats card on the dashboard
-- **Recent search activity** limited to 5 items (previously unbounded)
-- **All-time stats per strategy** on the queue detail page
-- **Hover tooltips** on non-obvious table headers across all pages
+- Dashboard stat card detail text now bottom-aligns across all cards (flex column with `margin-top: auto`)
+- Grab rate moved inline with search stats (eliminates height difference between cards)
 
-### Bug Fixes
-
-- **Indexer health table tooltips** no longer clipped by overflow wrapper
-- **Tooltip text styling** fixed across pseudo-elements (lowercase, lighter weight)
-- **Docker footer version** now displays actual version instead of "vdev"
-- **Library sync progress** no longer stuck on "Preparing sync" (broken auth call fixed)
-- **Poster images** persist across container rebuilds (Docker volume fix)
-
-### Infrastructure
-
-- Poster-missing log level bumped from DEBUG to INFO
-- Documentation screenshots regenerated for v1.0.0-alpha
-- AI warning and author info moved under Acknowledgments in README
-
-## Upgrading from v1.0.0-alpha
+## Upgrading from v1.0.1-alpha
 
 Pull the latest image and restart:
 
@@ -51,14 +36,7 @@ No database migrations required. Existing data is preserved.
 
 ## Known Limitations
 
-Same as v1.0.0-alpha:
-
-- **Sonarr only** -- Radarr support is disabled in the alpha (backend code exists, UI is gated)
-- **Single-worker only** -- Rate limiting is in-memory, doesn't share state across workers
-- **No CSRF tokens** on setup wizard form submissions (mitigated by SameSite=strict cookies)
-- **No config import** -- Export only in this release
-- **Series-level cooldown** -- Cooldown applies at the series level in Sonarr, not per-episode (by design)
-- **Tested on Windows Docker only** -- Linux/macOS should work but is unverified
+Same as v1.0.0-alpha — see [v1.0.0-alpha release notes](https://github.com/menottim/splintarr/releases/tag/v1.0.0-alpha).
 
 ## Feedback
 
