@@ -259,3 +259,63 @@ nav[aria-label="Pagination"] a[role="button"] {
 .demo-banner-dismiss:hover {
     opacity: 1;
 }
+
+/* Search running indicator (dashboard) */
+.search-running-banner {
+    background: rgba(212, 160, 23, 0.10);
+    border: 1px solid rgba(212, 160, 23, 0.30);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 1rem;
+    margin-bottom: 1.25rem;
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--brand-primary);
+}
+
+.search-running-banner.active {
+    display: flex;
+}
+
+.search-running-banner progress {
+    flex: 1;
+    max-width: 200px;
+}
+
+/* Live progress panel (queue detail) */
+.live-progress {
+    display: none;
+    margin-bottom: 1.5rem;
+}
+
+.live-progress.active {
+    display: block;
+}
+
+.live-progress .progress-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.live-progress .progress-header progress {
+    flex: 1;
+}
+
+.live-progress .progress-count {
+    font-size: 0.8125rem;
+    color: var(--muted-color);
+    white-space: nowrap;
+}
+
+.live-progress .results-table {
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+}
+
+.live-progress .results-table table {
+    margin: 0;
+}

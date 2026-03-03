@@ -246,6 +246,8 @@ async def _run_simulation_cycle() -> None:
             "result": "found",
             "score": round(random.uniform(70, 95), 1),  # noqa: S311
             "score_reason": "missing + high priority",
+            "item_index": 1,
+            "total_items": 3,
             "demo": True,
         }),
         (20, "search.item_result", {
@@ -254,6 +256,8 @@ async def _run_simulation_cycle() -> None:
             "result": random.choice(["found", "not_found"]),  # noqa: S311
             "score": round(random.uniform(50, 80), 1),  # noqa: S311
             "score_reason": "missing + medium priority",
+            "item_index": 2,
+            "total_items": 3,
             "demo": True,
         }),
         (25, "search.item_result", {
@@ -262,6 +266,8 @@ async def _run_simulation_cycle() -> None:
             "result": "found",
             "score": round(random.uniform(60, 90), 1),  # noqa: S311
             "score_reason": "missing + low priority",
+            "item_index": 3,
+            "total_items": 3,
             "demo": True,
         }),
         (30, "search.completed", {

@@ -691,11 +691,12 @@ class SearchQueueManager:
                 # Step 7: Truncate to max_items_per_run
                 truncated = scored_records[:max_items]
 
+                batch_total = len(truncated)
                 logger.info(
                     "search_batch_prepared",
                     strategy=strategy_name,
                     scored_count=len(scored_records),
-                    batch_size=len(truncated),
+                    batch_size=batch_total,
                     max_items=max_items,
                 )
 
@@ -771,7 +772,7 @@ class SearchQueueManager:
                 # Step 8: Search each item individually
                 # Season pack search above is an optimization; individual
                 # search serves as fallback if the pack didn't grab.
-                for record, score, reason in truncated:
+                for batch_idx, (record, score, reason) in enumerate(truncated, start=1):
                     item_id = record.get("id")
 
                     label = label_fn(record)
@@ -846,6 +847,8 @@ class SearchQueueManager:
                             "result": "found",
                             "score": score,
                             "score_reason": reason,
+                            "item_index": batch_idx,
+                            "total_items": batch_total,
                         })
                     except Exception as e:
                         errors.append(f"{item_type.title()} {item_id}: {e}")
@@ -873,6 +876,8 @@ class SearchQueueManager:
                             "result": "failed",
                             "score": score,
                             "score_reason": reason,
+                            "item_index": batch_idx,
+                            "total_items": batch_total,
                         })
 
                 # Commit library item search tracking updates
