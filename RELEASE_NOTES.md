@@ -1,11 +1,11 @@
-# Splintarr v1.1.0-alpha Release Notes
+# Splintarr v1.1.0 Release Notes
 
 **Release Date:** 2026-03-03
-**Status:** Alpha -- Ready for Testing
+**Theme:** Visibility — see what's happening, what will happen, and what has happened
 
-## What's New in v1.1.0-alpha
+## What's New in v1.1.0
 
-Real-time WebSocket updates and a synthetic demo mode for new installs. This is the first release in the **v1.1.0 Visibility** series.
+Six features completing the Visibility release, plus code quality and security hardening.
 
 ### WebSocket Real-Time Activity Feed (PR #111)
 
@@ -13,22 +13,50 @@ Real-time WebSocket updates and a synthetic demo mode for new installs. This is 
 - In-process event bus broadcasts search progress, item results, stats, system status, indexer health, and library sync events
 - JWT cookie authentication on WebSocket upgrade with automatic reconnect (exponential backoff: 1s/2s/4s, then 60s reset)
 - **Graceful fallback to polling** after 3 failed reconnect attempts
-- WebSocket cleanup on page unload prevents stale connections
-- Auto-connects on all `/dashboard/*` pages
+- Auto-connects on all `/dashboard/*` pages, cleanup on page unload
 
 ### Synthetic Demo Data Simulation (PR #112)
 
 - **Demo mode** fills the dashboard with synthetic data before users connect real instances
 - Background simulation loop emits 13 WebSocket events per ~2-minute cycle through the real event bus
-- Five synthetic data generators matching exact API response shapes: dashboard stats, activity, system status, library stats, indexer health
+- Five synthetic data generators matching exact API response shapes
 - **Auto-disables** instantly when user creates both an instance AND a search queue
-- Gold **Demo Mode** banner visible on all authenticated pages with dismiss button and links to Instances/Queues pages
-- All synthetic payloads include `"demo": true` for consumer differentiation
+- Gold **Demo Mode** banner visible on all authenticated pages
 
-### Additional Improvements
+### Search Progress & Live Queue View (PR #113)
 
-- Added rate limiting (`30/minute`) to `api_dashboard_stats` and `api_dashboard_activity` endpoints
-- Added DEBUG logging to all dashboard API handlers (both real and demo paths)
+- **Live progress panel** on queue detail page with determinate progress bar and streaming results table
+- Per-item scores and reasons displayed as each search completes
+- **Gold "currently running" banner** on dashboard showing queue name, strategy, and progress count
+- Enriched `search.item_result` WebSocket events with `item_index` and `total_items`
+
+### Search Dry Run / Preview Mode (PR #114)
+
+- **"Preview Next Run" button** on queue detail page runs the full scoring/filtering pipeline without executing searches
+- Shows what would be searched: items in priority order with scores and reasons
+- Summary stats: eligible items, excluded, in cooldown, scored, batch size
+- Season pack groupings shown when season pack mode is enabled
+
+### Search History Analytics (PR #115)
+
+- **"Last 7 Days" analytics card** on dashboard with week-over-week trend comparison
+- Three metrics: Searches Run, Items Found, Grabs Confirmed — with colored trend arrows
+- **Top 3 most-searched series** extracted from search execution metadata
+- Refreshes on search completion via WebSocket events
+
+### Bulk Queue Operations (PR #116)
+
+- **Multi-select checkboxes** on queue cards with bulk action bar
+- Bulk **Pause, Resume, Run Now, Delete** with confirmation dialogs
+- Select All with indeterminate state and selection count indicator
+
+### Code Quality & Security
+
+- Code simplification pass: -34 lines net reduction across 6 files
+- Security audit: 0 Critical, 0 High, 3 Medium findings (all addressed)
+- WebSocket endpoint now verifies user exists and is active after token validation
+- WebSocket error handler now logs exceptions instead of silently swallowing
+- Documented single-admin broadcast design constraint
 
 ## Upgrading from v1.0.2-alpha
 
@@ -41,9 +69,17 @@ docker-compose up -d
 
 No database migrations required. Existing data is preserved.
 
-## Known Limitations
+## Security Audit Summary
 
-Same as v1.0.0-alpha — see [v1.0.0-alpha release notes](https://github.com/menottim/splintarr/releases/tag/v1.0.0-alpha).
+| Severity | Count | Status |
+|----------|-------|--------|
+| Critical | 0 | — |
+| High | 0 | — |
+| Medium | 3 | All addressed |
+| Low | 5 | Documented |
+| Informational | 2 | Acceptable |
+
+Key Medium findings addressed: WebSocket user-active check added, broadcast design documented, CSRF tracked in existing roadmap.
 
 ## Feedback
 

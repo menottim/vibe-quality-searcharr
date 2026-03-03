@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-03 (v1.1.0-alpha: WebSocket + Demo Mode shipped)
+**Last updated:** 2026-03-03 (v1.1.0: Visibility release — all 6 features shipped)
 
 ---
 
@@ -95,9 +95,13 @@ All features below shipped in **v1.0.0-alpha** (Sonarr only; Radarr support defe
 | - | [v0.5.1 Bug Fixes](#v051) | **Done** | v0.5.1 | PR #97; Progress bars, Docker version |
 | 13 | [Search Analytics Dashboard](#13-search-analytics-dashboard) | Deferred | Post-alpha | |
 | 14 | [Config Import](#14-config-import) | Deferred | Post-alpha | Companion to Config Export |
-| 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | **Done** | v1.1.0-alpha | PR #111 |
-| - | [Synthetic Demo Mode](#synthetic-demo-mode) | **Done** | v1.1.0-alpha | PR #112 |
-| - | Radarr Support | Deferred | Post-alpha | Backend code exists, UI gated; Sonarr-only in alpha |
+| 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | **Done** | v1.1.0 | PR #111 |
+| - | [Synthetic Demo Mode](#synthetic-demo-mode) | **Done** | v1.1.0 | PR #112 |
+| 16 | [Search Progress & Live Queue View](#16-search-progress--live-queue-view) | **Done** | v1.1.0 | PR #113 |
+| 17 | [Search Dry Run / Preview Mode](#17-search-dry-run--preview-mode) | **Done** | v1.1.0 | PR #114 |
+| 18 | [Search History Analytics (Mini)](#18-search-history-analytics-mini) | **Done** | v1.1.0 | PR #115 |
+| 19 | [Bulk Queue Operations](#19-bulk-queue-operations) | **Done** | v1.1.0 | PR #116 |
+| - | Radarr Support | Deferred | Post-v1.1 | Backend code exists, UI gated |
 
 ---
 
@@ -175,10 +179,15 @@ All features below shipped in **v1.0.0-alpha** (Sonarr only; Radarr support defe
 - **Security Hardening** (PR #110) — Removed dead `?next=` redirect parameter from both server-side 401 handler and client-side fetch interceptor (latent open redirect risk). Replaced `innerHTML` with DOM construction in setup password meter.
 - **UI Fixes** — Dashboard stat card detail text bottom-aligned across cards, grab rate moved inline with search stats.
 
-### v1.1.0-alpha
+### v1.1.0
 
-- **WebSocket Real-Time Activity Feed** (PR #111) — Single WebSocket connection at `/ws/live` replaces all dashboard polling. In-process event bus, JWT cookie auth on upgrade, auto-reconnect with exponential backoff, graceful fallback to polling. Events: search progress, item results, stats, system status, indexer health, library sync. [Spec →](#15-websocket-real-time-activity-feed)
+- **WebSocket Real-Time Activity Feed** (PR #111) — Single WebSocket connection at `/ws/live` replaces all dashboard polling. In-process event bus, JWT cookie auth on upgrade, auto-reconnect with exponential backoff, graceful fallback to polling. [Spec →](#15-websocket-real-time-activity-feed)
 - **Synthetic Demo Mode** (PR #112) — Dashboard shows synthetic data before users connect real instances. Five data generators, background simulation loop emitting 13 WS events per ~2-minute cycle. Auto-disables when user has both instance + queue. Gold "Demo Mode" banner on all authenticated pages. [Spec →](#synthetic-demo-mode)
+- **Search Progress & Live Queue View** (PR #113) — Live progress panel on queue detail page with progress bar and streaming results. Gold "currently running" banner on dashboard. [Spec →](#16-search-progress--live-queue-view)
+- **Search Dry Run / Preview Mode** (PR #114) — "Preview Next Run" button runs scoring/filtering without executing searches. Shows items with scores, reasons, season pack groupings. [Spec →](#17-search-dry-run--preview-mode)
+- **Search History Analytics** (PR #115) — "Last 7 Days" dashboard card with trend arrows and top 3 most-searched series. [Spec →](#18-search-history-analytics-mini)
+- **Bulk Queue Operations** (PR #116) — Multi-select checkboxes with bulk pause/resume/run/delete and confirmation dialogs. [Spec →](#19-bulk-queue-operations)
+- **Security Hardening** — WebSocket user-active check, error logging, single-admin broadcast documentation. Security audit: 0 Critical, 0 High, 3 Medium (all addressed).
 
 ---
 
@@ -431,27 +440,27 @@ Synthetic data simulation so the dashboard looks alive before users connect real
 
 ### 16. Search Progress & Live Queue View
 
-**Priority:** High | **Effort:** Low-Medium | **Status:** Planned (v1.1.0)
+**Priority:** High | **Effort:** Low-Medium | **Status: Done** (PR #113, 2026-03-03)
 
-Full live progress view on queue detail page (progress bar, current item, per-item results streaming with reasons). Compact "currently running" indicator on dashboard. Powered by Feature #15 WebSocket.
+Live progress panel on queue detail page with determinate progress bar, current item, per-item results streaming with scores. Gold "currently running" banner on dashboard with queue name and progress count. Enriched `search.item_result` WS events with `item_index`/`total_items`.
 
 ### 17. Search Dry Run / Preview Mode
 
-**Priority:** High | **Effort:** Low | **Status:** Planned (v1.1.0)
+**Priority:** High | **Effort:** Low | **Status: Done** (PR #114, 2026-03-03)
 
-"Preview" button on queue creation modal AND "Preview next run" on existing queue detail pages. Runs the full scoring/filtering pipeline without executing searches. Returns item list in priority order with scores, reasons, estimated API cost, season pack groupings, cooldown skips.
+"Preview Next Run" button on queue detail page. Runs the full scoring/filtering pipeline without executing searches. Returns items in priority order with scores, reasons, season pack groupings. Summary stats show excluded/cooldown/scored counts. POST /api/search-queues/{id}/preview endpoint.
 
 ### 18. Search History Analytics (Mini)
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned (v1.1.0)
+**Priority:** Medium | **Effort:** Low | **Status: Done** (PR #115, 2026-03-03)
 
-Single "Last 7 Days" dashboard card. Searches run, items found, grabs confirmed with trend arrows vs previous 7 days. Top 3 most-searched series. Indexer hit/miss rates. Inline SVG sparklines (no chart library).
+"Last 7 Days" analytics card on dashboard. Searches run, items found, grabs confirmed with trend arrows (colored green/red) vs prior 7 days. Top 3 most-searched series extracted from search metadata JSON.
 
 ### 19. Bulk Queue Operations
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned (v1.1.0)
+**Priority:** Medium | **Effort:** Low | **Status: Done** (PR #116, 2026-03-03)
 
-Multi-select checkboxes on Queues page. Bulk pause/resume/delete. Header buttons: Pause All, Resume All, Run All Now (with confirmation).
+Multi-select checkboxes on queue cards with bulk action bar. Bulk pause/resume/run now/delete with confirmation dialogs. Select All with indeterminate state. Pure frontend — calls existing per-queue API endpoints sequentially.
 
 ---
 
@@ -603,4 +612,4 @@ Companion to Config Export (v0.2.1). Upload JSON to restore instances, queues, e
 | 2026-03-02 | v1.0.1-alpha: Dashboard system status redesign (3 sections), dashboard polish (cutoff unmet, activity limit, queue stats), UI fixes (tooltips, footer version), infrastructure (persistent posters, sync progress fix). |
 | 2026-03-02 | v1.0.2-alpha: Code simplification (PR #109), security hardening — removed dead redirect param + innerHTML (PR #110), UI fixes (stat card alignment, inline grab rate). |
 | 2026-03-03 | v1.1.0–v1.3.0 roadmap: 12 features across 3 releases. Research-backed proposal based on Sonarr ecosystem analysis, competitor review (Scoutarr), and community pain points. Features #15-26 added. API spike confirmed quality data availability for Feature #22. |
-| 2026-03-03 | v1.1.0-alpha: WebSocket Real-Time Activity Feed (PR #111) shipped — Feature #15 done. Synthetic Demo Mode (PR #112) shipped — new feature not in original roadmap. |
+| 2026-03-03 | v1.1.0: All 6 Visibility features shipped (PRs #111-#116). WebSocket, Demo Mode, Search Progress, Dry Run Preview, Mini Analytics, Bulk Queue Ops. Code simplification (-34 lines). Security audit: 0 Critical, 0 High, 3 Medium (all addressed). |
