@@ -75,7 +75,6 @@
 // WebSocket sync progress (supplements existing polling)
 (function() {
     if (!Splintarr.ws) return;
-    Splintarr.ws.connect();
 
     // Track overlay elements created by syncLibrary() so WS can update them
     var _syncOverlayDetail = null;
