@@ -13,6 +13,7 @@ JSON API routes (cookie auth, rate-limited):
   GET  /api/library/items           - Paginated, filterable item list
 """
 
+import asyncio
 from collections import defaultdict
 from datetime import datetime
 from typing import Any
@@ -133,7 +134,6 @@ def _update_sync_progress(
             "instances_done": instances_done,
         }
     )
-    import asyncio
 
     try:
         loop = asyncio.get_running_loop()

@@ -784,9 +784,8 @@ Splintarr.ws.on('activity.updated', function(data) {
     else pollActivity();  // Empty payload = trigger a fetch
 });
 
-Splintarr.ws.on('indexer_health.updated', function(data) {
-    if (data && data.indexers !== undefined) refreshIndexerHealthFromData(data);
-    else refreshIndexerHealth();  // Empty payload = trigger a fetch
+Splintarr.ws.on('indexer_health.updated', function() {
+    refreshIndexerHealth();  // Always fetch fresh data from API
 });
 
 // WS lifecycle
