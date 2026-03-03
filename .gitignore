@@ -37,6 +37,9 @@ env/
 # Claude Code local settings (contains user-specific paths and permissions)
 .claude/settings.local.json
 
+# Git worktrees
+.worktrees/
+
 # Testing
 .pytest_cache/
 .coverage
@@ -89,3 +92,6 @@ backups/
 # OS
 Thumbs.db
 .DS_Store
+
+# Announcement drafts (not for repo)
+reddit-announcement.md
