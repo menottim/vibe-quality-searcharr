@@ -1149,10 +1149,11 @@ class SearchQueueManager:
                 queue, instance
             )
 
-            # Validate custom strategy filters (same check as _execute_custom_strategy)
+            # Parse custom filters
+            filters: dict[str, Any] = {}
             if queue.strategy == "custom" and queue.filters:
                 try:
-                    json.loads(queue.filters)
+                    filters = json.loads(queue.filters)
                 except json.JSONDecodeError as err:
                     raise SearchQueueError("Invalid custom filters JSON") from err
 
@@ -1162,15 +1163,45 @@ class SearchQueueManager:
             api_key = decrypt_api_key(instance.api_key)
             client_cls = SonarrClient if is_sonarr else RadarrClient
 
-            async with client_cls(
-                url=instance.url,
-                api_key=api_key,
-                verify_ssl=instance.verify_ssl,
-                rate_limit_per_second=instance.rate_limit_per_second or 5,
-            ) as client:
-                all_records = await self._fetch_all_records(
-                    client, fetch_method, sort_key=sort_key, sort_dir=sort_dir
-                )
+            if queue.strategy == "custom" and filters:
+                # Multi-source fetch with dedup (same logic as _execute_custom_strategy)
+                sources: list[str] = filters.get("sources", ["missing"])
+                all_records: list[dict[str, Any]] = []
+                seen_keys: set[tuple[int, int]] = set()
+
+                async with client_cls(
+                    url=instance.url,
+                    api_key=api_key,
+                    verify_ssl=instance.verify_ssl,
+                    rate_limit_per_second=instance.rate_limit_per_second or 5,
+                ) as client:
+                    for source in sources:
+                        source_fetch = (
+                            "get_wanted_missing"
+                            if source == "missing"
+                            else "get_wanted_cutoff"
+                        )
+                        records = await self._fetch_all_records(client, source_fetch)
+                        for record in records:
+                            series_id = (
+                                record.get("seriesId")
+                                or record.get("series", {}).get("id", 0)
+                            )
+                            record_id = record.get("id", 0)
+                            key = (series_id, record_id)
+                            if key not in seen_keys:
+                                seen_keys.add(key)
+                                all_records.append(record)
+            else:
+                async with client_cls(
+                    url=instance.url,
+                    api_key=api_key,
+                    verify_ssl=instance.verify_ssl,
+                    rate_limit_per_second=instance.rate_limit_per_second or 5,
+                ) as client:
+                    all_records = await self._fetch_all_records(
+                        client, fetch_method, sort_key=sort_key, sort_dir=sort_dir
+                    )
 
             # Load library data and exclusions
             library_items = self._load_library_items(db, instance.id)
@@ -1178,6 +1209,10 @@ class SearchQueueManager:
             excluded_keys = exclusion_service.get_active_exclusion_keys(
                 user_id=instance.user_id, instance_id=instance.id
             )
+
+            # Apply custom filters (for custom strategy)
+            if queue.strategy == "custom" and filters:
+                all_records = apply_custom_filters(all_records, library_items, filters)
 
             content_type = "series" if is_sonarr else "movie"
             cooldown_mode = getattr(queue, "cooldown_mode", "adaptive") or "adaptive"
