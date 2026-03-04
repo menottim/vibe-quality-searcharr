@@ -21,6 +21,7 @@ REQUEST_TIMEOUT = 10.0
 
 # Module-level cache (same pattern as _sync_state in api/library.py)
 _update_state: dict[str, Any] = {}
+_notified_version: str | None = None  # Track which version we already notified about
 
 
 def is_update_available(current: str, latest: str) -> bool:
@@ -79,12 +80,23 @@ async def check_for_updates() -> dict[str, Any]:
             "checked_at": datetime.now(UTC).isoformat(),
         }
 
+        update_found = is_update_available(__version__, latest_version)
         logger.info(
             "update_check_completed",
             current_version=__version__,
             latest_version=latest_version,
-            update_available=is_update_available(__version__, latest_version),
+            update_available=update_found,
         )
+
+        # Send Discord notification once per new version detected
+        global _notified_version
+        if update_found and latest_version != _notified_version:
+            _notified_version = latest_version
+            await _notify_update_available(
+                current_version=__version__,
+                latest_version=latest_version,
+                release_url=_update_state.get("release_url", ""),
+            )
 
         return dict(_update_state)
 
@@ -98,3 +110,42 @@ async def check_for_updates() -> dict[str, Any]:
         logger.error("update_check_failed", error=str(e))
         _update_state.clear()
         return {}
+
+
+async def _notify_update_available(
+    current_version: str,
+    latest_version: str,
+    release_url: str,
+) -> None:
+    """Send Discord notification for available update if configured."""
+    try:
+        from splintarr.core.security import decrypt_field
+        from splintarr.database import get_session_factory
+        from splintarr.models.notification import NotificationConfig
+        from splintarr.services.discord import DiscordNotificationService
+
+        db = get_session_factory()()
+        try:
+            config = (
+                db.query(NotificationConfig)
+                .filter(NotificationConfig.is_active.is_(True))
+                .first()
+            )
+            if not config or not config.is_event_enabled("update_available"):
+                return
+
+            webhook_url = decrypt_field(config.webhook_url)
+            service = DiscordNotificationService(webhook_url)
+            await service.send_update_available(
+                current_version=current_version,
+                latest_version=latest_version,
+                release_url=release_url,
+            )
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(
+            "discord_notification_send_failed",
+            event="update_available",
+            error=str(e),
+        )
