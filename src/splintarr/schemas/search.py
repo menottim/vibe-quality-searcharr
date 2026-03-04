@@ -88,6 +88,25 @@ class SearchQueueCreate(BaseModel):
         le=168,
         description="Interval between searches in hours (1-168, required if recurring)",
     )
+    schedule_mode: Literal["interval", "daily", "weekly"] = Field(
+        default="interval",
+        description="Schedule mode: interval, daily, or weekly",
+    )
+    schedule_time: str | None = Field(
+        default=None,
+        pattern=r"^\d{2}:\d{2}$",
+        description="Time of day for daily/weekly modes (HH:MM)",
+    )
+    schedule_days: str | None = Field(
+        default=None,
+        description="Comma-separated days for weekly mode (mon,tue,wed,thu,fri,sat,sun)",
+    )
+    jitter_minutes: int = Field(
+        default=0,
+        ge=0,
+        le=15,
+        description="Random jitter in minutes to prevent thundering herd (0-15)",
+    )
     filters: CustomFilterConfig | None = Field(
         default=None,
         description="Filter configuration for custom search strategy",
@@ -161,6 +180,22 @@ class SearchQueueCreate(BaseModel):
             raise ValueError("Filters only allowed with custom strategy")
         return self
 
+    @model_validator(mode="after")
+    def validate_schedule_fields(self) -> "SearchQueueCreate":
+        """Validate schedule fields based on schedule_mode."""
+        if not self.recurring:
+            return self
+        if self.schedule_mode == "daily" and not self.schedule_time:
+            raise ValueError("schedule_time (HH:MM) is required for daily mode")
+        if self.schedule_mode == "weekly":
+            if not self.schedule_time:
+                raise ValueError("schedule_time (HH:MM) is required for weekly mode")
+            if not self.schedule_days:
+                raise ValueError("schedule_days is required for weekly mode")
+        if self.schedule_mode == "interval" and not self.interval_hours:
+            raise ValueError("interval_hours is required for interval mode")
+        return self
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -211,6 +246,25 @@ class SearchQueueUpdate(BaseModel):
         ge=1,
         le=168,
         description="Interval between searches in hours (1-168)",
+    )
+    schedule_mode: Literal["interval", "daily", "weekly"] | None = Field(
+        default=None,
+        description="Schedule mode: interval, daily, or weekly",
+    )
+    schedule_time: str | None = Field(
+        default=None,
+        pattern=r"^\d{2}:\d{2}$",
+        description="Time of day for daily/weekly modes (HH:MM)",
+    )
+    schedule_days: str | None = Field(
+        default=None,
+        description="Comma-separated days for weekly mode",
+    )
+    jitter_minutes: int | None = Field(
+        default=None,
+        ge=0,
+        le=15,
+        description="Random jitter in minutes (0-15)",
     )
     is_active: bool | None = Field(
         default=None,
@@ -298,6 +352,10 @@ class SearchQueueResponse(BaseModel):
     interval_hours: int | None = Field(
         None, description="Interval between recurring searches (hours)"
     )
+    schedule_mode: str = Field(default="interval", description="Schedule mode")
+    schedule_time: str | None = Field(default=None, description="Time for daily/weekly (HH:MM)")
+    schedule_days: str | None = Field(default=None, description="Days for weekly mode")
+    jitter_minutes: int = Field(default=0, description="Jitter minutes")
     is_active: bool = Field(..., description="Whether search is active")
     status: SearchQueueStatus = Field(..., description="Current execution status")
     next_run: datetime | None = Field(None, description="Next scheduled execution time (ISO 8601)")
