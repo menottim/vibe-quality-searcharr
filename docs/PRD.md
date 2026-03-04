@@ -2,7 +2,7 @@
 
 > **Living document.** Updated as features are implemented, priorities shift, or new requirements emerge. This is the sole source of truth; versioned PRDs have been retired.
 
-**Last updated:** 2026-03-04 (v1.1.1: Update Checker)
+**Last updated:** 2026-03-04 (v1.2.0: Custom Strategy Filters)
 
 ---
 
@@ -74,7 +74,7 @@ Huntarr was the most popular tool in this space until critical security vulnerab
 
 ## Feature Status
 
-Feature status across all releases (Sonarr only; Radarr support deferred to post-v1.1). Tested on Docker Desktop for Windows.
+Feature status across all releases (Sonarr only; Radarr support deferred to post-v1.2). Tested on Docker Desktop for Windows.
 
 | # | Feature | Status | Release | Notes |
 |---|---------|--------|---------|-------|
@@ -102,7 +102,8 @@ Feature status across all releases (Sonarr only; Radarr support deferred to post
 | 18 | [Search History Analytics (Mini)](#18-search-history-analytics-mini) | **Done** | v1.1.0 | PR #115 |
 | 19 | [Bulk Queue Operations](#19-bulk-queue-operations) | **Done** | v1.1.0 | PR #116 |
 | - | [Automatic Update Checker](#automatic-update-checker) | **Done** | v1.1.1 | PRs #117, #118; GitHub Releases API |
-| - | Radarr Support | Deferred | Post-v1.1 | Backend code exists, UI gated |
+| 20 | [Custom Strategy Filters](#20-custom-strategy-filters) | **Done** | v1.2.0 | PR #119; Year/quality/status filters |
+| - | Radarr Support | Deferred | Post-v1.2 | Backend code exists, UI gated |
 
 ---
 
@@ -193,6 +194,10 @@ Feature status across all releases (Sonarr only; Radarr support deferred to post
 ### v1.1.1
 
 - **Automatic Update Checker** (PRs #117, #118) — Background job checks GitHub Releases API every 24 hours. Dismissible gold banner on dashboard when newer version available. Per-version dismissal stored on User model. Settings page toggle and "Check Now" button. 38 tests. [Spec →](#automatic-update-checker)
+
+### v1.2.0
+
+- **Custom Strategy Filters** (PR #119) — New "Custom" strategy with dropdown filters: year range, quality profile, series status (continuing/ended/upcoming). Missing + Cutoff Unmet can be combined (explicit opt-in exception to strategy isolation). Quality profiles auto-populated from library data. Integrates with dry run/preview mode. 72 tests. [Spec →](#20-custom-strategy-filters)
 
 ---
 
@@ -471,23 +476,30 @@ Multi-select checkboxes on queue cards with bulk action bar. Bulk pause/resume/r
 
 ## v1.2.0 — Smart Searching
 
-> **Theme:** Search smarter, not harder. Target specific content, respect API budgets, prioritize by quality gap.
+> **Theme:** Search smarter, not harder. Target specific content with custom filters.
+> **Shipped:** 2026-03-04. Custom Strategy Filters delivered (PR #119). Features #21-23 moved to v1.3.0.
 
 ### 20. Custom Strategy Filters
 
-**Priority:** High | **Effort:** Medium | **Status:** Planned (v1.2.0)
+**Priority:** High | **Effort:** Medium | **Status: Done** (PR #119, 2026-03-04)
 
-Implement the stubbed Custom Strategy with simple dropdown filters: year range, quality profile, series status (continuing/ended/upcoming). Missing + Cutoff Unmet can be combined (explicit opt-in exception to strategy isolation). Filters applied client-side after Sonarr API fetch. Integrates with dry run (Feature #17).
+Implement the stubbed Custom Strategy with simple dropdown filters: year range, quality profile, series status (continuing/ended/upcoming). Missing + Cutoff Unmet can be combined (explicit opt-in exception to strategy isolation). Filters applied after Sonarr API fetch using `apply_custom_filters()`. Integrates with dry run (Feature #17). Quality profiles auto-populated from library data via `GET /api/instances/{id}/quality-profiles`. 72 tests.
+
+---
+
+## v1.3.0 — Polish & Reach
+
+> **Theme:** Broaden appeal. Smarter budgets, better scheduling, more notification services, richer library views.
 
 ### 21. Indexer Budget Visibility & Forecasting
 
-**Priority:** High | **Effort:** Medium | **Status:** Planned (v1.2.0)
+**Priority:** High | **Effort:** Medium | **Status:** Planned (v1.3.0)
 
 Per-indexer API usage progress bars on dashboard. Estimated API cost in queue creation. Budget alerts via notifications at 20% remaining. Smart batch auto-sizing ON by default — automatically reduces `max_items_per_run` when budget is low. User can disable per-queue.
 
 ### 22. Quality-Aware Search Intelligence
 
-**Priority:** Medium | **Effort:** Medium | **Status:** Planned (v1.2.0)
+**Priority:** Medium | **Effort:** Medium | **Status:** Planned (v1.3.0)
 
 **API spike confirmed:** Sonarr exposes `quality.quality.resolution`, `quality.quality.source`, `customFormats`, `customFormatScore` on episode files.
 
@@ -495,15 +507,9 @@ New quality gap scoring factor for cutoff unmet: resolution gap (720p→1080p = 
 
 ### 23. Queue Scheduling Improvements
 
-**Priority:** Medium | **Effort:** Low-Medium | **Status:** Planned (v1.2.0)
+**Priority:** Medium | **Effort:** Low-Medium | **Status:** Planned (v1.3.0)
 
 Three schedule modes: Interval (existing "every N hours"), Daily ("run at HH:MM every day"), Weekly ("run at HH:MM on Mon/Wed/Fri"). Jitter: random 0-15 min offset to prevent thundering herd. Uses APScheduler CronTrigger (already a dependency).
-
----
-
-## v1.3.0 — Polish & Reach
-
-> **Theme:** Broaden appeal. More notification services, better onboarding, richer library views.
 
 ### 24. Apprise Notification Integration
 
@@ -589,6 +595,7 @@ Companion to Config Export (v0.2.1). Upload JSON to restore instances, queues, e
 | Season pack threshold | Per-queue configurable, default 3+ | 2026-03-01 |
 | Alpha scope | Sonarr only; Radarr deferred to post-alpha | 2026-03-02 |
 | Alpha test platform | Docker Desktop for Windows; Linux/macOS unverified | 2026-03-02 |
+| v1.2.0 scope | Custom Strategy Filters only; #21-23 moved to v1.3.0 | 2026-03-04 |
 
 ---
 
@@ -619,3 +626,4 @@ Companion to Config Export (v0.2.1). Upload JSON to restore instances, queues, e
 | 2026-03-03 | v1.1.0–v1.3.0 roadmap: 12 features across 3 releases. Research-backed proposal based on Sonarr ecosystem analysis, competitor review (Scoutarr), and community pain points. Features #15-26 added. API spike confirmed quality data availability for Feature #22. |
 | 2026-03-03 | v1.1.0: All 6 Visibility features shipped (PRs #111-#116). WebSocket, Demo Mode, Search Progress, Dry Run Preview, Mini Analytics, Bulk Queue Ops. Code simplification (-34 lines). Security audit: 0 Critical, 0 High, 3 Medium (all addressed). |
 | 2026-03-04 | v1.1.1: Automatic Update Checker (PRs #117-#118). GitHub Releases API check every 24h, dismissible dashboard banner, Settings toggle. 38 tests. |
+| 2026-03-04 | v1.2.0: Custom Strategy Filters (PR #119). Year/quality/status dropdown filters, combined Missing+Cutoff Unmet. 72 tests. Features #21-23 moved to v1.3.0. |

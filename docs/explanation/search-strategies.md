@@ -96,39 +96,36 @@ Older content has already been searched (or would have been found by missing/cut
 
 ### Custom Strategy
 
-**What It Searches For**: User-defined criteria
+*Added in v1.2.0*
 
-**Core Concept**: The custom strategy provides flexibility for specific use cases that don't fit the standard patterns. It allows filtering by tags, years, quality profiles, and other metadata.
+**What It Searches For**: User-defined criteria with dropdown filters
 
-**Configuration Examples**:
+**Core Concept**: The custom strategy targets specific content using filters for year range, quality profile, and series status. It is the only strategy that can combine Missing and Cutoff Unmet sources in a single queue (explicit opt-in exception to the strategy isolation principle).
 
-```json
-{
-  "monitored_only": true,
-  "min_year": 2020,
-  "max_year": 2024,
-  "tags": ["favorite", "priority"],
-  "quality_profiles": ["HD-1080p"],
-  "sort_by": "popularity",
-  "sort_order": "desc"
-}
-```
+**Available Filters**:
+
+| Filter | Description |
+|--------|-------------|
+| **Sources** | Missing, Cutoff Unmet, or both (required) |
+| **Year range** | Filter by release year (e.g., 2020-2024) |
+| **Quality profile** | Target a specific profile (auto-populated from library) |
+| **Series status** | Continuing, Ended, or Upcoming |
 
 **Use Cases**:
 
-- **Favorites Only**: Search only tagged favorites
-- **Era-Specific**: Focus on specific decades or years
-- **Quality Tier**: Target specific quality profiles
-- **Genre-Based**: Using tag-based filtering for genres
+- **Era-Specific**: "Search only 2020+ content for missing episodes"
+- **Quality Tier**: "Upgrade only my HD-1080p profile items"
+- **Combined Search**: "Find missing AND upgrade quality for ended series"
+- **Targeted Cleanup**: "Fill gaps in my pre-2015 content"
 
 **Why This Exists**:
 
-Standard strategies cover 90% of use cases, but edge cases exist:
-- "Search only my 4K instance for 2020+ movies"
-- "Focus on anime-tagged content exclusively"
-- "Prioritize documentaries during slow months"
+Standard strategies cover 90% of use cases, but targeted searches are common:
+- "Search only recent years where content is most likely available"
+- "Upgrade quality for a specific profile without touching others"
+- "Both find missing and upgrade quality for ended series in one pass"
 
-Custom strategy provides escape hatch without complicating standard strategies.
+Custom strategy provides an escape hatch without complicating standard strategies. Integrates with dry run/preview (v1.1.0) to see what matches before running.
 
 ## Strategy Interactions
 

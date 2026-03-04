@@ -4,9 +4,9 @@
 
 <h1 align="center">Splintarr</h1>
 
-<p align="center"><strong><a href="https://github.com/menottim/splintarr/releases/tag/v1.1.1">Version 1.1.1</a></strong> | Automated backlog search for Sonarr, designed for homelab use.</p>
+<p align="center"><strong><a href="https://github.com/menottim/splintarr/releases/tag/v1.2.0">Version 1.2.0</a></strong> | Automated backlog search for Sonarr, designed for homelab use.</p>
 
-> **Status: v1.1.1 -- Update Checker**
+> **Status: v1.2.0 -- Smart Searching**
 >
 > Splintarr is ready for use by homelab enthusiasts. Tested on Docker Desktop for Windows; Linux and macOS Docker environments are expected to work but have not been independently verified. **Radarr support is planned for a future release; currently supports Sonarr only.** This is AI-generated code (Claude Code) — treat accordingly.
 
@@ -35,7 +35,8 @@ This tool is designed for **homelab enthusiasts** running personal Sonarr instan
 
 ### Key Features
 
-- **Intelligent Search Scheduling** -- Multiple strategies (missing, cutoff unmet, recent) with customizable intervals
+- **Intelligent Search Scheduling** -- Multiple strategies (missing, cutoff unmet, recent, custom) with customizable intervals
+- **Custom Strategy Filters** -- Target searches by year range, quality profile, and series status with combined Missing + Cutoff Unmet
 - **Search Intelligence** -- Adaptive prioritization, per-episode cooldowns, and search result feedback
 - **Real-Time WebSocket Updates** -- Single connection replaces polling, with auto-reconnect and fallback
 - **Live Search Progress** -- Progress bar and streaming results on queue detail, running indicator on dashboard
@@ -108,7 +109,7 @@ Documentation is organized following the [Diataxis](https://diataxis.fr/) framew
 
 ### Release Information
 
-- **[Release Notes v1.1.1](RELEASE_NOTES.md)** -- What's in the current release
+- **[Release Notes v1.2.0](RELEASE_NOTES.md)** -- What's in the current release
 - **[Release History](https://github.com/menottim/splintarr/wiki/Release-History)** -- Complete version history
 
 ### Screenshots

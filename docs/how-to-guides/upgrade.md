@@ -139,6 +139,20 @@ docker run -d \
 - All existing data compatible
 - Secrets remain unchanged
 
+### Upgrading to v1.2.0
+
+**From:** v1.1.x
+
+**Breaking Changes:** None
+
+**New Features:** Custom Strategy Filters — target searches by year range, quality profile, and series status
+
+**Steps:**
+1. Pull latest image: `docker-compose pull`
+2. Restart: `docker-compose up -d`
+
+No database migrations required. The Custom strategy uses existing database columns.
+
 ### Upgrading to v1.1.1
 
 **From:** v1.1.0

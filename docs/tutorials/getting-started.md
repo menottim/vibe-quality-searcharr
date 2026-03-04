@@ -1,6 +1,6 @@
 # Getting Started
 
-**Splintarr v1.1.1**
+**Splintarr v1.2.0**
 
 This tutorial walks you through the post-install experience: completing the setup wizard, understanding the dashboard, creating your first search queue, and checking search history.
 
@@ -99,7 +99,7 @@ Go to **Search Queues** and click **Create Queue**. Fill in the following:
 - **Missing** -- Search for episodes or movies that are completely missing
 - **Cutoff Unmet** -- Search for upgrades to content that does not meet your quality profile cutoff
 - **Recent** -- Search only recently added content
-- **Custom** -- Advanced filtering by tags, quality, and other criteria
+- **Custom** -- Target specific content by year range, quality profile, and series status (can combine Missing + Cutoff Unmet)
 
 Click **Create Queue** to save. The queue will run automatically on its schedule.
 
