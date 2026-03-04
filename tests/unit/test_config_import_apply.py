@@ -32,7 +32,8 @@ class TestApplyImport:
         data = _make_config(instances=[_make_instance()])
         secrets = {"instances": {"New Sonarr": "real-key"}, "webhook_url": None}
 
-        with patch("splintarr.services.config_import.encrypt_field", return_value="encrypted"):
+        with patch("splintarr.services.config_import.encrypt_field", return_value="encrypted"), \
+             patch("splintarr.services.config_import.validate_instance_url"):
             result = apply_import(data, secrets, user_id=1, db=db)
 
         assert result["imported"]["instances"] == 1
@@ -55,7 +56,8 @@ class TestApplyImport:
         data = _make_config(instances=[_make_instance(name="Fail")])
         secrets = {"instances": {"Fail": "key"}, "webhook_url": None}
 
-        with patch("splintarr.services.config_import.encrypt_field", return_value="enc"):
+        with patch("splintarr.services.config_import.encrypt_field", return_value="enc"), \
+             patch("splintarr.services.config_import.validate_instance_url"):
             with pytest.raises(Exception, match="DB error"):
                 apply_import(data, secrets, user_id=1, db=db)
 

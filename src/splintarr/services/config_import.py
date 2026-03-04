@@ -3,7 +3,9 @@ from typing import Any
 
 import structlog
 
+from splintarr.config import settings
 from splintarr.core.security import encrypt_field
+from splintarr.core.ssrf_protection import validate_instance_url
 from splintarr.models.exclusion import SearchExclusion
 from splintarr.models.instance import Instance
 from splintarr.models.notification import NotificationConfig
@@ -12,6 +14,9 @@ from splintarr.models.search_queue import SearchQueue
 logger = structlog.get_logger()
 
 REQUIRED_KEYS = {"splintarr_version", "exported_at", "instances", "search_queues", "exclusions"}
+VALID_INSTANCE_TYPES = {"sonarr", "radarr"}
+VALID_STRATEGIES = {"missing", "cutoff_unmet", "recent", "custom"}
+VALID_CONTENT_TYPES = {"series", "movie"}
 
 
 def validate_import_data(
@@ -178,11 +183,27 @@ def apply_import(
                 skipped["instances"] += 1
                 continue
 
+            # Validate instance_type
+            inst_type = inst_data.get("instance_type", "sonarr")
+            if inst_type not in VALID_INSTANCE_TYPES:
+                logger.warning("config_import_invalid_instance_type", name=name, type=inst_type)
+                skipped["instances"] += 1
+                continue
+
+            # SSRF check on URL
+            url = inst_data.get("url", "")
+            try:
+                validate_instance_url(url, allow_local=settings.allow_local_instances)
+            except Exception as ssrf_err:
+                logger.warning("config_import_url_blocked", name=name, url=url, error=str(ssrf_err))
+                skipped["instances"] += 1
+                continue
+
             instance = Instance(
                 user_id=user_id,
                 name=name,
-                instance_type=inst_data.get("instance_type", "sonarr"),
-                url=inst_data.get("url", ""),
+                instance_type=inst_type,
+                url=url,
                 api_key=encrypt_field(api_key),
                 is_active=inst_data.get("is_active", True),
                 verify_ssl=inst_data.get("verify_ssl", True),
@@ -200,10 +221,15 @@ def apply_import(
             if not inst_name or inst_name not in name_to_id:
                 skipped["queues"] += 1
                 continue
+            strategy = q_data.get("strategy", "missing")
+            if strategy not in VALID_STRATEGIES:
+                logger.warning("config_import_invalid_strategy", strategy=strategy)
+                skipped["queues"] += 1
+                continue
             queue = SearchQueue(
                 instance_id=name_to_id[inst_name],
                 name=q_data.get("name", "Imported Queue"),
-                strategy=q_data.get("strategy", "missing"),
+                strategy=strategy,
                 is_recurring=q_data.get("is_recurring", False),
                 interval_hours=q_data.get("interval_hours"),
                 schedule_mode=q_data.get("schedule_mode", "interval"),
@@ -223,11 +249,15 @@ def apply_import(
             if not inst_name or inst_name not in name_to_id:
                 skipped["exclusions"] += 1
                 continue
+            content_type = exc_data.get("content_type", "series")
+            if content_type not in VALID_CONTENT_TYPES:
+                skipped["exclusions"] += 1
+                continue
             exclusion = SearchExclusion(
                 user_id=user_id,
                 instance_id=name_to_id[inst_name],
                 external_id=exc_data.get("external_id"),
-                content_type=exc_data.get("content_type", "series"),
+                content_type=content_type,
                 title=exc_data.get("title", ""),
                 reason=exc_data.get("reason", "Imported"),
             )
@@ -237,6 +267,10 @@ def apply_import(
         # --- Notifications ---
         webhook_url = secrets.get("webhook_url")
         notif_data = data.get("notifications")
+        # Validate webhook URL format (must be https Discord webhook)
+        if webhook_url and not webhook_url.startswith("https://"):
+            logger.warning("config_import_webhook_url_invalid", user_id=user_id)
+            webhook_url = None
         if notif_data and webhook_url:
             existing_notif = (
                 db.query(NotificationConfig)
