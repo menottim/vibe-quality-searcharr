@@ -21,6 +21,7 @@ REQUEST_TIMEOUT = 10.0
 
 # Module-level cache (same pattern as _sync_state in api/library.py)
 _update_state: dict[str, Any] = {}
+_notified_version: str | None = None  # Track which version we already notified about
 
 
 def is_update_available(current: str, latest: str) -> bool:
@@ -87,8 +88,10 @@ async def check_for_updates() -> dict[str, Any]:
             update_available=update_found,
         )
 
-        # Send Discord notification when a new update is detected
-        if update_found:
+        # Send Discord notification once per new version detected
+        global _notified_version
+        if update_found and latest_version != _notified_version:
+            _notified_version = latest_version
             await _notify_update_available(
                 current_version=__version__,
                 latest_version=latest_version,

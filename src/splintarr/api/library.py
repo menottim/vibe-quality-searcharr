@@ -105,11 +105,12 @@ async def _run_sync_all_background() -> None:
         await event_bus.emit("stats.updated", {})
 
         # Fire-and-forget: send Discord notification for library sync
-        await _notify_library_sync(
-            items_synced=result.get("items_synced", 0),
-            instance_count=result.get("instance_count", 0),
-            error_count=len(result.get("errors", [])),
-        )
+        if isinstance(result, dict):
+            await _notify_library_sync(
+                items_synced=result.get("items_synced", 0),
+                instance_count=result.get("instance_count", 0),
+                error_count=len(result.get("errors", [])),
+            )
     except Exception as e:
         logger.error(
             "library_sync_background_failed",
