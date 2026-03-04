@@ -297,6 +297,8 @@ def _render_library_page(
     exclusion_service = ExclusionService(get_session_factory())
     excluded_set = _build_excluded_set(exclusion_service, user.id, instance_id)
 
+    completion_data = _get_completion_data(items)
+
     logger.debug(
         "library_page_rendered",
         template=template_name,
@@ -320,6 +322,7 @@ def _render_library_page(
             "excluded_set": excluded_set,
             "onboarding": get_onboarding_state(db, user.id),
             "demo_mode": is_demo_active(db, user.id),
+            "completion": completion_data,
         },
     )
 

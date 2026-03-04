@@ -22,6 +22,21 @@
     <button id="sync-btn" class="secondary" style="margin-left: auto; margin-bottom: 0;" data-action="sync-library">Refresh Library</button>
 </div>
 
+<!-- Completion Progress Section -->
+{% if completion and completion.most_incomplete %}
+<details open style="margin-bottom: 1rem;">
+    <summary><strong>Completion Progress</strong></summary>
+    <div style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+        <small>
+            <a href="#" data-lib-tab="most_incomplete" style="margin-right: 0.75rem; font-weight: 600;">Most Incomplete</a>
+            <a href="#" data-lib-tab="closest_to_complete" style="margin-right: 0.75rem; color: var(--muted-color);">Closest to Complete</a>
+            <a href="#" data-lib-tab="recently_aired" style="color: var(--muted-color);">Recently Aired</a>
+        </small>
+    </div>
+    <div id="lib-completion-scroll" style="display:flex;gap:0.75rem;overflow-x:auto;padding:0.5rem 0;"></div>
+</details>
+{% endif %}
+
 <!-- Poster grid -->
 {% if items %}
 <div class="poster-grid">
@@ -72,6 +87,75 @@
 
 {% block extra_scripts %}
 <script nonce="{{ request.state.csp_nonce }}">
+// Completion Progress section
+{% if completion and completion.most_incomplete %}
+(function() {
+    var completionData = {{ completion | tojson }};
+    var container = document.getElementById('lib-completion-scroll');
+    if (!container) return;
+
+    function renderCards(items) {
+        container.textContent = '';
+        if (!items || items.length === 0) {
+            var empty = document.createElement('small');
+            empty.style.color = 'var(--muted-color)';
+            empty.textContent = 'No items in this category';
+            container.appendChild(empty);
+            return;
+        }
+        items.forEach(function(item) {
+            var card = document.createElement('a');
+            card.href = '/dashboard/library/' + item.id;
+            card.style.cssText = 'display:flex;flex-direction:column;min-width:120px;max-width:120px;text-decoration:none;color:inherit;';
+
+            var img = document.createElement('img');
+            img.src = item.poster_path ? '/posters/' + item.poster_path : '';
+            img.alt = '';
+            img.style.cssText = 'width:120px;height:170px;object-fit:cover;border-radius:4px;background:var(--muted-border-color);';
+            img.onerror = function() { this.style.background = 'var(--muted-border-color)'; this.style.minHeight = '170px'; };
+            card.appendChild(img);
+
+            var title = document.createElement('small');
+            title.style.cssText = 'margin-top:0.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;';
+            title.textContent = item.title;
+            card.appendChild(title);
+
+            var barOuter = document.createElement('div');
+            barOuter.style.cssText = 'background:var(--muted-border-color);border-radius:3px;height:6px;width:100%;margin-top:2px;';
+            var barInner = document.createElement('div');
+            var pct = item.completion_pct;
+            var barColor = pct >= 80 ? 'var(--ins-color)' : pct >= 50 ? 'var(--mark-background-color)' : 'var(--del-color)';
+            barInner.style.cssText = 'height:100%;border-radius:3px;width:' + pct + '%;background:' + barColor + ';';
+            barOuter.appendChild(barInner);
+            card.appendChild(barOuter);
+
+            var count = document.createElement('small');
+            count.style.cssText = 'color:var(--muted-color);font-size:0.7rem;';
+            count.textContent = item.episode_have + '/' + item.episode_count;
+            card.appendChild(count);
+
+            container.appendChild(card);
+        });
+    }
+
+    renderCards(completionData.most_incomplete);
+
+    document.querySelectorAll('[data-lib-tab]').forEach(function(tab) {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            var key = this.dataset.libTab;
+            renderCards(completionData[key]);
+            document.querySelectorAll('[data-lib-tab]').forEach(function(t) {
+                t.style.fontWeight = '';
+                t.style.color = 'var(--muted-color)';
+            });
+            this.style.fontWeight = '600';
+            this.style.color = '';
+        });
+    });
+})();
+{% endif %}
+
 // WebSocket sync progress (supplements existing polling)
 (function() {
     if (!Splintarr.ws) return;
