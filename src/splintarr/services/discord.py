@@ -357,13 +357,16 @@ class DiscordNotificationService:
             "footer": {"text": "Splintarr"},
         }
 
-        logger.info(
-            "discord_notification_budget_alert_sent",
-            indexer_name=indexer_name,
-            percent_used=percent_used,
-        )
+        result = await self._send_embed(embed)
 
-        return await self._send_embed(embed)
+        if result:
+            logger.info(
+                "discord_notification_budget_alert_sent",
+                indexer_name=indexer_name,
+                percent_used=percent_used,
+            )
+
+        return result
 
     async def send_test_message(self) -> bool:
         """

@@ -196,6 +196,13 @@ class SearchQueueManager:
                 budget_aware = getattr(queue, "budget_aware", True)
                 if budget_aware:
                     effective_max = min(queue.max_items_per_run or 50, rate_result["max_items"])
+                    logger.debug(
+                        "search_queue_budget_aware_applied",
+                        queue_id=queue_id,
+                        queue_max=queue.max_items_per_run,
+                        prowlarr_budget=rate_result["max_items"],
+                        effective_max=effective_max,
+                    )
                 else:
                     effective_max = queue.max_items_per_run or 50
                     logger.debug(

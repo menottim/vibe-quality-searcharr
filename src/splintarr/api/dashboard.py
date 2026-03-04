@@ -84,16 +84,31 @@ limiter = Limiter(key_func=rate_limit_key_func)
 
 # Budget alert dedup — tracks which indexers have been alerted this period
 _alerted_indexers: set[str] = set()
+_alert_period_hour: int | None = None  # Reset dedup set when the hour changes
 
 BUDGET_ALERT_THRESHOLD = 80  # percent
 
 
 def _check_budget_alerts(indexers: list[dict]) -> list[dict]:
-    """Check indexer usage and return alerts for newly-over-threshold indexers."""
+    """Check indexer usage and return alerts for newly-over-threshold indexers.
+
+    Dedup resets every hour so alerts can fire again in the next budget period.
+    """
+    global _alert_period_hour
+    current_hour = datetime.now().hour
+    if _alert_period_hour != current_hour:
+        _alerted_indexers.clear()
+        _alert_period_hour = current_hour
+
     alerts = []
     for idx in indexers:
         limit = idx.get("query_limit")
         if not limit:
+            logger.debug(
+                "indexer_budget_check_skipped",
+                indexer_name=idx.get("name"),
+                reason="no_limit",
+            )
             continue
         used = idx.get("queries_used", 0)
         pct = round(used / limit * 100)
@@ -106,6 +121,11 @@ def _check_budget_alerts(indexers: list[dict]) -> list[dict]:
                 "query_limit": limit,
                 "percent_used": pct,
             })
+            logger.debug(
+                "indexer_budget_alert_generated",
+                indexer_name=idx["name"],
+                percent_used=pct,
+            )
     return alerts
 
 
@@ -1632,6 +1652,10 @@ async def api_indexer_health(
                 for alert in alerts:
                     await service.send_budget_alert(**alert)
         except Exception as e:
-            logger.warning("budget_alert_notification_failed", error=str(e))
+            logger.warning(
+                "budget_alert_notification_failed",
+                user_id=current_user.id,
+                error=str(e),
+            )
 
     return JSONResponse(content={"configured": True, "indexers": indexer_list})

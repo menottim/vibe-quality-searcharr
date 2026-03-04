@@ -185,6 +185,7 @@ class SearchQueue(Base):
     budget_aware = Column(
         Boolean,
         default=True,
+        server_default="1",
         nullable=False,
         comment="Automatically reduce batch size when indexer budget is low",
     )
