@@ -16,6 +16,7 @@ from typing import Annotated, Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from slowapi import Limiter
 from sqlalchemy.orm import Session
@@ -769,6 +770,44 @@ async def test_instance_connection(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to test connection",
         ) from e
+
+
+@router.get(
+    "/{instance_id}/quality-profiles",
+    include_in_schema=False,
+)
+@limiter.limit("30/minute")
+async def get_quality_profiles(
+    request: Request,
+    instance_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> JSONResponse:
+    """Return distinct quality profile names for an instance's library items."""
+    instance = (
+        db.query(Instance)
+        .filter(Instance.id == instance_id, Instance.user_id == current_user.id)
+        .first()
+    )
+    if not instance:
+        raise HTTPException(status_code=404, detail="Instance not found")
+
+    from splintarr.models.library import LibraryItem
+
+    profiles = (
+        db.query(LibraryItem.quality_profile)
+        .filter(
+            LibraryItem.instance_id == instance_id,
+            LibraryItem.quality_profile.isnot(None),
+        )
+        .distinct()
+        .order_by(LibraryItem.quality_profile)
+        .all()
+    )
+    logger.debug(
+        "quality_profiles_fetched", instance_id=instance_id, count=len(profiles)
+    )
+    return JSONResponse(content={"profiles": [p[0] for p in profiles]})
 
 
 @router.get(
