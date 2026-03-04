@@ -38,6 +38,7 @@ from splintarr.api import (
     prowlarr,
     search_history,
     search_queue,
+    updates,
     ws,
 )
 from splintarr.config import settings
@@ -324,6 +325,7 @@ app.include_router(notifications.router)
 app.include_router(exclusions.router)
 app.include_router(prowlarr.router)
 app.include_router(config.router)
+app.include_router(updates.router)
 app.include_router(ws.router)
 
 
