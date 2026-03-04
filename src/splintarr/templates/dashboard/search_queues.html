@@ -267,6 +267,7 @@
         </header>
         <form id="edit-queue-form">
             <input type="hidden" id="edit-queue-id">
+            <input type="hidden" id="edit-instance-id">
 
             <label for="edit-instance-name">
                 Instance
@@ -284,8 +285,39 @@
                     <option value="missing">Missing</option>
                     <option value="cutoff_unmet">Cutoff Unmet</option>
                     <option value="recent">Recent</option>
+                    <option value="custom">Custom</option>
                 </select>
             </label>
+
+            <!-- Edit Custom Filters (shown when strategy = custom) -->
+            <div id="editCustomFiltersSection" style="display: none;">
+                <fieldset>
+                    <legend>Custom Filters</legend>
+
+                    <label><strong>Search Sources</strong> <small>(at least one required)</small></label>
+                    <label><input type="checkbox" id="editFilterSourceMissing" checked> Missing episodes</label>
+                    <label><input type="checkbox" id="editFilterSourceCutoff"> Cutoff unmet (upgrades)</label>
+
+                    <div class="grid">
+                        <label>Year From
+                            <input type="number" id="editFilterYearMin" min="1900" max="2100" placeholder="Any">
+                        </label>
+                        <label>Year To
+                            <input type="number" id="editFilterYearMax" min="1900" max="2100" placeholder="Any">
+                        </label>
+                    </div>
+
+                    <label><strong>Series Status</strong></label>
+                    <label><input type="checkbox" id="editFilterStatusContinuing" checked> Continuing</label>
+                    <label><input type="checkbox" id="editFilterStatusEnded" checked> Ended</label>
+                    <label><input type="checkbox" id="editFilterStatusUpcoming"> Upcoming</label>
+
+                    <label><strong>Quality Profile</strong></label>
+                    <div id="editQualityProfileCheckboxes">
+                        <small style="color: var(--muted-color);">Loading quality profiles...</small>
+                    </div>
+                </fieldset>
+            </div>
 
             <label for="edit-max-items">
                 Max Items Per Run
@@ -878,6 +910,7 @@ async function editQueue(queueId, instanceName) {
         var queue = result.data;
 
         document.getElementById('edit-queue-id').value = queue.id;
+        document.getElementById('edit-instance-id').value = queue.instance_id;
         document.getElementById('edit-instance-name').value = instanceName || 'Instance #' + queue.instance_id;
         document.getElementById('edit-name').value = queue.name;
         document.getElementById('edit-strategy').value = queue.strategy;
@@ -891,6 +924,15 @@ async function editQueue(queueId, instanceName) {
         document.getElementById('edit-season-threshold').value = queue.season_pack_threshold || 3;
         document.getElementById('edit-season-threshold-row').style.display =
             queue.season_pack_enabled ? '' : 'none';
+
+        // Pre-populate custom filters
+        if (queue.strategy === 'custom') {
+            document.getElementById('editCustomFiltersSection').style.display = '';
+            populateEditCustomFilters(queue.filters, queue.instance_id);
+        } else {
+            document.getElementById('editCustomFiltersSection').style.display = 'none';
+            resetEditCustomFilters();
+        }
 
         document.getElementById('edit-queue').showModal();
     } catch (error) {
@@ -908,14 +950,112 @@ document.getElementById('edit-season-pack').addEventListener('change', function(
         this.checked ? '' : 'none';
 });
 
+// Show/hide edit custom filters when strategy changes
+document.getElementById('edit-strategy').addEventListener('change', function() {
+    var show = this.value === 'custom';
+    document.getElementById('editCustomFiltersSection').style.display = show ? '' : 'none';
+    if (show) {
+        var instanceId = document.getElementById('edit-instance-id').value;
+        if (instanceId) {
+            loadEditQualityProfiles(instanceId, []);
+        }
+    }
+});
+
+function resetEditCustomFilters() {
+    document.getElementById('editFilterSourceMissing').checked = true;
+    document.getElementById('editFilterSourceCutoff').checked = false;
+    document.getElementById('editFilterYearMin').value = '';
+    document.getElementById('editFilterYearMax').value = '';
+    document.getElementById('editFilterStatusContinuing').checked = true;
+    document.getElementById('editFilterStatusEnded').checked = true;
+    document.getElementById('editFilterStatusUpcoming').checked = false;
+    var container = document.getElementById('editQualityProfileCheckboxes');
+    while (container.firstChild) container.removeChild(container.firstChild);
+    var hint = document.createElement('small');
+    hint.style.color = 'var(--muted-color)';
+    hint.textContent = 'Loading quality profiles...';
+    container.appendChild(hint);
+}
+
+async function loadEditQualityProfiles(instanceId, selectedProfiles) {
+    var container = document.getElementById('editQualityProfileCheckboxes');
+    while (container.firstChild) container.removeChild(container.firstChild);
+    if (!instanceId) return;
+    try {
+        var response = await fetch('/api/instances/' + instanceId + '/quality-profiles');
+        var data = await response.json();
+        if (data.profiles.length === 0) {
+            var hint = document.createElement('small');
+            hint.style.color = 'var(--muted-color)';
+            hint.textContent = 'No profiles found. Sync your library first.';
+            container.appendChild(hint);
+        } else {
+            data.profiles.forEach(function(p) {
+                var label = document.createElement('label');
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'edit-quality-profile-cb';
+                cb.value = p;
+                cb.checked = selectedProfiles.indexOf(p) !== -1;
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(' ' + p));
+                container.appendChild(label);
+            });
+        }
+    } catch (e) {
+        var errHint = document.createElement('small');
+        errHint.style.color = 'var(--del-color)';
+        errHint.textContent = 'Failed to load profiles';
+        container.appendChild(errHint);
+    }
+}
+
+async function populateEditCustomFilters(filtersRaw, instanceId) {
+    var filters = {};
+    if (typeof filtersRaw === 'string') {
+        try { filters = JSON.parse(filtersRaw); } catch (e) { filters = {}; }
+    } else if (filtersRaw && typeof filtersRaw === 'object') {
+        filters = filtersRaw;
+    }
+
+    var sources = filters.sources || ['missing'];
+    document.getElementById('editFilterSourceMissing').checked = sources.indexOf('missing') !== -1;
+    document.getElementById('editFilterSourceCutoff').checked = sources.indexOf('cutoff_unmet') !== -1;
+
+    document.getElementById('editFilterYearMin').value = filters.year_min || '';
+    document.getElementById('editFilterYearMax').value = filters.year_max || '';
+
+    var statuses = filters.statuses || [];
+    document.getElementById('editFilterStatusContinuing').checked = statuses.length === 0 || statuses.indexOf('continuing') !== -1;
+    document.getElementById('editFilterStatusEnded').checked = statuses.length === 0 || statuses.indexOf('ended') !== -1;
+    document.getElementById('editFilterStatusUpcoming').checked = statuses.indexOf('upcoming') !== -1;
+
+    // Load quality profiles and pre-check saved ones
+    var selectedProfiles = filters.quality_profiles || [];
+    await loadEditQualityProfiles(instanceId, selectedProfiles);
+}
+
 document.getElementById('edit-queue-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     var queueId = document.getElementById('edit-queue-id').value;
     var cooldownMode = document.getElementById('edit-cooldown-mode').value;
     var seasonPackEnabled = document.getElementById('edit-season-pack').checked;
+    var editStrategy = document.getElementById('edit-strategy').value;
+
+    // Validate custom filters before submit
+    if (editStrategy === 'custom') {
+        var hasMissing = document.getElementById('editFilterSourceMissing').checked;
+        var hasCutoff = document.getElementById('editFilterSourceCutoff').checked;
+        if (!hasMissing && !hasCutoff) {
+            Splintarr.showNotification('Custom strategy requires at least one search source (Missing or Cutoff Unmet).');
+            return;
+        }
+    }
+
     var payload = {
         name: document.getElementById('edit-name').value,
-        strategy: document.getElementById('edit-strategy').value,
+        strategy: editStrategy,
         max_items_per_run: parseInt(document.getElementById('edit-max-items').value),
         interval_hours: parseInt(document.getElementById('edit-interval').value),
         cooldown_mode: cooldownMode,
@@ -927,6 +1067,33 @@ document.getElementById('edit-queue-form').addEventListener('submit', async func
             ? parseInt(document.getElementById('edit-season-threshold').value)
             : 3,
     };
+
+    // Serialize custom filters for edit
+    if (editStrategy === 'custom') {
+        var sources = [];
+        if (document.getElementById('editFilterSourceMissing').checked) sources.push('missing');
+        if (document.getElementById('editFilterSourceCutoff').checked) sources.push('cutoff_unmet');
+
+        var statuses = [];
+        if (document.getElementById('editFilterStatusContinuing').checked) statuses.push('continuing');
+        if (document.getElementById('editFilterStatusEnded').checked) statuses.push('ended');
+        if (document.getElementById('editFilterStatusUpcoming').checked) statuses.push('upcoming');
+
+        var profiles = [];
+        document.querySelectorAll('.edit-quality-profile-cb:checked').forEach(function(cb) {
+            profiles.push(cb.value);
+        });
+
+        payload.filters = {
+            sources: sources.length > 0 ? sources : ['missing'],
+            year_min: document.getElementById('editFilterYearMin').value ? parseInt(document.getElementById('editFilterYearMin').value) : null,
+            year_max: document.getElementById('editFilterYearMax').value ? parseInt(document.getElementById('editFilterYearMax').value) : null,
+            quality_profiles: profiles,
+            statuses: statuses,
+        };
+    } else {
+        payload.filters = null;
+    }
 
     try {
         var response = await fetch('/api/search-queues/' + queueId, {
