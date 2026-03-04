@@ -270,7 +270,7 @@ def get_demo_completion() -> dict[str, Any]:
                 "status": "ended",
             },
         ],
-        "recently_aired": [
+        "recently_added": [
             {
                 "id": 6,
                 "title": "Severance",

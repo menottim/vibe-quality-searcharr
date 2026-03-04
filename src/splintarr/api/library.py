@@ -208,7 +208,7 @@ def _get_completion_data(items: list) -> dict[str, list[dict]]:
             "year": item.year,
             "episode_count": item.episode_count,
             "episode_have": item.episode_have,
-            "completion_pct": round(item.completion_pct, 1),
+            "completion_pct": item.completion_pct,
             "poster_path": item.poster_path,
             "status": item.status,
         }
@@ -223,7 +223,7 @@ def _get_completion_data(items: list) -> dict[str, list[dict]]:
         key=lambda i: i.completion_pct,
         reverse=True,
     )[:10]
-    recently_aired = sorted(
+    recently_added = sorted(
         incomplete,
         key=lambda i: i.added_at or "",
         reverse=True,
@@ -232,7 +232,7 @@ def _get_completion_data(items: list) -> dict[str, list[dict]]:
     return {
         "most_incomplete": [_item_dict(i) for i in most_incomplete],
         "closest_to_complete": [_item_dict(i) for i in closest_to_complete],
-        "recently_aired": [_item_dict(i) for i in recently_aired],
+        "recently_added": [_item_dict(i) for i in recently_added],
     }
 
 
@@ -645,15 +645,11 @@ async def api_library_completion(
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Completion progress data for dashboard and library page."""
-    from splintarr.services.demo import is_demo_active
-
     if is_demo_active(db, current_user.id):
-        try:
-            from splintarr.services.demo import get_demo_completion
+        from splintarr.services.demo import get_demo_completion
 
-            return JSONResponse(content=get_demo_completion())
-        except ImportError:
-            pass  # Demo completion not implemented yet, fall through to real data
+        logger.debug("library_completion_demo", user_id=current_user.id)
+        return JSONResponse(content=get_demo_completion())
 
     items = _base_library_query(db, current_user).all()
 

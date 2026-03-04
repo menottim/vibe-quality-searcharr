@@ -49,15 +49,15 @@ class TestGetCompletionData:
         result = _get_completion_data(items)
         assert len(result["most_incomplete"]) == 0
         assert len(result["closest_to_complete"]) == 0
-        assert len(result["recently_aired"]) == 0
+        assert len(result["recently_added"]) == 0
 
-    def test_recently_aired_sorted_by_added_at_desc(self):
+    def test_recently_added_sorted_by_added_at_desc(self):
         items = [
             _make_item(1, "Old", 2020, 10, 5, added_at="2024-01-01"),
             _make_item(2, "New", 2025, 10, 3, added_at="2025-06-01"),
         ]
         result = _get_completion_data(items)
-        assert result["recently_aired"][0]["title"] == "New"
+        assert result["recently_added"][0]["title"] == "New"
 
     def test_lists_limited_to_10(self):
         items = [_make_item(i, f"S{i}", 2020, 100, i * 3) for i in range(1, 16)]

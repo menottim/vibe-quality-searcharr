@@ -176,7 +176,7 @@
         <small>
             <a href="#" data-completion-tab="most_incomplete" class="completion-tab-active" style="margin-right: 0.75rem; font-weight: 600;">Most Incomplete</a>
             <a href="#" data-completion-tab="closest_to_complete" style="margin-right: 0.75rem; color: var(--muted-color);">Closest to Complete</a>
-            <a href="#" data-completion-tab="recently_aired" style="color: var(--muted-color);">Recently Aired</a>
+            <a href="#" data-completion-tab="recently_added" style="color: var(--muted-color);">Recently Added</a>
         </small>
     </div>
     <div id="completion-list"></div>
@@ -421,7 +421,7 @@
 
         var hasData = data.most_incomplete.length > 0 ||
                       data.closest_to_complete.length > 0 ||
-                      data.recently_aired.length > 0;
+                      data.recently_added.length > 0;
         if (!hasData) return;
 
         card.style.display = '';
