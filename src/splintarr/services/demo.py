@@ -213,6 +213,89 @@ def get_demo_analytics() -> dict[str, Any]:
     }
 
 
+def get_demo_completion() -> dict[str, Any]:
+    """Synthetic completion data matching ``/api/library/completion`` shape."""
+    return {
+        "most_incomplete": [
+            {
+                "id": 1,
+                "title": "The Wire",
+                "year": 2002,
+                "episode_count": 60,
+                "episode_have": 12,
+                "completion_pct": 20.0,
+                "poster_path": None,
+                "status": "ended",
+            },
+            {
+                "id": 2,
+                "title": "Lost",
+                "year": 2004,
+                "episode_count": 121,
+                "episode_have": 34,
+                "completion_pct": 28.1,
+                "poster_path": None,
+                "status": "ended",
+            },
+            {
+                "id": 3,
+                "title": "The Sopranos",
+                "year": 1999,
+                "episode_count": 86,
+                "episode_have": 30,
+                "completion_pct": 34.9,
+                "poster_path": None,
+                "status": "ended",
+            },
+        ],
+        "closest_to_complete": [
+            {
+                "id": 4,
+                "title": "Breaking Bad",
+                "year": 2008,
+                "episode_count": 62,
+                "episode_have": 58,
+                "completion_pct": 93.5,
+                "poster_path": None,
+                "status": "ended",
+            },
+            {
+                "id": 5,
+                "title": "Better Call Saul",
+                "year": 2015,
+                "episode_count": 63,
+                "episode_have": 55,
+                "completion_pct": 87.3,
+                "poster_path": None,
+                "status": "ended",
+            },
+        ],
+        "recently_added": [
+            {
+                "id": 6,
+                "title": "Severance",
+                "year": 2022,
+                "episode_count": 19,
+                "episode_have": 10,
+                "completion_pct": 52.6,
+                "poster_path": None,
+                "status": "continuing",
+            },
+            {
+                "id": 7,
+                "title": "The Last of Us",
+                "year": 2023,
+                "episode_count": 16,
+                "episode_have": 9,
+                "completion_pct": 56.3,
+                "poster_path": None,
+                "status": "continuing",
+            },
+        ],
+        "demo": True,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Simulation loop
 # ---------------------------------------------------------------------------
