@@ -15,6 +15,7 @@ from slowapi import Limiter
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from splintarr import __version__
 from splintarr.core.auth import get_current_user_from_cookie
 from splintarr.core.rate_limit import rate_limit_key_func
 from splintarr.database import get_db, get_engine
@@ -120,7 +121,7 @@ async def export_config(
         }
 
     export_payload = {
-        "splintarr_version": "0.2.1",
+        "splintarr_version": __version__,
         "exported_at": datetime.now(UTC).isoformat(),
         "instances": instances_data,
         "search_queues": queues_data,
