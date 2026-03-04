@@ -711,24 +711,25 @@ async def dashboard_index(
     """
     Main dashboard page with overview statistics.
     """
-    demo_mode = is_demo_active(db, current_user.id)
-
-    # Compute onboarding state once (reused in template context below)
+    # Compute onboarding state once (reused for auto-sync check and template context)
     onboarding = get_onboarding_state(db, current_user.id)
 
     # Auto-trigger library sync on first dashboard visit after setup wizard
     # (instance exists but library hasn't been synced yet)
-    if not demo_mode:
-        if onboarding["has_instances"] and not onboarding["has_library"]:
-            from splintarr.api.library import _run_sync_all_background, _sync_in_progress
+    # Runs before demo_mode check — demo is active until user has instance+queue,
+    # but we want to start syncing as soon as there's an instance.
+    if onboarding["has_instances"] and not onboarding["has_library"]:
+        from splintarr.api.library import _run_sync_all_background, _sync_in_progress
 
-            if not _sync_in_progress:
-                background_tasks.add_task(_run_sync_all_background)
-                logger.info(
-                    "library_sync_auto_triggered",
-                    user_id=current_user.id,
-                    trigger="first_dashboard_visit",
-                )
+        if not _sync_in_progress:
+            background_tasks.add_task(_run_sync_all_background)
+            logger.info(
+                "library_sync_auto_triggered",
+                user_id=current_user.id,
+                trigger="first_dashboard_visit",
+            )
+
+    demo_mode = is_demo_active(db, current_user.id)
 
     if demo_mode:
         stats = get_demo_stats()
