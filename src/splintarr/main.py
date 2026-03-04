@@ -419,9 +419,11 @@ async def api_info():
 
 
 def _sanitize_for_json(value: object) -> object:
-    """Recursively convert non-JSON-serializable values (e.g. bytes) to strings."""
+    """Recursively convert non-JSON-serializable values (e.g. bytes, exceptions) to strings."""
     if isinstance(value, bytes):
         return value.decode("utf-8", errors="replace")
+    if isinstance(value, Exception):
+        return str(value)
     if isinstance(value, dict):
         return {k: _sanitize_for_json(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):

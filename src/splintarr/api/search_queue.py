@@ -8,6 +8,7 @@ This module provides REST API endpoints for managing search queues:
 - History retrieval
 """
 
+import json
 from typing import Any
 
 import structlog
@@ -133,7 +134,11 @@ async def create_search_queue(
             strategy=queue_data.strategy,
             is_recurring=queue_data.recurring,
             interval_hours=queue_data.interval_hours,
-            filters=queue_data.filters,
+            filters=(
+                json.dumps(queue_data.filters.model_dump())
+                if queue_data.filters is not None
+                else None
+            ),
             cooldown_mode=queue_data.cooldown_mode,
             cooldown_hours=queue_data.cooldown_hours,
             max_items_per_run=queue_data.max_items_per_run,
@@ -295,7 +300,7 @@ async def update_search_queue(
                 queue.deactivate()
 
         if queue_data.filters is not None:
-            queue.filters = queue_data.filters
+            queue.filters = json.dumps(queue_data.filters.model_dump())
 
         if queue_data.cooldown_mode is not None:
             queue.cooldown_mode = queue_data.cooldown_mode
