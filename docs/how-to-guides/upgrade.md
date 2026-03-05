@@ -139,6 +139,24 @@ docker run -d \
 - All existing data compatible
 - Secrets remain unchanged
 
+### Upgrading to v1.3.1
+
+**From:** v1.3.0
+
+**Breaking Changes:** None
+
+**Security Fixes:** 4 advisories resolved (GHSA-x58h, GHSA-9wq6, GHSA-j98q, GHSA-g27f). Docker container now runs as non-root with read-only filesystem and dropped capabilities.
+
+**Bug Fixes:** Daily/weekly queue display ("Every Noneh"), edit modal schedule mode persistence, Docker read_only compatibility.
+
+**Steps:**
+1. Pull latest image: `docker-compose pull`
+2. Restart: `docker-compose up -d`
+
+No database migrations required. Daily/weekly queues will display correctly after upgrade.
+
+**Note:** If you use Windows Docker Desktop, the new `read_only: true` and `cap_drop: ALL` settings may cause issues. Use the Windows override: `docker-compose -f docker-compose.yml -f docker-compose.override.windows.yml up -d`
+
 ### Upgrading to v1.3.0
 
 **From:** v1.2.x

@@ -1,57 +1,47 @@
-# Splintarr v1.3.0 Release Notes
+# Splintarr v1.3.1 Release Notes
 
-**Release Date:** 2026-03-04
-**Theme:** Polish & Reach
+**Release Date:** 2026-03-05
+**Theme:** Security Hardening & Bug Fixes
 
-## What's New in v1.3.0
+## Security Fixes (4 Advisories Resolved)
 
-### Indexer Budget Visibility (PR #123)
+All four findings from the v1.3.0 security assessment have been fixed and published as GitHub Security Advisories:
 
-- **Visual progress bars** on dashboard indexer widget — color-coded green/gold/red by usage %
-- **Budget alert notifications** via Discord at 80%+ usage with per-period dedup
-- **Smart batch auto-sizing** — `budget_aware` toggle on queues reduces batch size when indexer budget is low
-- Settings UI toggle for budget alerts, new `budget_aware` checkbox in queue modal
+- **GHSA-x58h-pwmm-vfpf** -- Container now drops to non-root user (appuser) via gosu before starting the application
+- **GHSA-9wq6-96r6-j6p6** -- SSRF blocklist split: cloud metadata (169.254.x.x), multicast, and reserved ranges are always blocked even when `ALLOW_LOCAL_INSTANCES=true`
+- **GHSA-j98q-225j-p8cf** -- Validation error responses no longer include raw input values (passwords stripped from error bodies and logs)
+- **GHSA-g27f-2vx9-gvhr** -- WebSocket endpoint validates Origin header to prevent Cross-Site WebSocket Hijacking
 
-### Series Completion Cards (PR #124)
+### Additional Security Hardening
 
-- **Dashboard card** — "Completion Progress" with 3 tabs: Most Incomplete, Closest to Complete, Recently Added
-- **Library page section** — collapsible section above poster grid with scrollable cards
-- **New API endpoint** — `GET /api/library/completion` returns sorted completion lists
-- Demo data for completion cards on new installs
+- Docker `read_only: true` and `cap_drop: ALL` enabled (Windows override file provided)
+- `decrypt_if_needed()` logs a warning on failure instead of silently returning ciphertext
+- WebSocket connection limit of 50 prevents resource exhaustion
+- Config import rejects payloads over 1MB
+- Registration endpoint has post-commit race condition check
+- Webhook URLs validated against SSRF blocklist during config import
+- GitHub CodeQL scanning: all 13 alerts triaged, 0 open
 
-### Queue Scheduling Improvements (PR #125)
+## Bug Fixes
 
-- **Daily mode** — "run at HH:MM every day" via APScheduler CronTrigger
-- **Weekly mode** — "run at HH:MM on Mon/Wed/Fri" with day checkboxes
-- **Jitter** — 0-15 min random offset to prevent thundering herd (APScheduler native)
-- Schedule mode selector in queue creation/edit modal, presets updated
-- Queue cards show mode-appropriate text ("Daily at 03:00", "Mon, Thu at 03:00")
+- **"Every Noneh" display** -- Queue cards and detail pages now correctly show "Daily at HH:MM" or "Mon, Thu at HH:MM" for daily/weekly scheduled queues instead of rendering `None` as text
+- **Edit modal schedule mode** -- Queue API response now includes `schedule_mode`, `schedule_time`, `schedule_days`, `jitter_minutes`, and `budget_aware` fields. Previously the edit modal always showed "Every N hours" regardless of saved schedule
+- **Docker read_only compatibility** -- `/app/data` symlink created at build time in Dockerfile instead of at runtime in entrypoint
 
-### Config Import (PR #126)
+## New Documentation
 
-- **Upload JSON** to restore instances, queues, exclusions, and notifications
-- **Preview modal** with conflict detection and API key/webhook re-entry
-- **Atomic import** with rollback on failure
-- **SSRF protection** on imported instance URLs + field validation
-- **Config export** now uses dynamic version (fixes stale "0.2.1")
+- **[GitHub Pages site](https://menottim.github.io/splintarr/)** -- Landing page with feature overview, screenshots, and install steps
+- **[Huntarr Lessons](docs/explanation/huntarr-lessons.md)** -- Comparison mapping all 21 Huntarr vulnerabilities to Splintarr's approach
+- **[Security Assessment Prompt](docs/security-assessment-prompt.md)** -- Reusable, self-improving security assessment template
 
-### Code Quality & Security
-
-- Code simplification: 12→6 DB queries on dashboard (eliminated double `get_onboarding_state`)
-- N+1 elimination in config import (pre-loads instance names)
-- Security hardening: SSRF check on imported URLs, field allowlists, user-scoped notification queries
-- Duplicate code merged: cron trigger branches, schedule validation
-
-## Upgrading from v1.2.x
-
-Pull the latest image and restart:
+## Upgrading from v1.3.0
 
 ```bash
 docker-compose pull
 docker-compose up -d
 ```
 
-New columns (`schedule_mode`, `schedule_time`, `schedule_days`, `jitter_minutes`, `budget_aware`) are auto-created on startup with safe defaults. No manual database migrations required.
+If you previously created daily or weekly scheduled queues, they will now display correctly. No data migration needed.
 
 ## Feedback
 
