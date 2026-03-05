@@ -54,6 +54,11 @@ def _queue_to_response(queue: SearchQueue) -> SearchQueueResponse:
         max_items_per_run=queue.max_items_per_run or 50,
         season_pack_enabled=queue.season_pack_enabled or False,
         season_pack_threshold=queue.season_pack_threshold or 3,
+        schedule_mode=queue.schedule_mode or "interval",
+        schedule_time=queue.schedule_time,
+        schedule_days=queue.schedule_days,
+        jitter_minutes=queue.jitter_minutes or 0,
+        budget_aware=queue.budget_aware if queue.budget_aware is not None else True,
         created_at=queue.created_at,
     )
 
