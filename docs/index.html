@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splintarr - Intelligent Backlog Search for Sonarr</title>
+  <meta name="description" content="Splintarr automates systematic backlog searching for Sonarr. Scheduled, throttled, indexer-aware search with adaptive prioritization. Docker-first, encrypted, open source.">
+  <meta property="og:title" content="Splintarr - Intelligent Backlog Search for Sonarr">
+  <meta property="og:description" content="The backlog search scheduler that Sonarr should have built in.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://raw.githubusercontent.com/menottim/splintarr/main/docs/images/dashboard.png">
+  <link rel="icon" href="https://raw.githubusercontent.com/menottim/splintarr/main/src/splintarr/static/img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #12141a;
+      --bg-primary: #1a1d23;
+      --bg-card: #242830;
+      --bg-card-hover: #2c3038;
+      --gold: #d4a843;
+      --gold-dim: #b8922e;
+      --gold-glow: rgba(212, 168, 67, 0.15);
+      --maroon: #8b2252;
+      --maroon-glow: rgba(139, 34, 82, 0.2);
+      --text: #e0e0e0;
+      --text-dim: #8a8f9a;
+      --text-bright: #f5f5f5;
+      --green: #4caf50;
+      --red: #e74c3c;
+      --border: rgba(212, 168, 67, 0.12);
+      --font-display: 'JetBrains Mono', monospace;
+      --font-body: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* --- Ambient background --- */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background:
+        radial-gradient(ellipse at 20% 20%, var(--maroon-glow) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, var(--gold-glow) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) rotate(0deg); }
+      to { transform: translate(-3%, 2%) rotate(1deg); }
+    }
+
+    /* --- Noise texture overlay --- */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.5;
+    }
+
+    /* --- Layout --- */
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section {
+      padding: 80px 0;
+    }
+
+    /* --- Nav --- */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 0;
+      background: rgba(18, 20, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-bright);
+    }
+
+    .nav-brand img {
+      width: 32px;
+      height: 32px;
+    }
+
+    .nav-brand span {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--gold); }
+
+    .nav-links .btn-nav {
+      background: var(--gold);
+      color: var(--bg-deep);
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .nav-links .btn-nav:hover {
+      background: var(--gold-dim);
+      color: var(--bg-deep);
+      transform: translateY(-1px);
+    }
+
+    /* --- Hero --- */
+    .hero {
+      padding: 160px 0 80px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      color: var(--gold);
+      background: var(--gold-glow);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 99px;
+      margin-bottom: 28px;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--text-bright);
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--gold);
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-dim);
+      max-width: 580px;
+      margin: 0 auto 36px;
+      line-height: 1.65;
+    }
+
+    .hero-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 64px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      color: var(--bg-deep);
+      box-shadow: 0 4px 24px rgba(212, 168, 67, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-dim);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 32px rgba(212, 168, 67, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
+
+    /* --- Hero Screenshot --- */
+    .hero-screenshot {
+      position: relative;
+      max-width: 960px;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px var(--border),
+        0 24px 80px rgba(0, 0, 0, 0.5),
+        0 0 120px var(--gold-glow);
+    }
+
+    .hero-screenshot img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .hero-screenshot::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      box-shadow: inset 0 0 80px rgba(18, 20, 26, 0.3);
+      pointer-events: none;
+    }
+
+    /* --- Section Headers --- */
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .section-label {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: -0.02em;
+    }
+
+    /* --- Features Grid --- */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 28px;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(212, 168, 67, 0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 1.6rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+
+    /* --- Screenshots --- */
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .screenshot-item {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: all 0.25s;
+      position: relative;
+    }
+
+    .screenshot-item:hover {
+      border-color: rgba(212, 168, 67, 0.3);
+      transform: scale(1.02);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      z-index: 2;
+    }
+
+    .screenshot-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .screenshot-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px 16px 12px;
+      background: linear-gradient(transparent, rgba(18, 20, 26, 0.9));
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    /* --- Quick Start --- */
+    .quickstart-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      position: relative;
+    }
+
+    .step-number {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .step h3 {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      color: var(--text-bright);
+      margin-bottom: 12px;
+    }
+
+    .step code {
+      display: block;
+      background: var(--bg-deep);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      color: var(--gold);
+      overflow-x: auto;
+      line-height: 1.6;
+      white-space: pre;
+    }
+
+    /* --- Security Bar --- */
+    .security-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 40px;
+      display: flex;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .security-bar h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--text-bright);
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+
+    .security-bar p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      max-width: 500px;
+      line-height: 1.55;
+    }
+
+    .security-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .security-tag {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      color: var(--green);
+      background: rgba(76, 175, 80, 0.1);
+      border: 1px solid rgba(76, 175, 80, 0.2);
+      padding: 5px 12px;
+      border-radius: 6px;
+    }
+
+    /* --- Footer --- */
+    footer {
+      padding: 48px 0 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-left a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-left a:hover { color: var(--gold); }
+
+    .footer-right {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-family: var(--font-display);
+    }
+
+    .footer-right a {
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 768px) {
+      .nav-links { gap: 16px; }
+      .nav-links a:not(.btn-nav) { display: none; }
+      section { padding: 56px 0; }
+      .hero { padding: 120px 0 56px; }
+      .screenshots-grid { grid-template-columns: 1fr; }
+      .security-bar { flex-direction: column; }
+      .security-tags { margin-left: 0; }
+      .footer-content { flex-direction: column; text-align: center; }
+    }
+
+    /* --- Animations --- */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .stagger-1 { transition-delay: 0.05s; }
+    .stagger-2 { transition-delay: 0.1s; }
+    .stagger-3 { transition-delay: 0.15s; }
+    .stagger-4 { transition-delay: 0.2s; }
+    .stagger-5 { transition-delay: 0.25s; }
+    .stagger-6 { transition-delay: 0.3s; }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="container">
+      <a class="nav-brand" href="#">
+        <img src="https://raw.githubusercontent.com/menottim/splintarr/main/src/splintarr/static/img/logo.svg" alt="Splintarr">
+        <span>Splintarr</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#screenshots">Screenshots</a></li>
+        <li><a href="#quickstart">Install</a></li>
+        <li><a href="https://github.com/menottim/splintarr/wiki" target="_blank">Docs</a></li>
+        <li><a class="btn-nav" href="https://github.com/menottim/splintarr" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">v1.3.0 &mdash; Polish &amp; Reach</div>
+      <h1>The backlog search scheduler<br>Sonarr <em>should have</em> built in</h1>
+      <p>Scheduled, throttled, indexer-aware backlog searching with adaptive prioritization. Set it, forget it, find everything.</p>
+      <div class="hero-buttons">
+        <a class="btn btn-primary" href="#quickstart">Get Started</a>
+        <a class="btn btn-secondary" href="https://github.com/menottim/splintarr" target="_blank">View on GitHub</a>
+      </div>
+      <div class="hero-screenshot">
+        <img src="images/dashboard.png" alt="Splintarr Dashboard showing search queues, analytics, completion progress, and indexer health">
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Capabilities</div>
+        <h2>Search smarter, not harder</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card fade-up stagger-1">
+          <span class="feature-icon">&#x1f9e0;</span>
+          <h3>Search Intelligence</h3>
+          <p>Adaptive prioritization scores every item before searching. Tiered cooldowns back off on unfindable content. Grab detection learns what actually downloads.</p>
+        </div>
+        <div class="feature-card fade-up stagger-2">
+          <span class="feature-icon">&#x23f1;&#xfe0f;</span>
+          <h3>Scheduling Modes</h3>
+          <p>Interval, daily, or weekly schedules with jitter to prevent thundering herd. Budget-aware batch sizing reduces searches when indexers are near their limits.</p>
+        </div>
+        <div class="feature-card fade-up stagger-3">
+          <span class="feature-icon">&#x1f50c;</span>
+          <h3>Prowlarr Integration</h3>
+          <p>Indexer-aware rate limiting with visual budget progress bars. Season pack intelligence groups episodes for efficient searching. Respects every API limit.</p>
+        </div>
+        <div class="feature-card fade-up stagger-4">
+          <span class="feature-icon">&#x26a1;</span>
+          <h3>Real-Time Dashboard</h3>
+          <p>WebSocket-powered live updates. Search progress streaming, completion cards, analytics trends, and system status &mdash; all without polling.</p>
+        </div>
+        <div class="feature-card fade-up stagger-5">
+          <span class="feature-icon">&#x1f6e1;&#xfe0f;</span>
+          <h3>Encrypted Everything</h3>
+          <p>SQLCipher AES-256 database. Fernet-encrypted API keys. Argon2id passwords with pepper. CSP nonces. Pentest-hardened with 4 published security advisories resolved.</p>
+        </div>
+        <div class="feature-card fade-up stagger-6">
+          <span class="feature-icon">&#x1f433;</span>
+          <h3>Docker-First</h3>
+          <p>Single container, zero external dependencies. Read-only filesystem, dropped capabilities, non-root process. Works on Windows, Linux, and macOS.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screenshots -->
+  <section id="screenshots" style="background: rgba(0,0,0,0.15);">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Interface</div>
+        <h2>See it in action</h2>
+      </div>
+      <div class="screenshots-grid">
+        <div class="screenshot-item fade-up stagger-1">
+          <img src="images/search-queues.png" alt="Create search queue with strategy selection and scheduling" loading="lazy">
+          <div class="screenshot-label">Queue Creation</div>
+        </div>
+        <div class="screenshot-item fade-up stagger-2">
+          <img src="images/search-queues-scheduling.png" alt="Weekly scheduling with day selection and jitter" loading="lazy">
+          <div class="screenshot-label">Schedule Modes</div>
+        </div>
+        <div class="screenshot-item fade-up stagger-3">
+          <img src="images/settings.png" alt="Settings page with notifications and integrations" loading="lazy">
+          <div class="screenshot-label">Settings</div>
+        </div>
+        <div class="screenshot-item fade-up stagger-4">
+          <img src="images/login.png" alt="Login page with password reset hint" loading="lazy">
+          <div class="screenshot-label">Login</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section id="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Get Started</div>
+        <h2>Running in under a minute</h2>
+      </div>
+      <div class="quickstart-steps">
+        <div class="step fade-up stagger-1">
+          <div class="step-number">Step 01</div>
+          <h3>Clone &amp; Setup</h3>
+          <code>git clone https://github.com/menottim/splintarr.git
+cd splintarr
+./scripts/setup.sh --auto-start</code>
+        </div>
+        <div class="step fade-up stagger-2">
+          <div class="step-number">Step 02</div>
+          <h3>Open the Wizard</h3>
+          <code>open http://localhost:7337</code>
+          <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-dim);">The setup wizard walks you through creating an admin account and connecting your Sonarr instance.</p>
+        </div>
+        <div class="step fade-up stagger-3">
+          <div class="step-number">Step 03</div>
+          <h3>Create a Queue</h3>
+          <code>Strategy: Missing
+Schedule: Daily at 02:00
+Batch: 50 items</code>
+          <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-dim);">Choose a preset or customize. Splintarr handles the rest &mdash; searching, throttling, and tracking results.</p>
+        </div>
+      </div>
+      <div style="text-align: center;">
+        <a class="btn btn-secondary" href="https://github.com/menottim/splintarr/blob/main/docs/tutorials/getting-started.md" target="_blank">Full Getting Started Guide</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security -->
+  <section style="padding-top: 0;">
+    <div class="container">
+      <div class="security-bar fade-up">
+        <div>
+          <h3>Security-First Design</h3>
+          <p>Built with defense-in-depth by a security engineering professional. 7 security audits completed, 58+ vulnerabilities found and fixed, 4 published security advisories resolved. 100% AI-generated &mdash; treat accordingly.</p>
+        </div>
+        <div class="security-tags">
+          <span class="security-tag">SQLCipher AES-256</span>
+          <span class="security-tag">Argon2id + Pepper</span>
+          <span class="security-tag">Fernet Encryption</span>
+          <span class="security-tag">CSP Nonces</span>
+          <span class="security-tag">SSRF Protection</span>
+          <span class="security-tag">Rate Limiting</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-left">
+          <a href="https://github.com/menottim/splintarr">GitHub</a>
+          <a href="https://github.com/menottim/splintarr/wiki">Wiki</a>
+          <a href="https://github.com/menottim/splintarr/releases">Releases</a>
+          <a href="https://github.com/menottim/splintarr/issues">Issues</a>
+          <a href="https://github.com/menottim/splintarr/security">Security</a>
+        </div>
+        <div class="footer-right">
+          <a href="https://github.com/menottim/splintarr/releases/tag/v1.3.0">v1.3.0</a> &middot; MIT License &middot; 100% <a href="https://claude.ai/code">Claude Code</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll animations -->
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>

@@ -107,7 +107,7 @@ Feature status across all releases (Sonarr only; Radarr support deferred to post
 | 25 | [Series Completion Cards](#25-series-completion-cards) | **Done** | v1.3.0 | PR #124; Dashboard + Library section |
 | 14 | [Config Import](#14-config-import) | **Done** | v1.3.0 | PR #126; Preview + atomic import |
 | 22 | [Quality-Aware Search Intelligence](#22-quality-aware-search-intelligence) | Deferred | Post-v1.3 | API spike done; implementation deferred |
-| 24 | [Apprise Notification Integration](#24-apprise-notification-integration) | Deferred | Post-v1.3 | Discord-only for now; Apprise deferred |
+| 24 | [Apprise Notification Integration](#24-apprise-notification-integration) | Deferred indefinitely | — | Discord covers primary use case |
 | 26 | [Queue Recommendations](#26-queue-recommendations) | Deferred | Post-v1.3 | Deferred until demand warrants it |
 | - | Radarr Support | Deferred | Post-v1.3 | Backend code exists, UI gated |
 
@@ -535,9 +535,9 @@ Three schedule modes: Interval (existing "every N hours"), Daily ("run at HH:MM 
 
 ### 24. Apprise Notification Integration
 
-**Priority:** Medium | **Effort:** Low | **Status:** Deferred (post-v1.3)
+**Priority:** Low | **Effort:** Low | **Status:** Deferred indefinitely
 
-[Apprise](https://github.com/caronc/apprise) integration for 90+ notification services via URL strings. Keep existing Discord as primary. Apprise handles formatting and delivery for all additional services.
+[Apprise](https://github.com/caronc/apprise) integration for 90+ notification services via URL strings. Discord-only covers the primary use case. Revisit only if user demand warrants it.
 
 ### 25. Series Completion Cards
 
