@@ -298,4 +298,4 @@ SQLite does not work well over network filesystems (NFS, SMB/CIFS). Always
 store the database on local or directly-attached storage.
 
 ---
-*Version 0.1.0 -- Last updated 2026-02-25*
+*Version 1.3.0 -- Last updated 2026-03-04*

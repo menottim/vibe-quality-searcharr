@@ -174,10 +174,14 @@ Screenshots live in `docs/images/` and are referenced from `README.md` and `docs
 | `setup-welcome.png` | getting-started.md | Setup wizard welcome |
 | `setup-admin.png` | getting-started.md | Admin account creation |
 | `setup-instance.png` | getting-started.md | Instance configuration |
+| `setup-notifications.png` | getting-started.md | Notifications setup |
+| `setup-prowlarr.png` | getting-started.md | Prowlarr setup |
 | `setup-complete.png` | getting-started.md | Setup completion |
-| `dashboard.png` | README.md, getting-started.md | Main dashboard |
+| `dashboard.png` | README.md, getting-started.md | Main dashboard with completion cards, indexer budget, analytics |
 | `instances.png` | README.md | Add Instance modal |
 | `search-queues.png` | README.md, getting-started.md | Create Queue modal |
+| `search-queues-scheduling.png` | README.md | Queue scheduling: weekly mode, day checkboxes, jitter |
+| `search-queues-budget.png` | — | Queue budget-aware toggle and cooldown mode |
 | `settings.png` | README.md | Settings with notifications |
 | `library.png` | README.md | Library overview |
 | `exclusions.png` | README.md | Content exclusions |

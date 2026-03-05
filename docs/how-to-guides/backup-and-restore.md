@@ -1,8 +1,10 @@
 # Backup and Restore Guide
 
-**Splintarr v0.1.0-alpha**
+**Splintarr v1.3.0**
 
 This guide provides comprehensive procedures for backing up and restoring your Splintarr installation.
+
+> **Tip:** Splintarr v1.3.0 added **Config Import/Export** (Settings > System) for backing up and restoring instances, queues, exclusions, and notification settings as JSON. This complements the full database backup procedures below — config export handles application-level settings, while database backup captures all data including search history and library state.
 
 ---
 

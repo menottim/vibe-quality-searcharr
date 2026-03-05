@@ -183,7 +183,7 @@ Security is implemented in layers:
 
 Background job processing uses APScheduler for its flexibility and reliability:
 
-**Job Store**: SQLite-based persistence ensures jobs survive restarts
+**Job Store**: Memory-based persistence with job re-registration on startup
 
 **Execution**: Async execution prevents blocking the API server
 
@@ -199,14 +199,21 @@ Background job processing uses APScheduler for its flexibility and reliability:
 
 Search queues operate independently:
 
-1. **Scheduler triggers** job at configured time
+1. **Scheduler triggers** job at configured time (interval, daily, or weekly mode with optional jitter)
 2. **Queue processor** fetches items based on strategy
-3. **Rate limiting** ensures indexer limits respected
-4. **Search execution** calls Sonarr/Radarr API asynchronously
-5. **History recording** prevents duplicate searches
-6. **Error handling** retries with exponential backoff
+3. **Budget check** — if `budget_aware` is enabled, reduces batch size when indexer API budget is low
+4. **Rate limiting** ensures indexer limits respected
+5. **Search execution** calls Sonarr/Radarr API asynchronously
+6. **History recording** prevents duplicate searches
+7. **Error handling** retries with exponential backoff
 
 This decoupled design allows multiple queues to run concurrently while respecting system-wide rate limits.
+
+### Config Import/Export
+
+*Added in v1.3.0*
+
+Config export downloads a JSON snapshot of instances (API keys redacted), queues, exclusions, and notification settings. Config import validates the JSON, shows a preview with conflict detection, requires re-entry of API keys and webhook URLs, and applies atomically with rollback on failure. SSRF protection validates all imported instance URLs.
 
 ## HTTP Client Architecture
 

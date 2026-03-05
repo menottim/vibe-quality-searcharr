@@ -300,5 +300,5 @@ The following security limitations have been reviewed, risk-assessed, and accept
 
 ---
 
-**Version:** 0.1.0
-**Last Updated:** 2026-02-28
+**Version:** 1.3.0
+**Last Updated:** 2026-03-04

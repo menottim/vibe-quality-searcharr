@@ -236,6 +236,26 @@ Sorting optimizes for **search effectiveness**, not fairness. The goal is maximi
 
 If a popular recent show has 10 missing episodes and an obscure 5-year-old show has 10 missing episodes, searching the popular show first likely yields more results. The obscure show will get its turn, but after higher-probability targets.
 
+## Scheduling Modes
+
+*Added in v1.3.0*
+
+Each queue supports three scheduling modes:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| **Every N hours** | Runs at a fixed interval (1-168 hours) | High-frequency searches (recent, aggressive missing) |
+| **Daily** | Runs at a specific time every day (HH:MM) | Standard daily searches |
+| **Weekly** | Runs at a specific time on selected days | Weekly maintenance (cutoff unmet, quality upgrades) |
+
+### Jitter
+
+All modes support a **jitter** setting (0-15 minutes) that adds a random offset to prevent multiple queues from hitting indexers at exactly the same time. This uses APScheduler's native jitter support.
+
+### Budget-Aware Batch Sizing
+
+When **"Adjust batch size based on indexer budget"** is enabled on a queue, Splintarr reduces the items-per-run when indexer API budget is low. This prevents wasting limited API calls on low-priority searches.
+
 ## Configuration Patterns
 
 ### Daily Operations
@@ -245,8 +265,8 @@ If a popular recent show has 10 missing episodes and an obscure 5-year-old show 
 **Pattern**:
 ```
 Recent Strategy: Every 6 hours, batch size 10
-Missing Strategy: Daily at 2 AM, batch size 20
-Cutoff Strategy: Weekly on Saturday, batch size 50
+Missing Strategy: Daily at 2:00 AM, batch size 20
+Cutoff Strategy: Weekly on Saturday at 2:00 AM, batch size 50
 ```
 
 **Rationale**: Recent strategy catches new releases quickly. Missing strategy fills gaps daily. Cutoff strategy improves quality on relaxed schedule.

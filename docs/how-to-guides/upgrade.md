@@ -537,21 +537,24 @@ docker pull splintarr:dev
 
 ## Staying Updated
 
-### Check for Updates
+### Built-In Update Checker (v1.1.1+)
+
+Splintarr checks for new releases automatically every 24 hours. When a newer version is available, a dismissible gold banner appears on the dashboard. You can also check manually from Settings > Update Notifications > "Check Now".
+
+### Manual Check
 
 ```bash
 # Check current version
-docker inspect splintarr | jq '.[0].Config.Labels."org.opencontainers.image.version"'
+docker exec splintarr cat /app/pyproject.toml | grep version
 
 # Check latest available
-curl -s https://api.github.com/repos/yourusername/splintarr/releases/latest | jq -r .tag_name
+curl -s https://api.github.com/repos/menottim/splintarr/releases/latest | jq -r .tag_name
 ```
 
 ### Subscribe to Updates
 
 - **GitHub Releases:** Watch repository for releases
-- **RSS Feed:** Subscribe to releases RSS feed
-- **Email Notifications:** Enable in GitHub settings
+- **Discord Notifications:** Enable the `update_available` notification type in Settings
 
 ---
 

@@ -91,7 +91,7 @@ Go to **Search Queues** and click **Create Queue**. Fill in the following:
 | **Name** | Descriptive label | "Daily Missing Search" |
 | **Instance** | Which Sonarr/Radarr to search | Select the instance you just added |
 | **Strategy** | What to look for | Missing |
-| **Schedule** | When to run | Daily at 2:00 AM |
+| **Schedule** | When to run | Daily at 2:00 AM (or choose Interval, Weekly modes) |
 | **Items per Batch** | How many items per run | 50 |
 
 ### Search Strategies
@@ -109,7 +109,7 @@ Click **Create Queue** to save. The queue will run automatically on its schedule
 ```
 Name: Daily Missing
 Strategy: Missing
-Schedule: 0 2 * * * (2 AM daily)
+Schedule Mode: Daily at 02:00
 Batch Size: 50
 ```
 
@@ -117,7 +117,7 @@ Batch Size: 50
 ```
 Name: Weekend Upgrades
 Strategy: Cutoff Unmet
-Schedule: 0 2 * * 6 (Saturday 2 AM)
+Schedule Mode: Weekly on Sat at 02:00
 Batch Size: 30
 ```
 
@@ -155,6 +155,8 @@ Once an item is searched, it will not be searched again for 24 hours. This preve
 - Missing: run daily
 - Cutoff Unmet: run weekly
 - Recent: run every 6 hours
+
+**Add jitter** to prevent multiple queues from hitting indexers at the exact same time (0-15 min random offset)
 
 ---
 

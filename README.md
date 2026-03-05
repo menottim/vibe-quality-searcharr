@@ -119,10 +119,12 @@ Documentation is organized following the [Diataxis](https://diataxis.fr/) framew
 | Dashboard | Instance Management |
 |:-:|:-:|
 | ![Dashboard](docs/images/dashboard.png) | ![Instances](docs/images/instances.png) |
-| **Search Queues** | **Settings & Notifications** |
-| ![Search Queues](docs/images/search-queues.png) | ![Settings](docs/images/settings.png) |
-| **Library** | **Exclusions** |
-| ![Library](docs/images/library.png) | ![Exclusions](docs/images/exclusions.png) |
+| **Search Queues** | **Queue Scheduling** |
+| ![Search Queues](docs/images/search-queues.png) | ![Queue Scheduling](docs/images/search-queues-scheduling.png) |
+| **Settings & Notifications** | **Library** |
+| ![Settings](docs/images/settings.png) | ![Library](docs/images/library.png) |
+| **Exclusions** | **Login** |
+| ![Exclusions](docs/images/exclusions.png) | ![Login](docs/images/login.png) |
 
 ---
 

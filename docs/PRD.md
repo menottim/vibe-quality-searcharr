@@ -94,7 +94,6 @@ Feature status across all releases (Sonarr only; Radarr support deferred to post
 | - | [v0.5.0 UX Overhaul](#v050) | **Done** | v0.5.0 | PR #94; Setup wizard, onboarding, filters |
 | - | [v0.5.1 Bug Fixes](#v051) | **Done** | v0.5.1 | PR #97; Progress bars, Docker version |
 | 13 | [Search Analytics Dashboard](#13-search-analytics-dashboard) | Deferred | v1.3.0 | Superseded by mini analytics (#18) |
-| 14 | [Config Import](#14-config-import) | Planned | v1.3.0 | Companion to Config Export |
 | 15 | [WebSocket Activity Feed](#15-websocket-real-time-activity-feed) | **Done** | v1.1.0 | PR #111 |
 | - | [Synthetic Demo Mode](#synthetic-demo-mode) | **Done** | v1.1.0 | PR #112 |
 | 16 | [Search Progress & Live Queue View](#16-search-progress--live-queue-view) | **Done** | v1.1.0 | PR #113 |
@@ -107,6 +106,9 @@ Feature status across all releases (Sonarr only; Radarr support deferred to post
 | 23 | [Queue Scheduling Improvements](#23-queue-scheduling-improvements) | **Done** | v1.3.0 | PR #125; Daily/weekly modes, jitter |
 | 25 | [Series Completion Cards](#25-series-completion-cards) | **Done** | v1.3.0 | PR #124; Dashboard + Library section |
 | 14 | [Config Import](#14-config-import) | **Done** | v1.3.0 | PR #126; Preview + atomic import |
+| 22 | [Quality-Aware Search Intelligence](#22-quality-aware-search-intelligence) | Deferred | Post-v1.3 | API spike done; implementation deferred |
+| 24 | [Apprise Notification Integration](#24-apprise-notification-integration) | Deferred | Post-v1.3 | Discord-only for now; Apprise deferred |
+| 26 | [Queue Recommendations](#26-queue-recommendations) | Deferred | Post-v1.3 | Deferred until demand warrants it |
 | - | Radarr Support | Deferred | Post-v1.3 | Backend code exists, UI gated |
 
 ---
@@ -513,13 +515,13 @@ Implement the stubbed Custom Strategy with simple dropdown filters: year range, 
 
 ### 21. Indexer Budget Visibility & Forecasting
 
-**Priority:** High | **Effort:** Medium | **Status:** Planned (v1.3.0)
+**Priority:** High | **Effort:** Medium | **Status:** Done (v1.3.0, PR #123)
 
 Per-indexer API usage progress bars on dashboard. Estimated API cost in queue creation. Budget alerts via notifications at 20% remaining. Smart batch auto-sizing ON by default — automatically reduces `max_items_per_run` when budget is low. User can disable per-queue.
 
 ### 22. Quality-Aware Search Intelligence
 
-**Priority:** Medium | **Effort:** Medium | **Status:** Planned (v1.3.0)
+**Priority:** Medium | **Effort:** Medium | **Status:** Deferred (post-v1.3)
 
 **API spike confirmed:** Sonarr exposes `quality.quality.resolution`, `quality.quality.source`, `customFormats`, `customFormatScore` on episode files.
 
@@ -527,25 +529,25 @@ New quality gap scoring factor for cutoff unmet: resolution gap (720p→1080p = 
 
 ### 23. Queue Scheduling Improvements
 
-**Priority:** Medium | **Effort:** Low-Medium | **Status:** Planned (v1.3.0)
+**Priority:** Medium | **Effort:** Low-Medium | **Status:** Done (v1.3.0, PR #125)
 
 Three schedule modes: Interval (existing "every N hours"), Daily ("run at HH:MM every day"), Weekly ("run at HH:MM on Mon/Wed/Fri"). Jitter: random 0-15 min offset to prevent thundering herd. Uses APScheduler CronTrigger (already a dependency).
 
 ### 24. Apprise Notification Integration
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned (v1.3.0)
+**Priority:** Medium | **Effort:** Low | **Status:** Deferred (post-v1.3)
 
 [Apprise](https://github.com/caronc/apprise) integration for 90+ notification services via URL strings. Keep existing Discord as primary. Apprise handles formatting and delivery for all additional services.
 
 ### 25. Series Completion Cards
 
-**Priority:** Medium | **Effort:** Low | **Status:** Planned (v1.3.0)
+**Priority:** Medium | **Effort:** Low | **Status:** Done (v1.3.0, PR #124)
 
 Library page "Completion Progress" section. Compact cards with small poster, completion bar, missing/total count. Filters: most incomplete, most recently aired, closest to complete.
 
 ### 26. Queue Recommendations
 
-**Priority:** Medium | **Effort:** Medium | **Status:** Planned (v1.3.0)
+**Priority:** Medium | **Effort:** Medium | **Status:** Deferred (post-v1.3)
 
 Post-sync library analysis with data-driven queue recommendations. Sizes batches to fit Prowlarr indexer limits. "You have 342 missing episodes → batch 20, every 6h, covered in ~4 days." One-click "Create recommended queues" button on Getting Started and empty Queues page.
 
@@ -557,7 +559,7 @@ Time-series charts, strategy comparison, instance comparison. Superseded by Feat
 
 ### 14. Config Import
 
-**Priority:** Low | **Effort:** Medium | **Status:** Planned (v1.3.0)
+**Priority:** Low | **Effort:** Medium | **Status:** Done (v1.3.0, PR #126)
 
 Companion to Config Export (v0.2.1). Upload JSON to restore instances, queues, exclusions, notifications. Conflict resolution for duplicate names, API key re-entry.
 

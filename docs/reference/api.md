@@ -2,8 +2,8 @@
 ## Splintarr REST API
 
 **Base URL:** `http://localhost:7337/api`
-**Version:** 0.1.0
-**Authentication:** Bearer JWT Token
+**Version:** 1.3.0
+**Authentication:** JWT via httpOnly cookies (access_token + refresh_token)
 
 ---
 
@@ -632,7 +632,7 @@ username=admin&password=SecurePassword123!
 ```json
 {
   "status": "healthy",
-  "version": "0.1.0",
+  "version": "1.3.0",
   "database": "connected",
   "uptime_seconds": 3600
 }
@@ -720,5 +720,21 @@ Interactive API documentation available at:
 
 ---
 
-**Version:** 0.1.0
-**Last Updated:** 2026-02-24
+**Version:** 1.3.0
+**Last Updated:** 2026-03-04
+
+### Additional Endpoints (v1.1.0+)
+
+| Method | Path | Description | Added |
+|--------|------|-------------|-------|
+| GET | `/ws/live` | WebSocket real-time events | v1.1.0 |
+| POST | `/api/search-queues/{id}/preview` | Dry run / preview next run | v1.1.0 |
+| POST | `/api/search-queues/bulk` | Bulk pause/resume/delete | v1.1.0 |
+| GET | `/api/search-history/analytics` | Last 7 days analytics | v1.1.0 |
+| GET | `/api/updates/status` | Update checker status | v1.1.1 |
+| POST | `/api/updates/check` | Trigger update check | v1.1.1 |
+| POST | `/api/updates/dismiss` | Dismiss update banner | v1.1.1 |
+| GET | `/api/instances/{id}/quality-profiles` | Quality profiles from library | v1.2.0 |
+| GET | `/api/library/completion` | Completion progress lists | v1.3.0 |
+| POST | `/api/config/import/preview` | Preview config import | v1.3.0 |
+| POST | `/api/config/import/apply` | Apply config import | v1.3.0 |
