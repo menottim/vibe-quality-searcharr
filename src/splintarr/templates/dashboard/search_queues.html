@@ -66,7 +66,7 @@
                 {% elif queue.schedule_mode == 'weekly' %}
                 🔄 {{ queue.schedule_days|replace(',', ', ')|title if queue.schedule_days else 'Mon, Wed, Fri' }} at {{ queue.schedule_time or '03:00' }}
                 {% else %}
-                🔄 Every {{ queue.interval_hours }}h
+                🔄 Every {{ queue.interval_hours or 24 }}h
                 {% endif %}
                 {% if queue.jitter_minutes %}<small style="color:var(--muted-color);">(+{{ queue.jitter_minutes }}m jitter)</small>{% endif %}
                 {% else %}

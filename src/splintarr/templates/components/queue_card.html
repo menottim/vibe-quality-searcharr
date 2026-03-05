@@ -47,7 +47,14 @@ Expected variables:
         <dt>Type</dt>
         <dd>
             {% if queue.is_recurring %}
-            🔄 Recurring (every {{ queue.interval_hours }}h)
+            {% if queue.schedule_mode == 'daily' %}
+            🔄 Daily at {{ queue.schedule_time or '03:00' }}
+            {% elif queue.schedule_mode == 'weekly' %}
+            🔄 {{ queue.schedule_days|replace(',', ', ')|title if queue.schedule_days else 'Mon, Wed, Fri' }} at {{ queue.schedule_time or '03:00' }}
+            {% else %}
+            🔄 Every {{ queue.interval_hours or 24 }}h
+            {% endif %}
+            {% if queue.jitter_minutes %}<small style="color:var(--muted-color);">(+{{ queue.jitter_minutes }}m jitter)</small>{% endif %}
             {% else %}
             One-time
             {% endif %}
