@@ -71,8 +71,9 @@ COPY --chown=appuser:appuser alembic/ ./alembic/
 COPY --chown=appuser:appuser alembic.ini ./
 COPY --chown=appuser:appuser pyproject.toml ./
 
-# Create data directory
-RUN mkdir -p /data && chown appuser:appuser /data
+# Create data directory and symlink (at build time for read_only filesystem)
+RUN mkdir -p /data && chown appuser:appuser /data \
+    && rm -rf /app/data && ln -sf /data /app/data
 
 # Copy and set up entrypoint script
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh

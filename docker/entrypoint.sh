@@ -15,9 +15,10 @@ log "Starting Splintarr entrypoint..."
 # resolve to the persistent Docker volume at /data.
 # Without this, posters are written to ephemeral /app/data/ and lost on rebuild.
 if [ ! -L /app/data ]; then
+    # Symlink should exist from Dockerfile build, but create if missing
     rm -rf /app/data 2>/dev/null || true
-    ln -sf /data /app/data
-    log "Created symlink /app/data -> /data"
+    ln -sf /data /app/data 2>/dev/null || log "Note: /app/data symlink already exists or filesystem is read-only"
+    [ -L /app/data ] && log "Created symlink /app/data -> /data"
 fi
 
 # Verify secrets are accessible
