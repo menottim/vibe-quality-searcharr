@@ -712,6 +712,53 @@ Per `SECURITY.md`, do **not** file:
 - Issues requiring local/physical host access
 - Missing security hardening suggestions (file as regular issues, not advisories)
 
+### Closing Out After Fixes Are Applied
+
+**This is mandatory.** Security findings are not "done" until filed issues and advisories are closed. After implementing fixes:
+
+**1. Publish Security Advisories with patched version:**
+
+```bash
+# For each advisory, update state to "published" and set patched_versions
+gh api repos/OWNER/REPO/security-advisories/GHSA-xxxx-xxxx-xxxx --method PATCH --input - <<'JSON'
+{
+  "state": "published",
+  "vulnerabilities": [
+    {
+      "package": {"ecosystem": "pip", "name": "PACKAGE_NAME"},
+      "vulnerable_version_range": "<= VULNERABLE_VERSION",
+      "patched_versions": "PATCHED_VERSION",
+      "vulnerable_functions": []
+    }
+  ]
+}
+JSON
+```
+
+**2. Close public issues with fix details:**
+
+```bash
+gh issue close ISSUE_NUMBER --repo OWNER/REPO --comment "All findings fixed and pushed. [list commits]"
+```
+
+**3. Include in the close-out comment:**
+- Which commit(s) fixed each finding
+- Verification evidence (test results, docker exec output, etc.)
+- Any findings that were intentionally deferred or accepted as risk
+
+**4. Verify advisory state:**
+
+```bash
+gh api repos/OWNER/REPO/security-advisories --method GET | python3 -c "
+import json, sys
+for a in json.load(sys.stdin):
+    print(f\"{a['ghsa_id']} | {a['state']} | {a['summary']}\")
+"
+# All should show "published", none should remain "draft"
+```
+
+**Key lesson (v1.3.0):** The `gh api` for publishing advisories requires `--input` with full JSON including the `vulnerabilities` array with `patched_versions` set. Using `-f` flags alone results in 422 errors because the `vulnerabilities` field needs nested JSON objects.
+
 ---
 
 ## Adapting This Prompt for Other Projects
@@ -880,3 +927,23 @@ None — all original test cases remained relevant.
 2. **[WebSocket testing]** Python `websockets` library may not be installed in the assessment environment. Workaround: use `python3 -c "import websockets"` to check availability first. If unavailable, test WebSocket auth via static code review of `ws.py` (the auth logic is fully visible in code).
 
 3. **[Timing analysis]** Running 100+ timed requests from `curl` inside Claude Code can be slow. Workaround: reduce to 20 samples per group (valid/invalid username). Statistical significance requires ~20+ samples for Argon2 timing (which takes ~200ms per hash).
+
+### Process Insights (from v1.3.0 fix + closeout cycle)
+
+These are lessons about the full lifecycle: assessment → filing → fixing → closeout.
+
+1. **[CLOSEOUT] Advisories must be published, not just created.** Draft advisories are invisible to the public and don't trigger GitHub's dependency alert system. After fixes land, PATCH each advisory to `state: "published"` with `patched_versions` set. This was missing from the original prompt and added to the Filing Findings section.
+
+2. **[CLOSEOUT] Issues need fix-to-commit mapping.** When closing a batched issue (multiple findings in one issue), the close comment should map each finding to its fix commit hash. This creates an audit trail from finding → fix → verification.
+
+3. **[FILING] `gh api` requires `--input` for nested JSON.** The `-f` flag approach doesn't work for Security Advisories because the `vulnerabilities` field requires nested JSON objects. Always use `--input - <<'JSON'` with a heredoc. This cost a failed attempt during the first filing.
+
+4. **[FIXING] Docker `read_only: true` has cascading effects.** Enabling `read_only` broke the entrypoint's symlink creation. Fixes that enable security hardening must be tested end-to-end in Docker, not just verified in code review. The assessment prompt should include a "Docker rebuild + smoke test" step after Docker-related fixes.
+
+5. **[FIXING] `docker exec whoami` is misleading.** It runs a new shell as root (Docker default), not as the application process user. To verify privilege dropping, check `/proc/1/status` for the actual UID: `docker exec <container> cat /proc/1/status | grep Uid`. This should be added to the Docker security test section.
+
+6. **[FIXING] Subagent-driven fixes are fast for isolated changes.** Each advisory fix was dispatched to a fresh subagent in <3 minutes. The key: provide the exact code context (file, line numbers, before/after) in the agent prompt. Don't make the agent discover the code — give it the answer and let it implement.
+
+7. **[PROCESS] Assessment → Plan → Fix → Closeout is the right sequence.** Don't start fixing during the assessment (context pollution). Don't file before the assessment is complete (may duplicate). Don't skip the closeout (advisories stay as invisible drafts). The full cycle for v1.3.0 was: 3 parallel assessment agents → compiled report → filed 4 advisories + 1 issue → wrote implementation plan → 6 subagent fix dispatches → Docker verification → published advisories + closed issue.
+
+8. **[MEMORY] Record advisory IDs and issue numbers.** Add the GHSA IDs and issue numbers to MEMORY.md immediately after filing so they're available for the closeout step. The v1.3.0 run had to re-query the API to find them.
