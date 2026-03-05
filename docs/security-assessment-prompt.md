@@ -506,6 +506,51 @@ cat /tmp/splintarr-deps.txt
 # - pydantic
 ```
 
+### 2.9 Code Scanning Alert Triage
+
+If the repository has GitHub Code Scanning (CodeQL, Semgrep, etc.) enabled, triage all open alerts as part of the assessment.
+
+```bash
+# List all open code scanning alerts
+gh api repos/OWNER/REPO/code-scanning/alerts --method GET \
+  -q '.[] | select(.state == "open") | "#\(.number) | \(.rule.severity) | \(.rule.id) | \(.most_recent_instance.location.path):\(.most_recent_instance.location.start_line) | \(.most_recent_instance.message.text[:100])"'
+```
+
+For each alert, determine:
+
+| Verdict | Action |
+|---------|--------|
+| **True positive in production code** | Fix the code, commit, alert auto-resolves |
+| **True positive in dev/test scripts** | Delete or fix the script. If the file shouldn't be in the repo, remove it. |
+| **False positive** | Dismiss with reason and explanation |
+
+**Dismiss false positives with context:**
+
+```bash
+gh api repos/OWNER/REPO/code-scanning/alerts/ALERT_NUMBER --method PATCH \
+  -f state=dismissed \
+  -f dismissed_reason="false positive" \
+  -f dismissed_comment="[Explanation of why this is not a real vulnerability]"
+```
+
+Valid `dismissed_reason` values: `false positive`, `won't fix`, `used in tests`
+
+**Common false positive patterns to watch for:**
+- `py/weak-sensitive-data-hashing`: SHA256 used for pepper mixing before Argon2id — the scanner flags the SHA256 without seeing the Argon2id step
+- `py/stack-trace-exposure`: `str(e)` used in logger calls but the HTTP response returns a generic message
+- `py/incomplete-url-substring-sanitization`: Test assertions checking URL values, not sanitization logic
+- `py/clear-text-logging-sensitive-data`: Development/debug scripts that shouldn't be in the repo (delete them)
+
+**After triage, verify zero open alerts:**
+
+```bash
+gh api repos/OWNER/REPO/code-scanning/alerts --method GET \
+  -q '[.[] | select(.state == "open")] | length'
+# Expected: 0
+```
+
+Include the code scanning triage results in the assessment report as a separate section.
+
 ---
 
 ## Phase 3: Regression Verification [REFERENCE: Splintarr]
