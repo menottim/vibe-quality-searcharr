@@ -17,14 +17,14 @@ import structlog
 
 logger = structlog.get_logger()
 
-# Blocked IP ranges for SSRF protection
-BLOCKED_NETWORKS = [
-    # IPv4
-    ipaddress.ip_network("127.0.0.0/8"),  # Loopback
-    ipaddress.ip_network("10.0.0.0/8"),  # Private
-    ipaddress.ip_network("172.16.0.0/12"),  # Private
-    ipaddress.ip_network("192.168.0.0/16"),  # Private
+# Dangerous networks — ALWAYS blocked even when allow_local=True.
+# These are never legitimate Sonarr/Radarr targets and include cloud
+# metadata endpoints (169.254.x.x), multicast, reserved, and test ranges.
+ALWAYS_BLOCKED_NETWORKS: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = [
     ipaddress.ip_network("169.254.0.0/16"),  # Link-local / AWS metadata
+    ipaddress.ip_network("224.0.0.0/4"),  # Multicast
+    ipaddress.ip_network("240.0.0.0/4"),  # Reserved
+    ipaddress.ip_network("255.255.255.255/32"),  # Broadcast
     ipaddress.ip_network("0.0.0.0/8"),  # Current network
     ipaddress.ip_network("100.64.0.0/10"),  # Shared address space (CGN)
     ipaddress.ip_network("192.0.0.0/24"),  # IETF Protocol Assignments
@@ -32,16 +32,23 @@ BLOCKED_NETWORKS = [
     ipaddress.ip_network("198.18.0.0/15"),  # Benchmarking
     ipaddress.ip_network("198.51.100.0/24"),  # TEST-NET-2
     ipaddress.ip_network("203.0.113.0/24"),  # TEST-NET-3
-    ipaddress.ip_network("224.0.0.0/4"),  # Multicast
-    ipaddress.ip_network("240.0.0.0/4"),  # Reserved
-    ipaddress.ip_network("255.255.255.255/32"),  # Broadcast
-    # IPv6
-    ipaddress.ip_network("::1/128"),  # Loopback
-    ipaddress.ip_network("::ffff:0:0/96"),  # IPv4-mapped IPv6
-    ipaddress.ip_network("fc00::/7"),  # Private (Unique Local Addresses)
-    ipaddress.ip_network("fe80::/10"),  # Link-local
-    ipaddress.ip_network("ff00::/8"),  # Multicast
+    ipaddress.ip_network("fe80::/10"),  # IPv6 Link-local
+    ipaddress.ip_network("ff00::/8"),  # IPv6 Multicast
 ]
+
+# Private/local networks — bypassed when allow_local=True (homelab use).
+LOCAL_NETWORKS: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = [
+    ipaddress.ip_network("127.0.0.0/8"),  # Loopback
+    ipaddress.ip_network("10.0.0.0/8"),  # Private (Class A)
+    ipaddress.ip_network("172.16.0.0/12"),  # Private (Class B)
+    ipaddress.ip_network("192.168.0.0/16"),  # Private (Class C)
+    ipaddress.ip_network("::1/128"),  # IPv6 Loopback
+    ipaddress.ip_network("::ffff:0:0/96"),  # IPv6 IPv4-mapped
+    ipaddress.ip_network("fc00::/7"),  # IPv6 ULA
+]
+
+# Combined list for backward compatibility
+BLOCKED_NETWORKS = ALWAYS_BLOCKED_NETWORKS + LOCAL_NETWORKS
 
 
 class SSRFError(Exception):
@@ -122,9 +129,24 @@ def validate_instance_url(url: str, allow_local: bool = False) -> None:
         except ValueError as e:
             raise ValueError(f"Invalid IP address '{ip_str}': {e}") from e
 
-        # Check against blocked networks
+        # Always check dangerous networks (cloud metadata, multicast, reserved)
+        for network in ALWAYS_BLOCKED_NETWORKS:
+            if ip in network:
+                logger.warning(
+                    "ssrf_blocked",
+                    url=url,
+                    hostname=hostname,
+                    ip=str(ip),
+                    blocked_network=str(network),
+                )
+                raise SSRFError(
+                    f"URL resolves to blocked network: {network}. "
+                    f"This network is always blocked for security reasons."
+                )
+
+        # Check local/private networks (skipped when allow_local=True)
         if not allow_local:
-            for network in BLOCKED_NETWORKS:
+            for network in LOCAL_NETWORKS:
                 if ip in network:
                     logger.warning(
                         "ssrf_blocked",
