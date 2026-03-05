@@ -716,7 +716,9 @@ Per `SECURITY.md`, do **not** file:
 
 **This is mandatory.** Security findings are not "done" until filed issues and advisories are closed. After implementing fixes:
 
-**1. Publish Security Advisories with patched version:**
+**Important:** The correct terminal state for fixed advisories is **Published** (not Closed). Published advisories enter the GitHub Advisory Database and trigger Dependabot alerts. Closed means "dismissed/invalid" — only use it for false positives or duplicates. See [GitHub docs on publishing advisories](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/publishing-a-repository-security-advisory).
+
+**1. Publish Security Advisories with patched version and Resolution section:**
 
 ```bash
 # For each advisory, update state to "published" and set patched_versions
@@ -746,18 +748,39 @@ gh issue close ISSUE_NUMBER --repo OWNER/REPO --comment "All findings fixed and 
 - Verification evidence (test results, docker exec output, etc.)
 - Any findings that were intentionally deferred or accepted as risk
 
-**4. Verify advisory state:**
+**4. Update advisory descriptions with Resolution section:**
+
+After fixes land, PATCH each advisory to add a `## Resolution` section to the description with:
+- Fix commit hash(es)
+- What the fix does
+- Verification evidence (test results, etc.)
+- "In affected versions" language in the Steps to Reproduce to clarify this is no longer exploitable
+
+```bash
+gh api repos/OWNER/REPO/security-advisories/GHSA-xxxx --method PATCH --input - <<'JSON'
+{
+  "description": "[Original description...]\n\n## Resolution\n\n**Fixed in commit `abcdef1`.** [What the fix does]. [Verification evidence]."
+}
+JSON
+```
+
+**5. Verify advisory state:**
 
 ```bash
 gh api repos/OWNER/REPO/security-advisories --method GET | python3 -c "
 import json, sys
 for a in json.load(sys.stdin):
-    print(f\"{a['ghsa_id']} | {a['state']} | {a['summary']}\")
+    pv = a['vulnerabilities'][0].get('patched_versions', 'NONE')
+    print(f\"{a['ghsa_id']} | {a['state']} | patched={pv} | {a['summary']}\")
 "
-# All should show "published", none should remain "draft"
+# All should show "published" with patched_versions set. None should remain "draft".
+# Do NOT close published advisories — "closed" means invalid/dismissed.
 ```
 
-**Key lesson (v1.3.0):** The `gh api` for publishing advisories requires `--input` with full JSON including the `vulnerabilities` array with `patched_versions` set. Using `-f` flags alone results in 422 errors because the `vulnerabilities` field needs nested JSON objects.
+**Key lessons (v1.3.0):**
+- The `gh api` for publishing advisories requires `--input` with full JSON including the `vulnerabilities` array with `patched_versions` set. Using `-f` flags alone results in 422 errors.
+- **Published = correct terminal state** for confirmed vulnerabilities. It enters the GitHub Advisory Database and triggers Dependabot alerts. **Closed = dismissed/invalid** — only for false positives.
+- Always update the description with a Resolution section after fixing so readers know the advisory is addressed.
 
 ---
 
