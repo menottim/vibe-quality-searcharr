@@ -435,17 +435,24 @@ def _sanitize_for_json(value: object) -> object:
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Log validation errors at WARNING level."""
+    safe_errors = [
+        {k: v for k, v in e.items() if k != "input"}
+        for e in exc.errors()
+    ]
     logger.warning(
         "http_validation_error",
         path=request.url.path,
         method=request.method,
-        errors=exc.errors(),
+        errors=safe_errors,
     )
     errors = []
     for error in exc.errors():
-        # Ensure all values are JSON-serializable (bytes input causes TypeError).
-        # Values can be nested dicts/lists, so sanitize recursively.
-        sanitized = {k: _sanitize_for_json(v) for k, v in error.items()}
+        # Strip 'input' key to prevent leaking sensitive values (passwords, API keys)
+        sanitized = {
+            k: _sanitize_for_json(v)
+            for k, v in error.items()
+            if k != "input"
+        }
         errors.append(sanitized)
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

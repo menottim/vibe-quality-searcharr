@@ -279,6 +279,20 @@ class TestCryptographicFailures:
             "API key should be omitted or masked in response"
 
 
+class TestValidationErrorLeakage:
+    """Validation error information leakage tests."""
+
+    def test_validation_error_does_not_leak_password(self, client: TestClient):
+        """VULN-03: Validation errors must not include raw input values."""
+        response = client.post(
+            "/api/auth/login",
+            json={"username": 123, "password": "SuperSecretPassword123!"},
+        )
+        assert response.status_code == 422
+        body = response.text
+        assert "SuperSecretPassword123" not in body
+
+
 class TestInjection:
     """A03:2021 – Injection tests (SQL, Command, etc.)."""
 
