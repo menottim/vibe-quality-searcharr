@@ -59,12 +59,6 @@
         radial-gradient(ellipse at 80% 80%, var(--gold-glow) 0%, transparent 50%);
       pointer-events: none;
       z-index: -1;
-      animation: drift 20s ease-in-out infinite alternate;
-    }
-
-    @keyframes drift {
-      from { transform: translate(0, 0) rotate(0deg); }
-      to { transform: translate(-3%, 2%) rotate(1deg); }
     }
 
     /* --- Noise texture overlay --- */
@@ -188,12 +182,6 @@
       height: 6px;
       background: var(--green);
       border-radius: 50%;
-      animation: pulse-dot 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
     }
 
     .hero h1 {
@@ -249,8 +237,8 @@
 
     .btn-primary:hover {
       background: var(--gold-dim);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 32px rgba(212, 168, 67, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(212, 168, 67, 0.3);
     }
 
     .btn-secondary {
@@ -262,7 +250,7 @@
     .btn-secondary:hover {
       background: var(--bg-card-hover);
       border-color: var(--gold);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     /* --- Hero Screenshot --- */
@@ -347,8 +335,8 @@
 
     .feature-card:hover {
       border-color: rgba(212, 168, 67, 0.3);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }
 
     .feature-card:hover::before { opacity: 1; }
@@ -391,8 +379,7 @@
 
     .screenshot-item:hover {
       border-color: rgba(212, 168, 67, 0.3);
-      transform: scale(1.02);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
       z-index: 2;
     }
 
@@ -557,24 +544,8 @@
       .footer-content { flex-direction: column; text-align: center; }
     }
 
-    /* --- Animations --- */
-    .fade-up {
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-
-    .fade-up.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .stagger-1 { transition-delay: 0.05s; }
-    .stagger-2 { transition-delay: 0.1s; }
-    .stagger-3 { transition-delay: 0.15s; }
-    .stagger-4 { transition-delay: 0.2s; }
-    .stagger-5 { transition-delay: 0.25s; }
-    .stagger-6 { transition-delay: 0.3s; }
+    /* fade-up classes kept in markup but are no-ops */
+    .fade-up { }
   </style>
 </head>
 <body>
@@ -763,18 +734,6 @@ Batch: 50 items</code>
     </div>
   </footer>
 
-  <!-- Scroll animations -->
-  <script>
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-        }
-      });
-    }, { threshold: 0.1 });
-
-    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
-  </script>
 
 </body>
 </html>
