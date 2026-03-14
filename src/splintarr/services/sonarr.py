@@ -258,3 +258,38 @@ class SonarrClient(BaseArrClient):
             bytes | None: JPEG poster data, or None if unavailable
         """
         return await self._request_bytes(f"/api/v3/mediacover/{series_id}/poster.jpg")
+
+    async def get_history(
+        self,
+        episode_id: int,
+        event_type: str | None = None,
+        page_size: int = 10,
+    ) -> list[dict[str, Any]]:
+        """
+        Get history records for an episode from Sonarr.
+
+        Args:
+            episode_id: Episode ID to get history for
+            event_type: Optional event type filter (e.g. 'grabbed')
+            page_size: Max records to return (default 10)
+
+        Returns:
+            list[dict]: History records matching the filters
+        """
+        params: dict[str, Any] = {
+            "episodeId": episode_id,
+            "pageSize": page_size,
+        }
+        if event_type:
+            params["eventType"] = event_type
+
+        result = await self._request("GET", "/api/v3/history", params=params)
+
+        records = result.get("records", []) if isinstance(result, dict) else []
+        logger.debug(
+            "sonarr_history_retrieved",
+            episode_id=episode_id,
+            event_type=event_type,
+            count=len(records),
+        )
+        return records

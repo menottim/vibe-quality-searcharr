@@ -54,7 +54,6 @@ from splintarr.core.security import decrypt_field, encrypt_field, hash_password
 from splintarr.core.ssrf_protection import SSRFError, validate_instance_url
 from splintarr.database import database_health_check, get_db
 from splintarr.models.instance import Instance
-from splintarr.models.library import LibraryItem
 from splintarr.models.notification import NotificationConfig
 from splintarr.models.prowlarr import ProwlarrConfig
 from splintarr.models.search_history import SearchHistory
@@ -1263,21 +1262,33 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
 
     success_rate = (successful_searches / searches_this_week * 100) if searches_this_week > 0 else 0
 
-    # Grab rate from library search intelligence: 1 query with two aggregates
-    user_instance_ids = db.query(Instance.id).filter(Instance.user_id == user.id)
-    grab_stats = (
-        db.query(
-            func.coalesce(func.sum(LibraryItem.search_attempts), 0).label("attempts"),
-            func.coalesce(func.sum(LibraryItem.grabs_confirmed), 0).label("grabs"),
+    # Grab rate from search history (last 7 days, matching analytics scope)
+    recent_histories = (
+        db.query(SearchHistory.search_metadata)
+        .join(Instance, SearchHistory.instance_id == Instance.id)
+        .filter(
+            Instance.user_id == user.id,
+            SearchHistory.started_at >= week_ago,
+            SearchHistory.search_metadata.isnot(None),
         )
-        .filter(LibraryItem.instance_id.in_(user_instance_ids))
-        .one()
+        .all()
     )
-    total_search_attempts = int(grab_stats.attempts)
-    total_grabs = int(grab_stats.grabs)
-    grab_rate = (
-        round(total_grabs / total_search_attempts * 100, 1) if total_search_attempts > 0 else 0.0
-    )
+
+    total_grabs = 0
+    total_checked = 0
+    for (metadata_json,) in recent_histories:
+        try:
+            entries = json.loads(metadata_json)
+            if isinstance(entries, list):
+                for entry in entries:
+                    if isinstance(entry, dict) and entry.get("result") in ("grabbed", "no grab"):
+                        total_checked += 1
+                        if entry.get("result") == "grabbed":
+                            total_grabs += 1
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    grab_rate = round(total_grabs / total_checked * 100, 1) if total_checked > 0 else 0.0
 
     return {
         "instances": {
@@ -1295,6 +1306,7 @@ async def get_dashboard_stats(db: Session, user: User) -> dict[str, Any]:
             "this_week": searches_this_week,
             "success_rate": round(success_rate, 1),
             "grab_rate": grab_rate,
+            "grabs_confirmed": total_grabs,
         },
     }
 
