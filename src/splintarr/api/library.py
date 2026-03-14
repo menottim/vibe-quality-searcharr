@@ -88,6 +88,19 @@ async def _run_sync_all_background() -> None:
         }
     )
     logger.info("library_sync_background_started")
+
+    # Count active instances for notification
+    from splintarr.models.instance import Instance
+
+    _count_db = get_session_factory()()
+    try:
+        instance_count = _count_db.query(Instance).filter(Instance.is_active.is_(True)).count()
+    finally:
+        _count_db.close()
+
+    # Fire-and-forget: Discord notification for sync start
+    await _notify_library_sync_started(instance_count=instance_count)
+
     try:
         service = get_sync_service()
         result = await service.sync_all_instances(progress_callback=_update_sync_progress)
@@ -185,6 +198,36 @@ async def _notify_library_sync(
         logger.warning(
             "discord_notification_send_failed",
             event="library_sync",
+            error=str(e),
+        )
+
+
+async def _notify_library_sync_started(instance_count: int) -> None:
+    """Send Discord notification for library sync start if configured."""
+    try:
+        from splintarr.core.security import decrypt_field
+        from splintarr.models.notification import NotificationConfig
+        from splintarr.services.discord import DiscordNotificationService
+
+        db = get_session_factory()()
+        try:
+            config = (
+                db.query(NotificationConfig)
+                .filter(NotificationConfig.is_active.is_(True))
+                .first()
+            )
+            if not config or not config.is_event_enabled("library_sync"):
+                return
+
+            webhook_url = decrypt_field(config.webhook_url)
+            service = DiscordNotificationService(webhook_url)
+            await service.send_library_sync_started(instance_count=instance_count)
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(
+            "discord_notification_send_failed",
+            event="library_sync_started",
             error=str(e),
         )
 
