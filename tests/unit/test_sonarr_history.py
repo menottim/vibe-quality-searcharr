@@ -1,6 +1,7 @@
 """Tests for Sonarr history API method."""
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from splintarr.services.sonarr import SonarrClient
 

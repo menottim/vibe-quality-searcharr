@@ -1,6 +1,7 @@
 """Tests for feedback check using Sonarr history API."""
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, patch
 
 from splintarr.services.feedback import FeedbackCheckService
 
