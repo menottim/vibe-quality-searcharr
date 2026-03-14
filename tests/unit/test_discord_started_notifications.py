@@ -1,6 +1,7 @@
 """Tests for Discord 'started' notification embeds."""
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from splintarr.services.discord import DiscordNotificationService
 
