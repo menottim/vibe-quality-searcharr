@@ -13,6 +13,7 @@ The service:
 """
 
 import json
+from datetime import datetime
 from typing import Any
 
 import structlog
@@ -225,16 +226,60 @@ class FeedbackCheckService:
         client: SonarrClient,
         entry: dict[str, Any],
     ) -> bool:
-        """Check if a Sonarr episode now has a file."""
-        series_id = entry.get("series_id")
+        """Check if a Sonarr episode was grabbed after our search command.
+
+        Uses Sonarr's history API to find 'grabbed' events for this episode
+        that occurred after the search command was issued. Falls back to
+        hasFile check for old metadata without command_issued_at.
+        """
         item_id = entry.get("item_id")
-        if not series_id or not item_id:
+        series_id = entry.get("series_id")
+        if not item_id:
             return False
 
-        episodes = await client.get_episodes(series_id)
-        for ep in episodes:
-            if ep.get("id") == item_id and ep.get("hasFile") is True:
+        command_issued_at = entry.get("command_issued_at")
+
+        # Fallback for old metadata without timestamp: use legacy hasFile check
+        if not command_issued_at:
+            if not series_id:
+                return False
+            episodes = await client.get_episodes(series_id)
+            for ep in episodes:
+                if ep.get("id") == item_id and ep.get("hasFile") is True:
+                    return True
+            return False
+
+        # Use history API: find grabbed events after our command
+        try:
+            history_records = await client.get_history(
+                episode_id=item_id,
+                event_type="grabbed",
+            )
+        except Exception as e:
+            logger.warning(
+                "feedback_check_history_failed",
+                episode_id=item_id,
+                error=str(e),
+            )
+            return False
+
+        # Parse command timestamp for comparison
+        try:
+            command_time = datetime.fromisoformat(command_issued_at.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            return False
+
+        for record in history_records:
+            record_date = record.get("date", "")
+            try:
+                grab_time = datetime.fromisoformat(record_date.replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                continue
+
+            if grab_time > command_time:
+                entry["source_title"] = record.get("sourceTitle")
                 return True
+
         return False
 
     async def _check_radarr_movie(
