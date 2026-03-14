@@ -175,6 +175,17 @@ class SearchQueueManager:
                 strategy=queue.strategy,
                 instance_id=instance.id,
             )
+
+            # Fire-and-forget: Discord notification for search started
+            await self._notify_search_started(
+                db=db,
+                user_id=instance.user_id,
+                search_name=queue.name,
+                instance_name=instance.name,
+                strategy=queue.strategy,
+                estimated_items=queue.max_items_per_run or 50,
+            )
+
             await event_bus.emit("search.started", {
                 "queue_id": queue_id,
                 "queue_name": queue.name,
@@ -1477,6 +1488,44 @@ class SearchQueueManager:
             logger.warning(
                 "discord_notification_send_failed",
                 event="queue_failed",
+                user_id=user_id,
+                error=str(e),
+            )
+
+    async def _notify_search_started(
+        self,
+        db: Session,
+        user_id: int,
+        search_name: str,
+        instance_name: str,
+        strategy: str,
+        estimated_items: int,
+    ) -> None:
+        """Send a search started Discord notification if configured and enabled."""
+        try:
+            config = (
+                db.query(NotificationConfig)
+                .filter(
+                    NotificationConfig.user_id == user_id,
+                    NotificationConfig.is_active.is_(True),
+                )
+                .first()
+            )
+            if not config or not config.is_event_enabled("search_triggered"):
+                return
+
+            webhook_url = decrypt_field(config.webhook_url)
+            service = DiscordNotificationService(webhook_url)
+            await service.send_search_started(
+                search_name=search_name,
+                instance_name=instance_name,
+                strategy=strategy,
+                estimated_items=estimated_items,
+            )
+        except Exception as e:
+            logger.warning(
+                "discord_notification_send_failed",
+                event="search_started",
                 user_id=user_id,
                 error=str(e),
             )
