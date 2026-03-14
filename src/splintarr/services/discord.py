@@ -90,6 +90,34 @@ class DiscordNotificationService:
 
         return await self._send_embed(embed)
 
+    async def send_library_sync_started(
+        self,
+        instance_count: int,
+    ) -> bool:
+        """
+        Send a library sync started notification (blue embed).
+
+        Args:
+            instance_count: Number of instances being synced
+
+        Returns:
+            bool: True if the webhook accepted the message
+        """
+        embed: dict = {
+            "title": "Library Sync Started",
+            "description": f"Syncing {instance_count} instance(s)...",
+            "color": COLOR_BLUE,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "footer": {"text": "Splintarr"},
+        }
+
+        logger.info(
+            "discord_notification_library_sync_started",
+            instance_count=instance_count,
+        )
+
+        return await self._send_embed(embed)
+
     async def send_search_summary(
         self,
         search_name: str,

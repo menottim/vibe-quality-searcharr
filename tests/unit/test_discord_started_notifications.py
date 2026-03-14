@@ -40,3 +40,27 @@ class TestSendSearchStarted:
             assert "15" in embed["description"]
             assert "footer" in embed
             assert "timestamp" in embed
+
+
+class TestSendLibrarySyncStarted:
+    """Test send_library_sync_started Discord embed."""
+
+    @pytest.mark.asyncio
+    async def test_sends_blue_embed(self):
+        service = DiscordNotificationService("https://discord.com/api/webhooks/test")
+        with patch.object(service, "_send_embed", new_callable=AsyncMock, return_value=True) as mock:
+            result = await service.send_library_sync_started(instance_count=2)
+            assert result is True
+            embed = mock.call_args[0][0]
+            assert embed["color"] == 0x3498DB  # COLOR_BLUE
+            assert "Sync Started" in embed["title"]
+
+    @pytest.mark.asyncio
+    async def test_embed_includes_instance_count(self):
+        service = DiscordNotificationService("https://discord.com/api/webhooks/test")
+        with patch.object(service, "_send_embed", new_callable=AsyncMock, return_value=True) as mock:
+            await service.send_library_sync_started(instance_count=3)
+            embed = mock.call_args[0][0]
+            assert "3" in embed["description"]
+            assert "footer" in embed
+            assert "timestamp" in embed
