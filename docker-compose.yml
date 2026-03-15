@@ -50,6 +50,11 @@ services:
       - HOST=0.0.0.0
       - PORT=7337
       - RELOAD=false
+      # WARNING: WORKERS > 1 requires a Redis rate-limit backend.
+      # Without Redis, rate limiting is per-process and trivially bypassed.
+      # Uncomment and configure both lines below to scale workers:
+      # - WORKERS=4
+      # - RATE_LIMIT_STORAGE_URI=redis://redis:6379/0
 
       # Database
       - DATABASE_URL=sqlite+pysqlcipher:///data/splintarr.db?cipher=aes-256-cfb&kdf_iter=256000
