@@ -284,6 +284,15 @@ The following security limitations have been reviewed, risk-assessed, and accept
 ### CSP `style-src 'unsafe-inline'` ([#49](https://github.com/menottim/splintarr/issues/49))
 **Risk: Low** | The Content Security Policy allows inline styles, which could enable CSS injection data exfiltration. Accepted because: Pico CSS framework requires `unsafe-inline` for styles, scripts are properly nonce-protected, and CSS injection requires an existing HTML injection vector (mitigated by Jinja2 autoescaping).
 
+### Fernet HKDF salt is hardcoded ([#136](https://github.com/menottim/splintarr/issues/136))
+**Risk: Medium** | The Fernet key derivation uses a hardcoded application-wide salt (`b"vibe-quality-searcharr-fernet-v1"`). All Splintarr instances share this salt, reducing key derivation diversity. Accepted because: exploitation requires SECRET_KEY compromise (which is per-deployment), changing the salt would break all existing encrypted data (API keys, webhook URLs), and HKDF with a unique secret key still produces cryptographically strong derived keys.
+
+### Timing oracle in username enumeration ([#137](https://github.com/menottim/splintarr/issues/137))
+**Risk: Low** | The dummy Argon2 verification for unknown usernames uses a pre-computed hash rather than a per-request computation. Theoretically, timing differences could emerge if Argon2 parameters change between deployments. Accepted because: practical exploitation requires sustained high-precision timing measurements over many requests, the rate limiter blocks rapid enumeration, and the homelab single-user model means the username is typically known.
+
+### Argon2 parameters at lower bound ([#141](https://github.com/menottim/splintarr/issues/141))
+**Risk: Low** | Default Argon2id parameters (128 MiB memory, time=3, parallelism=8) are at the lower bound of OWASP recommendations. Accepted because: parameters are configurable, the global pepper makes offline cracking infeasible even with weaker parameters, and higher defaults would increase login latency and memory usage on resource-constrained homelab hardware. Users with dedicated hardware can increase via `ARGON2_MEMORY_COST` and `ARGON2_TIME_COST` environment variables.
+
 ---
 
 ## Security Audit History
@@ -297,8 +306,9 @@ The following security limitations have been reviewed, risk-assessed, and accept
 | 2026-02-25 | [Red Team Assessment](../other/red-team-adversarial-assessment-2026-02-25.md) | 15 vulnerabilities (3 critical) | All fixed |
 | 2026-02-27 | [Full Codebase Assessment](../security-assessment-2026-02-27.md) | 28 findings (3 critical, 8 high) | Fixed in PRs #41-#44 |
 | 2026-02-28 | Comprehensive Audit (web research + SAST + manual review) | 4 PRs created, 5 accepted risks documented | Complete |
+| 2026-03-14 | AI-Assisted Full Assessment (architecture, static, active, regression) | 10 findings (1 high, 4 medium, 5 low), 4 accepted risks | In progress |
 
 ---
 
-**Version:** 1.3.0
-**Last Updated:** 2026-03-04
+**Version:** 1.3.2
+**Last Updated:** 2026-03-14

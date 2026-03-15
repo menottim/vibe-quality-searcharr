@@ -43,6 +43,11 @@ ALLOWED_JWT_ALGORITHMS = ["HS256"]
 # NOTE: Only works with a single worker process. For multi-worker, use Redis.
 _access_token_blacklist: dict[str, datetime] = {}
 
+# In-memory counter for failed 2FA verification attempts per pending-token JTI (#135).
+# After MAX_2FA_ATTEMPTS failures the token is blacklisted, forcing a fresh login.
+MAX_2FA_ATTEMPTS = 3
+_2fa_failed_attempts: dict[str, int] = {}
+
 
 def _blacklist_token(
     token: str, default_expiry_minutes: int, success_event: str, failure_event: str
@@ -92,6 +97,41 @@ def _cleanup_blacklist() -> None:
     expired = [jti for jti, exp in _access_token_blacklist.items() if exp <= now]
     for jti in expired:
         del _access_token_blacklist[jti]
+
+
+def record_2fa_failure(token: str) -> bool:
+    """Record a failed 2FA attempt for a pending token.
+
+    Returns True if the token should be locked out (>= MAX_2FA_ATTEMPTS failures).
+    When the threshold is reached the token is automatically blacklisted so that
+    ``verify_2fa_pending_token`` will reject any further use.
+    """
+    try:
+        payload = jwt.decode(token, settings.get_secret_key(), algorithms=ALLOWED_JWT_ALGORITHMS)
+        jti = payload.get("jti")
+        if not jti:
+            return False
+        _2fa_failed_attempts[jti] = _2fa_failed_attempts.get(jti, 0) + 1
+        if _2fa_failed_attempts[jti] >= MAX_2FA_ATTEMPTS:
+            # Blacklist the token so it cannot be reused
+            blacklist_2fa_pending_token(token)
+            logger.warning("2fa_pending_token_locked_out", jti=jti, attempts=_2fa_failed_attempts[jti])
+            return True
+        return False
+    except Exception:
+        return False
+
+
+def check_2fa_attempts_exceeded(token: str) -> bool:
+    """Return True if the pending token has already been locked out."""
+    try:
+        payload = jwt.decode(token, settings.get_secret_key(), algorithms=ALLOWED_JWT_ALGORITHMS)
+        jti = payload.get("jti")
+        if not jti:
+            return False
+        return _2fa_failed_attempts.get(jti, 0) >= MAX_2FA_ATTEMPTS
+    except Exception:
+        return False
 
 
 class AuthenticationError(Exception):

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Literal
 
 import structlog
-from pydantic import Field, ValidationError, field_validator
+from pydantic import Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = structlog.get_logger()
@@ -173,6 +173,11 @@ class Settings(BaseSettings):
         description="Authentication endpoint rate limit per minute per IP",
         ge=1,
         le=20,
+    )
+    rate_limit_storage_uri: str = Field(
+        default="memory://",
+        description="Rate limit storage URI. Use 'memory://' for single-worker dev, "
+        "'redis://host:port/db' for production with multiple workers.",
     )
 
     # Security Options
@@ -435,6 +440,26 @@ class Settings(BaseSettings):
     def validate_pepper(cls, v: str) -> str:
         """Validate password hashing pepper meets minimum security requirements."""
         return cls._validate_secret_field(v, "PEPPER", "Password hashing pepper")
+
+    @model_validator(mode="after")
+    def validate_workers_rate_limit_storage(self) -> "Settings":
+        """Reject WORKERS > 1 with in-memory rate limiting.
+
+        In-memory rate limit storage is per-process, so each worker maintains
+        independent counters. With N workers an attacker effectively gets
+        N x limit requests, silently bypassing rate limiting. If Redis is not
+        configured, fall back to a single worker to keep rate limits effective.
+        """
+        if self.workers > 1 and self.rate_limit_storage_uri == "memory://":
+            logger.warning(
+                "workers_reduced_to_1",
+                reason="In-memory rate limiting does not share state across workers. "
+                "Set RATE_LIMIT_STORAGE_URI to a Redis URL (e.g. redis://localhost:6379/0) "
+                "to run with multiple workers. Falling back to workers=1.",
+                configured_workers=self.workers,
+            )
+            self.workers = 1
+        return self
 
 
 # Global settings instance
