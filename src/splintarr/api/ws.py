@@ -5,6 +5,8 @@ Provides a single WebSocket connection at /ws/live that replaces all
 dashboard polling. Authenticates via access_token cookie on handshake.
 """
 
+import time
+
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -18,10 +20,49 @@ logger = structlog.get_logger()
 
 router = APIRouter(tags=["websocket"])
 
+# Per-IP WebSocket connection rate limiting (#134)
+_RATE_LIMIT_MAX = 10  # max connections per window
+_RATE_LIMIT_WINDOW = 60  # window in seconds
+_conn_attempts: dict[str, list[float]] = {}
+
+
+def _is_rate_limited(ip: str) -> bool:
+    """Check if an IP has exceeded the connection rate limit.
+
+    Cleans up expired entries on each call to prevent unbounded growth.
+    Returns True if the IP should be rejected.
+    """
+    now = time.monotonic()
+    cutoff = now - _RATE_LIMIT_WINDOW
+
+    # Clean up stale IPs to bound memory usage
+    stale_ips = [k for k, v in _conn_attempts.items() if v[-1] < cutoff]
+    for k in stale_ips:
+        del _conn_attempts[k]
+
+    # Trim timestamps for the current IP
+    timestamps = _conn_attempts.get(ip, [])
+    timestamps = [t for t in timestamps if t > cutoff]
+
+    if len(timestamps) >= _RATE_LIMIT_MAX:
+        _conn_attempts[ip] = timestamps
+        return True
+
+    timestamps.append(now)
+    _conn_attempts[ip] = timestamps
+    return False
+
 
 @router.websocket("/ws/live")
 async def websocket_live(websocket: WebSocket) -> None:
     """Real-time activity feed WebSocket endpoint."""
+    # Per-IP rate limiting — reject before doing any auth work
+    client_ip = websocket.client.host if websocket.client else "unknown"
+    if _is_rate_limited(client_ip):
+        logger.warning("websocket_rate_limited", ip=client_ip)
+        await websocket.close(code=4029, reason="Too many requests")
+        return
+
     # Authenticate from cookie
     token = websocket.cookies.get("access_token")
     if not token:
