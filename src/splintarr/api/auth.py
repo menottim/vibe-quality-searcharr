@@ -26,6 +26,7 @@ from splintarr.core.auth import (
     authenticate_user,
     blacklist_2fa_pending_token,
     blacklist_access_token,
+    check_2fa_attempts_exceeded,
     create_2fa_pending_token,
     create_access_token,
     create_refresh_token,
@@ -33,6 +34,7 @@ from splintarr.core.auth import (
     generate_totp_secret,
     generate_totp_uri,
     get_current_user_id_from_token,
+    record_2fa_failure,
     revoke_all_user_tokens,
     revoke_refresh_token,
     rotate_refresh_token,
@@ -693,6 +695,14 @@ async def login_verify_2fa(
             detail="No 2FA pending session",
         )
 
+    # Reject tokens that have already hit the failed-attempt limit (#135)
+    if check_2fa_attempts_exceeded(pending_token):
+        response.delete_cookie(key="2fa_pending_token", path="/")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Too many failed 2FA attempts. Please login again.",
+        )
+
     try:
         payload = verify_2fa_pending_token(pending_token)
     except TokenError as e:
@@ -737,14 +747,27 @@ async def login_verify_2fa(
             lockout_duration_minutes=settings.account_lockout_duration_minutes,
         )
         db.commit()
+
+        # Track per-token brute-force attempts; lock out after 3 failures (#135)
+        locked_out = record_2fa_failure(pending_token)
+        if locked_out:
+            response.delete_cookie(key="2fa_pending_token", path="/")
+
         logger.warning(
             "2fa_login_invalid_totp",
             user_id=user.id,
             failed_attempts=user.failed_login_attempts,
+            token_locked_out=locked_out,
+        )
+
+        detail = (
+            "Too many failed 2FA attempts. Please login again."
+            if locked_out
+            else "Invalid TOTP code"
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid TOTP code",
+            detail=detail,
         )
 
     # 2FA passed — blacklist the pending token to prevent replay attacks
